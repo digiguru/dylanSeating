@@ -12,6 +12,7 @@ var paper = Raphael("board", 900, 900),
     colSeatSelectedStroke = "blue";
 
 paper.customAttributes = {
+  
   model: function(model) {
     this.myModel = model;
     return this.myModel;
@@ -156,7 +157,7 @@ var Guest = function(name, x, y) {
                     }
                 }
             } else {
-                model.ghost.hide();
+                model.ghost.remove();
                 model.removeFromSeat();
             }
               this.animate({
@@ -296,20 +297,7 @@ Seat.prototype.GetRotation = function() {
 
 Guest.prototype.startDrag = function() {
     this.hideName();
-    if (!this.ghost) {  
-      this.ghost = this.graphic.clone();
-      this.ghost.GetX = function() {
-          return this.attr("ox");
-      };
-      this.ghost.GetY = function() {
-          return this.attr("oy");
-      };
-    }
-    this.ghost.attr({
-        ox: this.GetX(),
-        oy: this.GetY()
-    });
-    
+    this.ghost = this.graphic.clone();
     this.ghost.attr("opacity", 0.3);
 };
 Guest.prototype.overEmptySeat = function(x, y, seat) {
@@ -323,30 +311,7 @@ Guest.prototype.overOccupiedSeat = function(x, y, seat) {
 };
 Guest.prototype.moveGhostToNewLocation = function() {
     if (this.ghost) {
-        this.ghost.show();
         this.ghost.model = this;
-        
-       /* 
-        var myX = this.GetX(),
-            myY = this.GetY(),
-            translateX = this.ghost.GetX() - myX,
-            translateY = this.ghost.GetY() - myY;
-        this.ghost.animate({
-            translation: translateX + " " + translateY//,
-            //rotation: rotation
-        }, animationTime, ">", function() {
-            
-            this.model.showHelpText(this.model.name);
-            this.model.graphic.animate({
-                opacity: 1
-            }, animationTime);
-            this.hide();
-            this.model.showHelpText(this.model.name);
-        });
-        
-        */
-        
-        
         this.ghost.animate({
             path: this.graphic.attr("path")
         }, animationTime, "<", function() {
@@ -354,9 +319,8 @@ Guest.prototype.moveGhostToNewLocation = function() {
             this.model.graphic.animate({
                 opacity: 1
             }, animationTime);
-            this.hide();
+            this.remove();
         });
-        
     }
 };
 Guest.prototype.removeFromSeat = function() {
