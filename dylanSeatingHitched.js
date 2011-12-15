@@ -488,21 +488,28 @@ Desk = function(x, y, rotation) {
     this.graphic = paper.path(shapes.desk);//
     this.graphic.attr({
         ox: 0,
-        oy: 0,
-       rotation: rotation
+        oy: 30,
+       rotation: rotation,
+       fill: colTable,
+        stroke: colTableStroke,
+        model: this
     });
+    /*this.rotationHandle = paper.circle(x - 60, y + 60, 10);
+    this.rotationHandle.attr({
+        ox: 0,
+        oy: 0,
+       rotation: rotation,
+       fill: colTable,
+        stroke: colTableStroke,
+        model: this
+    });*/
     this.setGraphicPosition(x, y);
     
     //this.width = 1 * 10;
     //this.widthWithChairs = this.width + 20;
-    this.graphic = paper.circle(x, y, this.width);
+    //this.graphic = paper.circle(x, y, this.width);
     this.seatSet = paper.set();
     this.seatSet.push(this.graphic);
-    this.graphic.attr({
-        fill: colTable,
-        stroke: colTableStroke,
-        model: this
-    });
     this.tableSeatList = [];
     this.addSeat = function() {
         /*var alpha = 360 / seatCount * this.tableSeatList.length,
@@ -518,6 +525,7 @@ Desk = function(x, y, rotation) {
     
     var
     start = function(event) {
+        logEvent("StartDrag Desk");
         var model = this.attr("model");
         this.ox = model.GetX();
         this.oy = model.GetY();
@@ -547,6 +555,7 @@ Desk = function(x, y, rotation) {
         
     },
     up = function() {
+        logEvent("EndDrag Desk");
         var model = this.attr("model");
         model.seatSet.attr({
             stroke: colTableStroke 
@@ -555,13 +564,15 @@ Desk = function(x, y, rotation) {
     };
     this.graphic.drag(move, start, up);
     this.graphic.mouseover(function(event) {
-        this.animate({
+        logEvent("Over Desk");
+    this.animate({
             "stroke-width": 2,
             stroke: colTableSelectedStroke
         }, animationTime);
     });
     this.graphic.mouseout(function(event) {
-        this.animate({
+       logEvent("Out Desk");
+     this.animate({
             "stroke-width": 1,
             stroke: colTableStroke
         }, animationTime);
@@ -571,16 +582,17 @@ Desk = function(x, y, rotation) {
 
 var Init = function() {
     //Create Tables & Seats
-    myTables.push(new Desk(200, 200, 0));
+    myTables.push(new Desk(100, 100, 0));
     myTables.push(new Desk(200, 260, 180));
+    myTables.push(new Desk(200, 260, 0));
     myTables.push(new Desk(200, 450, 0));
-    /*
-     for (var i = 20; i < 900; i = i + Math.floor(Math.random() * 30) + 200) {
-        for (var j = 20; j < 900; j = j + Math.floor(Math.random() * 30) + 200) {
+    
+     for (var i = 20; i < 400; i = i + Math.floor(Math.random() * 30) + 200) {
+        for (var j = 20; j < 400; j = j + Math.floor(Math.random() * 30) + 200) {
             myTables.push(new RoundTable(i, j, Math.floor(Math.random() * 12)));
         }
     }
-    */
+    
     
     for (var p = 0; p < myGuests.length; p++) {
         draggableGuests.push(new Guest(myGuests[p].name, 100, 100 * (p + 1)));
