@@ -111,8 +111,10 @@ ToolBar = function() {
     var obj = {
       graphic: undefined,
       type: "guest",
-      createObject: function() {
-        return LoadData({guests:[{name:"Example New Guest", x:30, y:30}]});
+      createObject: function(x,y) {
+        if(!x) {x = 30;}
+        if(!y) {y = 30;}
+        return LoadData({guests:[{name:"Example New Guest", x:x, y:y}]});
       }
     };
     var guestSelect = paper.path(shapes.guest);
@@ -131,8 +133,10 @@ ToolBar = function() {
     var obj = {
       graphic: undefined,
       type: "table",
-      createObject: function() {
-        return LoadData({tables:[{type:"table",x:200, y:200, seatCount: 5}]});
+      createObject: function(x,y) {
+        if(!x) {x = 200;}
+        if(!y) {y = 200;}
+        return LoadData({tables:[{type:"table",x:x, y:y, seatCount: 5}]});
       }
     };
     var tableSelect = paper.circle(0, 0, 20);
@@ -153,8 +157,10 @@ ToolBar = function() {
     var obj = {
       graphic: undefined,
       type: "desk",
-      createObject: function() {
-       LoadData({tables:[{type:"desk",x:400, y:400, rotation: 90}]});     
+      createObject: function(x,y) {
+        if(!x) {x = 400;}
+        if(!y) {y = 400;}
+        LoadData({tables:[{type:"desk",x:x, y:y, rotation: 90}]});     
       }
     };
     var tableSelect = paper.path(shapes.desk);
@@ -197,18 +203,88 @@ ToolBar = function() {
             this.attr("model").text.hide();
         }
     });
-    item.click(function(event) {
+    /*item.click(function(event) {
       logEvent("Click toolbox item: " + this.attr("model").type);
       this.attr("model").createObject();
-      
-    });
+    });*/
+    obj.setGraphicPosition = function(x, y) {
+    
+        var currentX = this.GetX(),
+            currentY = this.GetY();
+        this.graphic.attr({
+            ox: x,
+            oy: y
+        });
+        this.graphic.translate(x - currentX, y - currentY);
+        if (this.text) {
+            this.text.attr({
+                x: x,
+                y: y - 20
+            });
+        }
+    };
+    obj.GetX = function() {
+        return this.graphic.attr("ox");
+    };
+    obj.GetY = function() {
+        return this.graphic.attr("oy");
+    };
+    
+  var //possibleSeats = [],
+        start = function(event) {
+            var model = this.attr("model");
+            //model.startDrag();
+            this.ox = this.attr("ox");
+            this.oy = this.attr("oy");
+            this.animate({
+                "stroke-width": 3,
+                opacity: 0.7
+            }, animationTime);
+        },
+        move = function(mx, my) {
+            var model = this.attr("model");
+            //inrange = false;
+
+            var mouseCX = this.ox + mx,
+                mouseCY = this.oy + my,
+                lockX = 0,
+                lockY = 0;
+
+            //logEvent("Move Toolbox thing: " + mouseCX);
+            var myStroke = colGuestStroke;
+            model.setGraphicPosition(mouseCX, mouseCY);
+            this.attr({
+                stroke: myStroke
+            }); 
+        },
+        up = function() {
+            var model = this.attr("model");
+            model.createObject(model.GetX(), model.GetY());
+            var inToolBox = false;
+            if (inToolBox) {
+                
+            } else {
+                //model.ghost.remove();
+                //model.removeFromSeat();
+                
+            }
+            this.animate({
+              "stroke-width": 2,
+              opacity: 1
+              //ox:this.ox,
+              //oy: this.oy
+               
+            }, animationTime);
+           model.setGraphicPosition(this.ox,this.oy);
+        };
+    item.drag(move, start, up);
+    
    
    
   }
   this.AddToolBoxItem(this.generateGuestSelect(), "Add new person", "guest");
   this.AddToolBoxItem(this.generateTableSelect(), "Add new table", "table");
   this.AddToolBoxItem(this.generateDeskSelect(), "Add new desk", "desk");
-  
   
   
   
