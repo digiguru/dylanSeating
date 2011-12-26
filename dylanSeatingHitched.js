@@ -1,5 +1,10 @@
 //window.addEvent('domready', function() {
-    
+
+
+
+
+
+
 var paper = Raphael("board", 900, 900),
     animationTime = 300,
     colGuest = "yellow",
@@ -103,41 +108,73 @@ ToolBar = function() {
   });
   this.toolBox = [];
   this.generateGuestSelect = function() {
+    var obj = {
+      graphic: undefined,
+      type: "guest",
+      createObject: function() {
+        return LoadData({guests:[{name:"Example New Guest", x:30, y:30}]});
+      }
+    };
     var guestSelect = paper.path(shapes.guest);
     guestSelect.attr({
         fill: colGuest,
         stroke: colGuestStroke,
-        model: this,
+        model: obj,
         ox: 0,
         oy: 0
     });
-    return guestSelect;
+    obj.graphic = guestSelect;
+    return obj;
+  
   };
   this.generateTableSelect = function() {
+    var obj = {
+      graphic: undefined,
+      type: "table",
+      createObject: function() {
+        return LoadData({tables:[{type:"table",x:200, y:200, seatCount: 5}]});
+      }
+    };
     var tableSelect = paper.circle(0, 0, 20);
     tableSelect.attr({
         fill: colTable,
         stroke: colTableStroke,
-        model: this,
+        model: obj,
         ox: 0,
-        oy: 0
+        oy: 0,
+        type: "table"
     });
-    return tableSelect;
+    //return tableSelect;
+    obj.graphic = tableSelect;
+    return obj;
   };
   this.generateDeskSelect = function() {
+    
+    var obj = {
+      graphic: undefined,
+      type: "desk",
+      createObject: function() {
+       LoadData({tables:[{type:"desk",x:400, y:400, rotation: 90}]});     
+      }
+    };
     var tableSelect = paper.path(shapes.desk);
     tableSelect.attr({
         fill: colTable,
         stroke: colTableStroke,
-        model: this,
+        model: obj,
         ox: 0,
-        oy: 0
+        oy: 0,
+        type: "desk"
     });
-    return tableSelect;
+    //return tableSelect;
+    obj.graphic = tableSelect;
+    return obj;
   }
 
-  this.AddToolBoxItem = function(item, helperText) {
-    this.toolBox.push(item);
+  this.AddToolBoxItem = function(obj, helperText, type) {
+    this.toolBox.push(obj);
+    this.type = type;
+    var item = obj.graphic;
     var offsetY = (this.toolBox.length * 50);
     item.translate(650, offsetY);
     item.attr({ox:650, oy:offsetY});
@@ -160,12 +197,21 @@ ToolBar = function() {
             this.attr("model").text.hide();
         }
     });
+    item.click(function(event) {
+      logEvent("Click toolbox item: " + this.attr("model").type);
+      this.attr("model").createObject();
+      
+    });
    
    
   }
-  this.AddToolBoxItem(this.generateGuestSelect(), "Add new person");
-  this.AddToolBoxItem(this.generateTableSelect(), "Add new table");
-  this.AddToolBoxItem(this.generateDeskSelect(), "Add new desk");
+  this.AddToolBoxItem(this.generateGuestSelect(), "Add new person", "guest");
+  this.AddToolBoxItem(this.generateTableSelect(), "Add new table", "table");
+  this.AddToolBoxItem(this.generateDeskSelect(), "Add new desk", "desk");
+  
+  
+  
+  
   
 }
 Guest = function(name, x, y) {
@@ -611,8 +657,6 @@ Desk = function(x, y, rotation) {
     });
     this.rotationHandle = paper.circle(0 + 60, 0 + 60, 10);
     this.rotationHandle.attr({
-       /* ox: 0,
-        oy: 0,*/
         rotation: rotation,
         fill: colTable,
         stroke: colTableStroke,
@@ -622,21 +666,6 @@ Desk = function(x, y, rotation) {
     rotationstart = function(event) {
         logEvent("StartRotation Desk");
         var model = this.attr("model");
-        /*
-         this.ox = model.GetX();
-        this.oy = model.GetY();
-        for (var i = 0; i < model.tableSeatList.length; i++) {
-            var s = model.tableSeatList[i];
-            s.graphic.attr({
-                  fromTableX: s.GetX(),
-                  fromTableY: s.GetY()
-            });
-        }
-        model.seatSet.attr({
-            stroke: colSeatSelectedStroke  
-        });
-        this.attr("stroke", colTableSelectedStroke);
-        */
     },
     rotationmove = function(mx, my) {
         var model = this.attr("model"),
@@ -657,42 +686,15 @@ Desk = function(x, y, rotation) {
             },
             roundValue = function(val, rounding) {
               return Math.round(val/rounding) * rounding;
-            };j
+            };
         var newANGLE = calculateAngle({x:model.GetX(), y:model.GetY()}, {x:mouseCX, y:mouseCY}) - offset;
-        newANGLE = roundValue(newANGLE,rounding);
-        
-        logEvent("rotate Desk" + model.GetX() + "," + model.GetY() + ", " + newANGLE);
-        
+        newANGLE = roundValue(newANGLE,rounding); 
         model.rotation = newANGLE;
         model.graphic.attr({rotation:model.rotation});
-        //soh cah toa
-        /*var 
-        var alpha = 360 / seatCount * this.tableSeatList.length,
-            a = (90 - alpha) * Math.PI / 180,
-            x = this.GetX() + this.widthWithChairs * Math.cos(a),
-            y = this.GetY() - this.widthWithChairs * Math.sin(a),
-            mySeat = new Seat(x, y, alpha);*/
-        
-        
-        
-/*
-        for (var i = 0; i < model.tableSeatList.length; i++) {
-            var s = model.tableSeatList[i];
-            s.setGraphicPosition(
-            s.graphic.attr("fromTableX") + mx, s.graphic.attr("fromTableY") + my);
-        }
-        
-        model.setGraphicPosition(mouseCX, mouseCY);
-*/
+
     },
     rotationup = function() {
         logEvent("EndRotation Desk");
-/*
-         var model = this.attr("model");
-        model.seatSet.attr({
-            stroke: colTableStroke 
-        });
-*/
     };
     this.rotationHandle.drag(rotationmove, rotationstart, rotationup);
     this.rotationHandle.mouseover(function(event) {
@@ -775,15 +777,13 @@ Desk = function(x, y, rotation) {
     };
     this.graphic.drag(move, start, up);
     this.graphic.mouseover(function(event) {
-        logEvent("Over Desk");
-    this.animate({
+      this.animate({
             "stroke-width": 2,
             stroke: colTableSelectedStroke
         }, animationTime);
     });
     this.graphic.mouseout(function(event) {
-       logEvent("Out Desk");
-     this.animate({
+      this.animate({
             "stroke-width": 1,
             stroke: colTableStroke
         }, animationTime);
@@ -818,15 +818,42 @@ var SaveAll = function() {
   }
   return SaveObject;
 }
+var LoadData = function(data) {
+  var loadGuest = function(data) {
+    return new Guest(data.name, data.x, data.y);
+  },
+  loadTable = function(data) {
+    return new RoundTable(data.x, data.y, data.seatCount);
+  },
+  loadDesk = function(data) {
+    return new Desk(data.x, data.y, data.rotation);
+  };
+  if(data.tables) {
+    for (var i = 0, l = data.tables.length; i < l; i++) {
+        if(data.tables[i].type === "desk") {
+           myTables.push(loadDesk(data.tables[i]));
+        } else if (data.tables[i].type === "table") {
+           myTables.push(loadTable(data.tables[i]));
+        }  
+    }
+  }
+  if(data.guests) {
+    for (var i = 0, l = data.guests.length; i < l; i++) {
+        draggableGuests.push(loadGuest(data.guests[i]));
+    }
+  }
+};
 var Init = function() {
     var toolbar = new ToolBar();
+    //LoadData(exampleSave);
+    
     //Create Tables & Seats
     myTables.push(new Desk(100, 100, 0));
     myTables.push(new Desk(200, 260, 180));
     myTables.push(new Desk(200, 260, 0));
     myTables.push(new Desk(200, 450, 0));
     
-     for (var i = 20; i < 400; i = i + Math.floor(Math.random() * 30) + 200) {
+    for (var i = 20; i < 400; i = i + Math.floor(Math.random() * 30) + 200) {
         for (var j = 20; j < 400; j = j + Math.floor(Math.random() * 30) + 200) {
             myTables.push(new RoundTable(i, j, Math.floor(Math.random() * 12)));
         }
@@ -835,5 +862,13 @@ var Init = function() {
     for (var p = 0; p < myGuests.length; p++) {
         draggableGuests.push(new Guest(myGuests[p].name, 100, 100 * (p + 1)));
     }
+    
     logEvent("Finished Init");
 }();
+
+var exampleSave = {
+  guests: [{name:"Fred Boodle", x:30, y:30}],
+  tables: [{type:"desk",x:400, y:400, rotation: 90},
+           {type:"desk",x:600, y:50, rotation: 0},
+           {type:"table",x:200, y:200, seatCount: 5}]
+}
