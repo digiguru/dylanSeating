@@ -1,10 +1,6 @@
 //window.addEvent('domready', function() {
 
 
-
-
-
-
 var paper = Raphael("board", 900, 900),
     animationTime = 300,
     colGuest = "yellow",
@@ -216,12 +212,7 @@ ToolBar = function() {
             oy: y
         });
         this.graphic.translate(x - currentX, y - currentY);
-        if (this.text) {
-            this.text.attr({
-                x: x,
-                y: y - 20
-            });
-        }
+        
     };
     obj.GetX = function() {
         return this.graphic.attr("ox");
@@ -259,14 +250,14 @@ ToolBar = function() {
         },
         up = function() {
             var model = this.attr("model");
-            model.createObject(model.GetX(), model.GetY());
-            var inToolBox = false;
+            var inToolBox = MyToolBar.background.getBBox().x < model.GetX();
+            
             if (inToolBox) {
-                
+              model.createObject();
             } else {
                 //model.ghost.remove();
                 //model.removeFromSeat();
-                
+              model.createObject(model.GetX(), model.GetY());
             }
             this.animate({
               "stroke-width": 2,
@@ -275,7 +266,8 @@ ToolBar = function() {
               //oy: this.oy
                
             }, animationTime);
-           model.setGraphicPosition(this.ox,this.oy);
+            model.setGraphicPosition(this.ox,this.oy);
+            
         };
     item.drag(move, start, up);
     
@@ -919,8 +911,9 @@ var LoadData = function(data) {
     }
   }
 };
+var MyToolBar; 
 var Init = function() {
-    var toolbar = new ToolBar();
+    MyToolBar = new ToolBar();
     //LoadData(exampleSave);
     
     //Create Tables & Seats
