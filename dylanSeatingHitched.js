@@ -340,6 +340,7 @@ Guest = function(name, x, y) {
             seatCY = 0;
         this.seat = false;
         this.animateToSpot(seatCX, seatCY, 0);
+        
     };
     this.animateToSpot = function(x, y, rotation) {
         this.graphic.model = this;
@@ -531,14 +532,22 @@ Guest = function(name, x, y) {
       };
     }
 },
-Seat = function(x, y, rotation) {
+Seat = function(x, y, rotation, table, seatNumber) {
     logEvent("Create Seat");
+    this.table = table;
     this.rotation = rotation;
     this.graphic = paper.path(shapes.seat);
+    this.seatNumber = seatNumber;
+    this.SetRotation = function(rotation) {
+      this.rotation = rotation;
+      this.graphic.attr({"rotation":rotation});
+    }
     this.graphic.attr({
         ox: x,
         oy: y,
-        rotation: rotation
+        fill: "blue",
+        rotation: rotation,
+        model: this
     });
     this.graphic.translate(x, y);
     
@@ -570,6 +579,10 @@ Seat = function(x, y, rotation) {
         this.guest = false;
         this.isoccupied = false;
     };
+    this.remove = function() {
+      this.RemoveGuest();
+      this.graphic.remove();
+    }
     this.RemoveGuest();
     seatList.push(this);
     
@@ -587,10 +600,32 @@ Seat = function(x, y, rotation) {
       };
     };
     
+    this.graphic.mouseover(function(event) {
+        this.animate({
+            "stroke-width": 2,
+            stroke: colTableSelectedStroke,
+            fill: "red"
+        }, animationTime);
+    });
+    this.graphic.mouseout(function(event) {
+        this.animate({
+            "stroke-width": 1,
+            stroke: colTableStroke,
+            fill: "blue"
+        }, animationTime);
+    });
+    this.graphic.click(function(event) {
+        logEvent("click empty seat");
+        var model = this.attr("model"),
+            table = model.table;
+        table.removeSeat(model.seatNumber);
+        
+    });
 },
     
     
 RoundTable = function(x, y, seatCount) {
+  this.seatCount = seatCount;
     this.GetX = function() {
         return this.graphic.attr("cx");
     };
@@ -615,20 +650,41 @@ RoundTable = function(x, y, seatCount) {
         model: this
     });
     this.tableSeatList = [];
-    this.addSeat = function() {
-        var alpha = 360 / seatCount * this.tableSeatList.length,
-            a = (90 - alpha) * Math.PI / 180,
-            x = this.GetX() + this.widthWithChairs * Math.cos(a),
-            y = this.GetY() - this.widthWithChairs * Math.sin(a),
-            mySeat = new Seat(x, y, alpha);
-        this.tableSeatList.push(mySeat);
-        this.seatSet.push(mySeat.graphic);
-    };
-
-    for (var t = 0; t < seatCount; t++) {
-        this.addSeat();
+    //this.tableSeatAdditions = [];
+    this.placeSeat = function(seatNumber) {
+      var alpha = 360 / this.seatCount * seatNumber,
+          a = (90 - alpha) * Math.PI / 180,
+          x = this.GetX() + this.widthWithChairs * Math.cos(a),
+          y = this.GetY() - this.widthWithChairs * Math.sin(a);
+      this.tableSeatList[seatNumber].setGraphicPosition(x,y);
+      this.tableSeatList[seatNumber].SetRotation(alpha);
     }
-
+    this.addSeat = function(seatNumber) {
+         mySeat = new Seat(0, 0, 0, this, seatNumber);
+      this.tableSeatList.push(mySeat);
+      this.seatSet.push(mySeat.graphic);
+      this.placeSeat(seatNumber);
+    };
+    this.removeSeat = function(index) {
+      logEvent("remove seat" + index);
+      this.tableSeatList[index].remove();
+      //this.tableSeatList.splice(index,1);//[index].remove();
+      var tempArr = [];
+      for (var t = 0, l = this.tableSeatList.length; t < l; t++) {
+          if(t!==index) {
+            tempArr.push(this.tableSeatList[t]);
+          }
+      }
+      this.tableSeatList = tempArr;
+      this.seatCount = this.tableSeatList.length;
+      for (var t = 0, l = this.tableSeatList.length; t < l; t++) {
+          this.placeSeat(t);
+      }
+    };
+    for (var t = 0; t < seatCount; t++) {
+        this.addSeat(t);
+    }
+    
     var
     start = function(event) {
         var model = this.attr("model");
