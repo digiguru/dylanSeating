@@ -9,10 +9,13 @@ var paper = Raphael("board", 900, 900),
     colTable = "purple",
     colTableStroke = "black",
     colTableSelectedStroke = "yellow",
+    colToolbarBack = "cyan",
     colSeatSelectedStroke = "blue",
     shapes = {guest:  "M -10 -10 L 10 -10 L 0 10 z",
               desk:   "m-60,0l0,60l120,0l0,-60c-45,20 -75,20 -120,0z",
-              seat:   "M -20 -10 L 20 -10 L 0 10 z"};
+              seat:   "M -20 -10 L 20 -10 L 0 10 z"
+              //seat:   "M -20 -50 L 20 -50 L 0 -20 z"
+              };
     inrange = false,
     seatList = [],
     draggableGuests = [],
@@ -91,6 +94,80 @@ var dragThreshold =  15,
             
 }
 var
+ToolBar = function() {
+  this.background = paper.rect(600,20,200,600, 5);
+  this.background.attr({
+    fill: colToolbarBack,
+    stroke: colTableStroke,
+    model: this
+  });
+  this.toolBox = [];
+  this.generateGuestSelect = function() {
+    var guestSelect = paper.path(shapes.guest);
+    guestSelect.attr({
+        fill: colGuest,
+        stroke: colGuestStroke,
+        model: this,
+        ox: 0,
+        oy: 0
+    });
+    return guestSelect;
+  };
+  this.generateTableSelect = function() {
+    var tableSelect = paper.circle(0, 0, 20);
+    tableSelect.attr({
+        fill: colTable,
+        stroke: colTableStroke,
+        model: this,
+        ox: 0,
+        oy: 0
+    });
+    return tableSelect;
+  };
+  this.generateDeskSelect = function() {
+    var tableSelect = paper.path(shapes.desk);
+    tableSelect.attr({
+        fill: colTable,
+        stroke: colTableStroke,
+        model: this,
+        ox: 0,
+        oy: 0
+    });
+    return tableSelect;
+  }
+
+  this.AddToolBoxItem = function(item, helperText) {
+    this.toolBox.push(item);
+    var offsetY = (this.toolBox.length * 50);
+    item.translate(650, offsetY);
+    item.attr({ox:650, oy:offsetY});
+    item.mouseover(function(event) {
+        logEvent("Over ToolboxItem");
+        this.animate({
+                "stroke-width": 2,
+                stroke: colTableSelectedStroke
+        }, animationTime);
+        this.attr("model").text = paper.text(this.attr("ox") + 75, this.attr("oy"), helperText);
+        this.attr("model").text.show();
+    });
+    item.mouseout(function(event) {
+        logEvent("Out ToolboxItem");
+        this.animate({
+               "stroke-width": 1,
+               stroke: colTableStroke
+        }, animationTime);
+        if (this.attr("model").text) {
+            this.attr("model").text.hide();
+        }
+    });
+   
+   
+  }
+  this.AddToolBoxItem(this.generateGuestSelect(), "Add new person");
+  this.AddToolBoxItem(this.generateTableSelect(), "Add new table");
+  this.AddToolBoxItem(this.generateDeskSelect(), "Add new desk");
+  
+}
 Guest = function(name, x, y) {
     logEvent("Create Guest");
     this.name = name;
@@ -332,10 +409,17 @@ Guest = function(name, x, y) {
             }, animationTime);
         };
     this.graphic.drag(move, start, up);
-    
+    this.ToJson = function() {
+      return {
+        name:this.name,
+        x:this.GetX(),
+        y:this.GetY()
+      };
+    }
 },
 Seat = function(x, y, rotation) {
     logEvent("Create Seat");
+    this.rotation = rotation;
     this.graphic = paper.path(shapes.seat);
     this.graphic.attr({
         ox: x,
@@ -374,6 +458,21 @@ Seat = function(x, y, rotation) {
     };
     this.RemoveGuest();
     seatList.push(this);
+    
+    this.ToJson = function() {
+    var myGuest;
+    if(this.guest) {
+      myGuest = this.guest.ToJson()
+    }
+      return {
+        type:"seat",
+        rotation:this.rotation,
+        x:this.GetX(),
+        y:this.GetY(),
+        guest: myGuest
+      };
+    };
+    
 },
     
     
@@ -466,6 +565,19 @@ RoundTable = function(x, y, seatCount) {
             stroke: colTableStroke
         }, animationTime);
     });
+    this.ToJson = function() {
+      var seatObject = [];
+      for(var i=0,l=this.tableSeatList.length;i<l;i++) {
+        seatObject.push(this.tableSeatList[i].ToJson());
+      };
+      return {
+        type:"round",
+        seatCount:this.tableSeatList.length,
+        x:this.GetX(),
+        y:this.GetY(),
+        seatList: seatObject
+      };
+    };
 };
 Desk = function(x, y, rotation) {
     this.GetX = function() {
@@ -482,8 +594,11 @@ Desk = function(x, y, rotation) {
             oy: y
         });
         this.graphic.translate(x - currentX, y - currentY);
+        this.rotationHandle.attr({cx:x + 50, cy:y + 50});
     };
     
+    
+    this.rotation = rotation;
     logEvent("Create Desk");
     this.graphic = paper.path(shapes.desk);//
     this.graphic.attr({
@@ -494,15 +609,107 @@ Desk = function(x, y, rotation) {
         stroke: colTableStroke,
         model: this
     });
-    /*this.rotationHandle = paper.circle(x - 60, y + 60, 10);
+    this.rotationHandle = paper.circle(0 + 60, 0 + 60, 10);
     this.rotationHandle.attr({
-        ox: 0,
-        oy: 0,
-       rotation: rotation,
-       fill: colTable,
+       /* ox: 0,
+        oy: 0,*/
+        rotation: rotation,
+        fill: colTable,
         stroke: colTableStroke,
         model: this
-    });*/
+    });
+    var
+    rotationstart = function(event) {
+        logEvent("StartRotation Desk");
+        var model = this.attr("model");
+        /*
+         this.ox = model.GetX();
+        this.oy = model.GetY();
+        for (var i = 0; i < model.tableSeatList.length; i++) {
+            var s = model.tableSeatList[i];
+            s.graphic.attr({
+                  fromTableX: s.GetX(),
+                  fromTableY: s.GetY()
+            });
+        }
+        model.seatSet.attr({
+            stroke: colSeatSelectedStroke  
+        });
+        this.attr("stroke", colTableSelectedStroke);
+        */
+    },
+    rotationmove = function(mx, my) {
+        var model = this.attr("model"),
+            mouseCX = this.attr("cx") + mx,
+            mouseCY = this.attr("cy") + my,
+            offset = 135,
+            rounding = 22.5,
+            calculateAngle = function(center,point) {
+              var twelveOClock = {
+                x:center.x,
+                y:center.y 
+                  - Math.sqrt(
+                        Math.abs(point.x - center.x) * Math.abs(point.x - center.x)
+                        + Math.abs(point.y - center.y) * Math.abs(point.y - center.y)
+                      )
+              };
+              return (2 * Math.atan2(point.y - twelveOClock.y, point.x - twelveOClock.x)) * 180 / Math.PI;
+            },
+            roundValue = function(val, rounding) {
+              return Math.round(val/rounding) * rounding;
+            };j
+        var newANGLE = calculateAngle({x:model.GetX(), y:model.GetY()}, {x:mouseCX, y:mouseCY}) - offset;
+        newANGLE = roundValue(newANGLE,rounding);
+        
+        logEvent("rotate Desk" + model.GetX() + "," + model.GetY() + ", " + newANGLE);
+        
+        model.rotation = newANGLE;
+        model.graphic.attr({rotation:model.rotation});
+        //soh cah toa
+        /*var 
+        var alpha = 360 / seatCount * this.tableSeatList.length,
+            a = (90 - alpha) * Math.PI / 180,
+            x = this.GetX() + this.widthWithChairs * Math.cos(a),
+            y = this.GetY() - this.widthWithChairs * Math.sin(a),
+            mySeat = new Seat(x, y, alpha);*/
+        
+        
+        
+/*
+        for (var i = 0; i < model.tableSeatList.length; i++) {
+            var s = model.tableSeatList[i];
+            s.setGraphicPosition(
+            s.graphic.attr("fromTableX") + mx, s.graphic.attr("fromTableY") + my);
+        }
+        
+        model.setGraphicPosition(mouseCX, mouseCY);
+*/
+    },
+    rotationup = function() {
+        logEvent("EndRotation Desk");
+/*
+         var model = this.attr("model");
+        model.seatSet.attr({
+            stroke: colTableStroke 
+        });
+*/
+    };
+    this.rotationHandle.drag(rotationmove, rotationstart, rotationup);
+    this.rotationHandle.mouseover(function(event) {
+        logEvent("Over Desk Rotation");
+        this.animate({
+            "stroke-width": 2,
+            stroke: colTableSelectedStroke
+        }, animationTime);
+    });
+    this.rotationHandle.mouseout(function(event) {
+       logEvent("Out Desk Rotation");
+       this.animate({
+            "stroke-width": 1,
+            stroke: colTableStroke
+        }, animationTime);
+    });
+    
     this.setGraphicPosition(x, y);
     
     //this.width = 1 * 10;
@@ -510,6 +717,7 @@ Desk = function(x, y, rotation) {
     //this.graphic = paper.circle(x, y, this.width);
     this.seatSet = paper.set();
     this.seatSet.push(this.graphic);
+    this.seatSet.push(this.rotationHandle);
     this.tableSeatList = [];
     this.addSeat = function() {
         /*var alpha = 360 / seatCount * this.tableSeatList.length,
@@ -532,9 +740,12 @@ Desk = function(x, y, rotation) {
         for (var i = 0; i < model.tableSeatList.length; i++) {
             var s = model.tableSeatList[i];
             s.graphic.attr({
-                fromTableX: s.GetX(),
-                fromTableY: s.GetY()
+                  fromTableX: s.GetX(),
+                  fromTableY: s.GetY()
             });
+
+            
+            
         }
         model.seatSet.attr({
             stroke: colSeatSelectedStroke  
@@ -551,8 +762,8 @@ Desk = function(x, y, rotation) {
             s.setGraphicPosition(
             s.graphic.attr("fromTableX") + mx, s.graphic.attr("fromTableY") + my);
         }
-        model.setGraphicPosition(mouseCX, mouseCY);
         
+        model.setGraphicPosition(mouseCX, mouseCY);
     },
     up = function() {
         logEvent("EndDrag Desk");
@@ -577,10 +788,38 @@ Desk = function(x, y, rotation) {
             stroke: colTableStroke
         }, animationTime);
     });
+    this.ToJson = function() {
+      var seatObject = [];
+      for(var i=0,l=this.tableSeatList.length;i<l;i++) {
+        seatObject.push(this.tableSeatList[i].ToJson());
+      };
+      return {
+        type:"desk",
+        rotation:this.rotation,
+        x:this.GetX(),
+        y:this.GetY(),
+        seatList: seatObject
+      };
+    };
 };
 
-
+var SaveAll = function() {
+  var SaveObject = {
+    tables:[],
+    guests:[]
+  }
+  for(var i=0,l=myTables.length;i<l;i++) {
+    SaveObject.tables.push(myTables[i].ToJson());
+  }
+  for(var i=0,l=draggableGuests.length;i<l;i++) {
+    if(!draggableGuests[i].seat) {
+      SaveObject.guests.push(draggableGuests[i].ToJson());
+    }
+  }
+  return SaveObject;
+}
 var Init = function() {
+    var toolbar = new ToolBar();
     //Create Tables & Seats
     myTables.push(new Desk(100, 100, 0));
     myTables.push(new Desk(200, 260, 180));
@@ -593,11 +832,8 @@ var Init = function() {
         }
     }
     
-    
     for (var p = 0; p < myGuests.length; p++) {
         draggableGuests.push(new Guest(myGuests[p].name, 100, 100 * (p + 1)));
     }
     logEvent("Finished Init");
 }();
-//Init();
-  //});
