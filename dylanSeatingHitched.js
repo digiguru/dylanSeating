@@ -650,20 +650,25 @@ RoundTable = function(x, y, seatCount) {
         model: this
     });
     this.tableSeatList = [];
-    //this.tableSeatAdditions = [];
+    this.tableSeatAdditions = [];
+    this.caclulateClockworkValues = function(divisions, pointNumber) {
+      var alpha= 360 / divisions * pointNumber,
+          a= (90 - alpha) * Math.PI / 180,
+          x= this.GetX() + this.widthWithChairs * Math.cos(a),
+          y= this.GetY() - this.widthWithChairs * Math.sin(a);
+      return {alpha:alpha,a:a,x:x,y:y};
+    }
     this.placeSeat = function(seatNumber) {
-      var alpha = 360 / this.seatCount * seatNumber,
-          a = (90 - alpha) * Math.PI / 180,
-          x = this.GetX() + this.widthWithChairs * Math.cos(a),
-          y = this.GetY() - this.widthWithChairs * Math.sin(a);
-      this.tableSeatList[seatNumber].setGraphicPosition(x,y);
-      this.tableSeatList[seatNumber].SetRotation(alpha);
+      var obj = this.caclulateClockworkValues(this.seatCount, seatNumber);
+      this.tableSeatList[seatNumber].setGraphicPosition(obj.x,obj.y);
+      this.tableSeatList[seatNumber].SetRotation(obj.alpha);
+      this.tableSeatList[seatNumber].seatNumber = seatNumber;
     }
     this.addSeat = function(seatNumber) {
          mySeat = new Seat(0, 0, 0, this, seatNumber);
       this.tableSeatList.push(mySeat);
       this.seatSet.push(mySeat.graphic);
-      this.placeSeat(seatNumber);
+      
     };
     this.removeSeat = function(index) {
       logEvent("remove seat" + index);
@@ -683,6 +688,7 @@ RoundTable = function(x, y, seatCount) {
     };
     for (var t = 0; t < seatCount; t++) {
         this.addSeat(t);
+        this.placeSeat(seatNumber);
     }
     
     var
