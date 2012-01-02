@@ -1,5 +1,18 @@
 //window.addEvent('domready', function() {
 
+// Array Remove - By John Resig (MIT Licensed)
+Array.prototype.remove = function(from, to) {
+  var rest = this.slice((to || from) + 1 || this.length);
+  this.length = from < 0 ? this.length + from : from;
+  return this.push.apply(this, rest);
+};
+Array.prototype.insertAt = function(o, index){    
+  if ( index > -1 && index <= this.length ) {
+      this.splice(index, 0, o);
+      return true;
+  }        
+  return false;
+};
 
 var paper = Raphael("board", 900, 900),
     animationTime = 300,
@@ -536,7 +549,7 @@ Seat = function(x, y, rotation, table, seatNumber) {
     logEvent("Create Seat");
     this.table = table;
     this.rotation = rotation;
-    this.graphic = paper.path(shapes.seat);
+    this.graphic = paper.path(shapes.seat);//paper.path(GenerateCirclePath(x,y,15));//
     this.seatNumber = seatNumber;
     this.SetRotation = function(rotation) {
       this.rotation = rotation;
@@ -622,8 +635,56 @@ Seat = function(x, y, rotation, table, seatNumber) {
         
     });
 },
-    
-    
+SeatMarker = function(x,y,table,seatNumber) {
+  logEvent("Create SeatMarker");
+  this.table = table;
+  this.seatNumber = seatNumber;
+  this.graphic = paper.circle(x, y, 4);
+  
+  this.GetX = function() {
+      return this.graphic.attr("cx");
+  };
+  this.GetY = function() {
+      return this.graphic.attr("cy");
+  };
+  this.setGraphicPosition = function(x, y) {
+    this.graphic.attr({
+      cx: x,
+      cy: y,
+      fill: "blue",
+      model: this
+    });
+  };
+  this.graphic.translate(x, y);
+  
+  this.remove = function() {
+    this.graphic.remove();
+  }
+  this.graphic.mouseover(function(event) {
+      this.animate({
+          "stroke-width": 2,
+          stroke: colTableSelectedStroke,
+          fill: "red"
+      }, animationTime);
+  });
+  this.graphic.mouseout(function(event) {
+      this.animate({
+          "stroke-width": 1,
+          stroke: colTableStroke,
+          fill: "blue"
+      }, animationTime);
+  });
+  this.graphic.click(function(event) {
+      logEvent("click seatmarker");
+      var model = this.attr("model"),
+          table = model.table;
+      table.addSeatFromMarker(model.seatNumber);
+  });
+},
+GenerateCirclePath = function(x , y, r) {      
+  var s = "M" + x + "," + (y-r) + "A"+r+","+r+",0,1,1,"+(x-0.1)+","+(y-r)+" z";   
+  return s; 
+},
 RoundTable = function(x, y, seatCount) {
   this.seatCount = seatCount;
     this.GetX = function() {
@@ -664,31 +725,68 @@ RoundTable = function(x, y, seatCount) {
       this.tableSeatList[seatNumber].SetRotation(obj.alpha);
       this.tableSeatList[seatNumber].seatNumber = seatNumber;
     }
+    this.placeSeatMarker = function(seatNumber) {
+      var seatCount = seatNumber > -1 ? this.seatCount * 2 : 1,
+          seatNumberWithOffset = seatNumber > -1 ? (seatNumber * 2) + 1 : 0,
+          obj = this.caclulateClockworkValues(seatCount, seatNumberWithOffset),
+          seatNumberFixed = seatNumber > -1 ? seatNumber : 0;
+          
+      this.tableSeatAdditions[seatNumberFixed].setGraphicPosition(obj.x,obj.y);
+      this.tableSeatAdditions[seatNumberFixed].seatNumber = seatNumberFixed;
+    }
     this.addSeat = function(seatNumber) {
-         mySeat = new Seat(0, 0, 0, this, seatNumber);
+      var mySeat = new Seat(0, 0, 0, this, seatNumber);
+      var mySeatMarker = new SeatMarker(0,0,this, seatNumber);
+    
       this.tableSeatList.push(mySeat);
+      this.tableSeatAdditions.push(mySeatMarker);
+      
       this.seatSet.push(mySeat.graphic);
+      this.seatSet.push(mySeatMarker.graphic);
+      
+    };
+    this.addSeatFromMarker = function(markerNumber) {
+      var mySeat = new Seat(0, 0, 0, this, markerNumber);
+      var mySeatMarker = new SeatMarker(0,0,this, markerNumber);
+    
+      this.tableSeatList.insertAt(mySeat,markerNumber);
+      this.tableSeatAdditions.insertAt(mySeatMarker,markerNumber);
+      
+      this.seatSet.push(mySeat.graphic);
+      this.seatSet.push(mySeatMarker.graphic);
+      
+      this.seatCount = this.tableSeatList.length;
+      for (var t = 0, l = this.tableSeatList.length; t < l; t++) {
+        this.placeSeat(t);
+        this.placeSeatMarker(t);
+      }
       
     };
     this.removeSeat = function(index) {
       logEvent("remove seat" + index);
+      var isLastSeat = (this.tableSeatList.length === 1);
+      
       this.tableSeatList[index].remove();
-      //this.tableSeatList.splice(index,1);//[index].remove();
-      var tempArr = [];
-      for (var t = 0, l = this.tableSeatList.length; t < l; t++) {
-          if(t!==index) {
-            tempArr.push(this.tableSeatList[t]);
-          }
+      this.tableSeatList.remove(index);
+      
+      if(!isLastSeat) {
+        this.tableSeatAdditions[index].remove();
+        this.tableSeatAdditions.remove(index);
       }
-      this.tableSeatList = tempArr;
+      
       this.seatCount = this.tableSeatList.length;
       for (var t = 0, l = this.tableSeatList.length; t < l; t++) {
-          this.placeSeat(t);
+        this.placeSeat(t);
+        this.placeSeatMarker(t);
+      }
+      if(isLastSeat) {
+        this.placeSeatMarker();
       }
     };
-    for (var t = 0; t < seatCount; t++) {
+    for (var t = 0; t < this.seatCount; t++) {
         this.addSeat(t);
-        this.placeSeat(seatNumber);
+        this.placeSeat(t);
+        this.placeSeatMarker(t);
     }
     
     var
@@ -696,8 +794,15 @@ RoundTable = function(x, y, seatCount) {
         var model = this.attr("model");
         this.ox = model.GetX();
         this.oy = model.GetY();
-        for (var i = 0; i < model.tableSeatList.length; i++) {
+        for (var i = 0, l = model.tableSeatList.length; i < l; i++) {
             var s = model.tableSeatList[i];
+            s.graphic.attr({
+                fromTableX: s.GetX(),
+                fromTableY: s.GetY()
+            });
+        }
+        for (var i = 0, l = model.tableSeatAdditions.length; i < l; i++) {
+            var s = model.tableSeatAdditions[i];
             s.graphic.attr({
                 fromTableX: s.GetX(),
                 fromTableY: s.GetY()
@@ -713,10 +818,17 @@ RoundTable = function(x, y, seatCount) {
             mouseCX = this.ox + mx,
             mouseCY = this.oy + my;
 
-        for (var i = 0; i < model.tableSeatList.length; i++) {
+        for (var i = 0, l = model.tableSeatList.length; i < l; i++) {
             var s = model.tableSeatList[i];
             s.setGraphicPosition(
-            s.graphic.attr("fromTableX") + mx, s.graphic.attr("fromTableY") + my);
+              s.graphic.attr("fromTableX") + mx,
+              s.graphic.attr("fromTableY") + my);
+        }
+        for (var i = 0, l = model.tableSeatAdditions.length; i < l; i++) {
+            var s = model.tableSeatAdditions[i];
+            s.setGraphicPosition(
+              s.graphic.attr("fromTableX") + mx,
+              s.graphic.attr("fromTableY") + my);
         }
         model.setGraphicPosition(mouseCX, mouseCY);
         
