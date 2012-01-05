@@ -13,7 +13,40 @@ Array.prototype.insertAt = function(o, index){
   }        
   return false;
 };
-
+var Generic = {
+  PathGetX: function(graphic) {
+    var myGraphic = graphic ? graphic : this.graphic;
+    return myGraphic.attr("ox");
+  },
+  PathGetY: function(graphic) {
+    var myGraphic = graphic ? graphic : this.graphic;
+    return myGraphic.attr("oy");
+  },
+  ShapeGetX: function(graphic) {
+    var myGraphic = graphic ? graphic : this.graphic;
+    return myGraphic.attr("cx");
+  },
+  ShapeGetY: function(graphic) {
+    var myGraphic = graphic ? graphic : this.graphic;
+    return myGraphic.attr("cy");
+  },
+  SetRelativeGraphicPosition: function(x, y, graphic) {
+    var myGraphic = graphic ? graphic : this.graphic,
+        currentX = this.GetX(),
+        currentY = this.GetY();
+    myGraphic.attr({
+        ox: x,
+        oy: y
+    });
+    myGraphic.translate(x - currentX, y - currentY);
+  },
+  SetShapeGraphicPosition: function(x, y) {
+    this.graphic.attr({
+      cx: x,
+      cy: y
+    });
+  } 
+};
 var paper = Raphael("board", 900, 900),
     animationTime = 300,
     colGuest = "yellow",
@@ -216,7 +249,7 @@ ToolBar = function() {
       logEvent("Click toolbox item: " + this.attr("model").type);
       this.attr("model").createObject();
     });*/
-    obj.setGraphicPosition = function(x, y) {
+    obj.setGraphicPosition = Generic.SetRelativeGraphicPosition;/*function(x, y) {
     
         var currentX = this.GetX(),
             currentY = this.GetY();
@@ -226,13 +259,14 @@ ToolBar = function() {
         });
         this.graphic.translate(x - currentX, y - currentY);
         
-    };
-    obj.GetX = function() {
+    };*///Generic.SetRelativeGraphicPosition;
+    
+    obj.GetX = Generic.PathGetX;/*function() {
         return this.graphic.attr("ox");
-    };
-    obj.GetY = function() {
+    };*/
+    obj.GetY = Generic.PathGetY;/*function() {
         return this.graphic.attr("oy");
-    };
+    };*/
     
   var //possibleSeats = [],
         start = function(event) {
@@ -415,27 +449,21 @@ Guest = function(name, x, y) {
         
     };
     
-    this.GetX = function() {
+    this.GetX = Generic.PathGetX;/*function() {
         return this.graphic.attr("ox");
-    };
-    this.GetY = function() {
+    };*/
+    this.GetY = Generic.PathGetY;/*function() {
         return this.graphic.attr("oy");
-    };
+    };*/
+    this.setGraphicPositionBase = Generic.SetRelativeGraphicPosition;
     this.setGraphicPosition = function(x, y) {
-    
-        var currentX = this.GetX(),
-            currentY = this.GetY();
-        this.graphic.attr({
-            ox: x,
-            oy: y
+      this.setGraphicPositionBase(x,y);
+      if (this.text) {
+        this.text.attr({
+          x: x,
+          y: y - 20
         });
-        this.graphic.translate(x - currentX, y - currentY);
-        if (this.text) {
-            this.text.attr({
-                x: x,
-                y: y - 20
-            });
-        }
+      }
     };
     this.showHelpText = function(text, x, y) {
         if (!x) {
@@ -564,23 +592,19 @@ Seat = function(x, y, rotation, table, seatNumber) {
     });
     this.graphic.translate(x, y);
     
-    this.GetX = function() {
+    this.GetX = Generic.PathGetX;/*function() {
         return this.graphic.attr("ox");
-    };
-    this.GetY = function() {
+    };*/
+    this.GetY = Generic.PathGetY;/*function() {
         return this.graphic.attr("oy");
-    };
+    };*/
+    this.setGraphicPositionBase = Generic.SetRelativeGraphicPosition;
+    
     this.GetRotation = function() {
         return this.graphic.attr("rotation");
     };
     this.setGraphicPosition = function(x, y) {
-        var currentX = this.GetX(),
-            currentY = this.GetY();
-        this.graphic.attr({
-            ox: x,
-            oy: y
-        });
-        this.graphic.translate(x - currentX, y - currentY);
+        this.setGraphicPositionBase(x,y);
         if (this.guest) {
             this.guest.setGraphicPosition(x, y);
         }
@@ -639,23 +663,49 @@ SeatMarker = function(x,y,table,seatNumber) {
   logEvent("Create SeatMarker");
   this.table = table;
   this.seatNumber = seatNumber;
-  this.graphic = paper.circle(x, y, 4);
   
-  this.GetX = function() {
-      return this.graphic.attr("cx");
-  };
-  this.GetY = function() {
-      return this.graphic.attr("cy");
-  };
-  this.setGraphicPosition = function(x, y) {
-    this.graphic.attr({
-      cx: x,
-      cy: y,
-      fill: "blue",
+  this.graphic = paper.circle(x,y,4);
+  //this.graphic = paper.path(GenerateCirclePath(x, y, 4));
+  this.graphic.attr({
+    fill: "blue",
+    model: this
+  });
+  this.GetX = Generic.ShapeGetX;//Generic.PathGetX;
+  this.GetY = Generic.ShapeGetY;//Generic.PathGetY;
+  //this.GetX = Generic.PathGetX;
+  //this.GetY = Generic.PathGetY;
+  this.setGraphicPositionBase = Generic.SetShapeGraphicPosition;
+  //this.setGraphicPositionBase = Generic.SetRelativeGraphicPosition;
+  this.setGraphicPosition = function(pointTo, pointFrom) {
+    if(pointFrom) {
+      
+    var mypath = PathGenerateCircularArc(pointFrom, pointTo, table.widthWithChairs);
+                                             /*  {x:pointTo.x,y:table.GetY()},
+                                               {x:this.GetX(),y:this.GetY()},
+                                               20);*/
+    if(this.graphic2) {
+      this.graphic2.remove();
+    }
+    this.graphic2 = paper.path(mypath);
+    this.graphic2.attr({
+      fill: "green",
       model: this
     });
+    
+    //this.setGraphicPositionBase( pointFrom.x, pointFrom.y);
+    //this.graphic.animateAlong(mypath, 300, false);
+    this.setGraphicPositionBase( pointTo.x, pointTo.y);
+    //
+    } else {
+    
+    this.setGraphicPositionBase(pointTo.x, pointTo.y);
+    }
+    
   };
-  this.graphic.translate(x, y);
+  /*
+   
+  */
+  //this.graphic.translate(x, y);
   
   this.remove = function() {
     this.graphic.remove();
@@ -685,21 +735,21 @@ GenerateCirclePath = function(x , y, r) {
   var s = "M" + x + "," + (y-r) + "A"+r+","+r+",0,1,1,"+(x-0.1)+","+(y-r)+" z";   
   return s; 
 },
+PathGenerateCircularArc = function(point1, point2, radius) {
+  point1.x = point1.x ? point1.x : 0;
+  point1.y = point1.y ? point1.y : 0;
+  point2.x = point2.x ? point2.x : 0;
+  point2.y = point2.y ? point2.y : 0;
+  
+  return "M" + point1.x + " " + point1.y +  " L " + point1.x + " " + point1.y + " A " + radius + " " + radius + " 0 0 1 " + point2.x + " " + point2.y;
+},
+
 RoundTable = function(x, y, seatCount) {
-  this.seatCount = seatCount;
-    this.GetX = function() {
-        return this.graphic.attr("cx");
-    };
-    this.GetY = function() {
-        return this.graphic.attr("cy");
-    };
-    this.setGraphicPosition = function(x, y) {
-        this.graphic.attr({
-            cx: x,
-            cy: y
-        });
-    };
     logEvent("Create Table");
+    this.seatCount = seatCount;
+    this.GetX = Generic.ShapeGetX;
+    this.GetY = Generic.ShapeGetY;
+    this.setGraphicPosition = Generic.SetShapeGraphicPosition;
     this.width = seatCount * 10;
     this.widthWithChairs = this.width + 20;
     this.graphic = paper.circle(x, y, this.width);
@@ -725,14 +775,16 @@ RoundTable = function(x, y, seatCount) {
       this.tableSeatList[seatNumber].SetRotation(obj.alpha);
       this.tableSeatList[seatNumber].seatNumber = seatNumber;
     }
+    this.lastSeatMarker = {};
     this.placeSeatMarker = function(seatNumber) {
       var seatCount = seatNumber > -1 ? this.seatCount * 2 : 1,
           seatNumberWithOffset = seatNumber > -1 ? (seatNumber * 2) + 1 : 0,
           obj = this.caclulateClockworkValues(seatCount, seatNumberWithOffset),
           seatNumberFixed = seatNumber > -1 ? seatNumber : 0;
-          
-      this.tableSeatAdditions[seatNumberFixed].setGraphicPosition(obj.x,obj.y);
+      
+      this.tableSeatAdditions[seatNumberFixed].setGraphicPosition({x:obj.x,y:obj.y}, this.lastSeatMarker);
       this.tableSeatAdditions[seatNumberFixed].seatNumber = seatNumberFixed;
+      this.lastSeatMarker = {x:obj.x,y:obj.y};
     }
     this.addSeat = function(seatNumber) {
       var mySeat = new Seat(0, 0, 0, this, seatNumber);
@@ -826,9 +878,9 @@ RoundTable = function(x, y, seatCount) {
         }
         for (var i = 0, l = model.tableSeatAdditions.length; i < l; i++) {
             var s = model.tableSeatAdditions[i];
-            s.setGraphicPosition(
-              s.graphic.attr("fromTableX") + mx,
-              s.graphic.attr("fromTableY") + my);
+            s.setGraphicPosition({
+              x:s.graphic.attr("fromTableX") + mx,
+              y:s.graphic.attr("fromTableY") + my});
         }
         model.setGraphicPosition(mouseCX, mouseCY);
         
@@ -868,34 +920,23 @@ RoundTable = function(x, y, seatCount) {
     };
 };
 Desk = function(x, y, rotation) {
-    this.GetX = function() {
-        return this.graphic.attr("ox");
-    };
-    this.GetY = function() {
-        return this.graphic.attr("oy");
-    };
-    this.setGraphicPosition = function(x, y) {
-        var currentX = this.GetX(),
-            currentY = this.GetY();
-        this.graphic.attr({
-            ox: x,
-            oy: y
-        });
-        this.graphic.translate(x - currentX, y - currentY);
-        this.rotationHandle.attr({cx:x + 50, cy:y + 50});
-    };
-    
-    
-    this.rotation = rotation;
     logEvent("Create Desk");
+    this.GetX = Generic.PathGetX;
+    this.GetY = Generic.PathGetY;
+    this.setGraphicPositionBase = Generic.SetRelativeGraphicPosition;
+    this.setGraphicPosition = function(x, y) {
+      this.setGraphicPositionBase(x,y);
+      this.rotationHandle.attr({cx:x + 50, cy:y + 50});
+    };
+    this.rotation = rotation;
     this.graphic = paper.path(shapes.desk);//
     this.graphic.attr({
-        ox: 0,
-        oy: 30,
-       rotation: rotation,
-       fill: colTable,
-        stroke: colTableStroke,
-        model: this
+      ox: 0,
+      oy: 30,
+      rotation: rotation,
+      fill: colTable,
+      stroke: colTableStroke,
+      model: this
     });
     this.rotationHandle = paper.circle(0 + 60, 0 + 60, 10);
     this.rotationHandle.attr({
