@@ -22,6 +22,11 @@ var Generic = {
     var myGraphic = graphic ? graphic : this.graphic;
     return myGraphic.attr("oy");
   },
+  GetRotation: function(graphic) {
+    var myGraphic = graphic ? graphic : this.graphic;
+    return myGraphic.attr("rotation") ? myGraphic.attr("rotation") : 0;
+  },
+
   ShapeGetX: function(graphic) {
     var myGraphic = graphic ? graphic : this.graphic;
     return myGraphic.attr("cx");
@@ -33,14 +38,16 @@ var Generic = {
   SetRelativeGraphicPosition: function(x, y, graphic) {
     var myGraphic = graphic ? graphic : this.graphic,
         currentX = this.GetX(),
-        currentY = this.GetY();
+        currentY = this.GetY(),
+        rotation = this.rotation;
     myGraphic.attr({
         ox: x,
         oy: y
     });
+    
     //myGraphic.translate(x - currentX, y - currentY);
     //myGraphic.transform("t" + (x - currentX) + "," + (y - currentY));
-    myGraphic.transform("t" + x + "," + y);
+    myGraphic.transform("t" + x + "," + y + "R" + rotation);
   },
   SetAbsoluteGraphicPosition: function(x, y, graphic) {
     var myGraphic = graphic ? graphic : this.graphic,
@@ -51,13 +58,29 @@ var Generic = {
         oy: y
     });
     //myGraphic.translate(x - currentX, y - currentY);
+    myGraphic.transform("T" + x + "," + y);
   },
   SetShapeGraphicPosition: function(x, y) {
     this.graphic.attr({
       cx: x,
       cy: y
     });
-  } 
+  },
+  SetRotation: function(r, graphic) {
+     var myGraphic = graphic ? graphic : this.graphic,
+        currentX = this.GetX(),
+        currentY = this.GetY(),
+        rotation = r;
+    /*
+     myGraphic.attr({
+        ox: x,
+        oy: y
+    });
+    */
+    //myGraphic.translate(x - currentX, y - currentY);
+    //myGraphic.transform("t" + (x - currentX) + "," + (y - currentY));
+    myGraphic.transform("t" + currentX + "," + currentY + "R" + rotation);
+  }
 };
 var paper = Raphael("board", 900, 900),
     animationTime = 300,
@@ -114,6 +137,10 @@ paper.customAttributes = {
   fromTableY: function(fromTableY) {
     this.myfromTableY = fromTableY;
     return this.myfromTableY;
+  },
+  rotation: function(rotation) {
+    this.myrotation = rotation;
+    return this.myrotation;
   }
 };
 
@@ -472,6 +499,7 @@ Guest = function(name, x, y) {
     this.GetY = Generic.PathGetY;/*function() {
         return this.graphic.attr("oy");
     };*/
+    this.Rotation = Generic.Rotation;
     this.setGraphicPositionBase = Generic.SetRelativeGraphicPosition;
     this.setGraphicPosition = function(x, y) {
       this.setGraphicPositionBase(x,y);
@@ -598,13 +626,14 @@ Seat = function(x, y, rotation, table, seatNumber) {
     this.seatNumber = seatNumber;
     this.SetRotation = function(rotation) {
       this.rotation = rotation;
-      this.graphic.attr({"transform":"...r" + rotation});
+      this.SetBaseRotation(rotation);
+      //this.graphic.attr({"transform":"R" + rotation});
     }
     this.graphic.attr({
         ox: x,
         oy: y,
         fill: "blue",
-        rotation: rotation,
+        //rotation: rotation,
         model: this
     });
     //this.graphic.translate(x, y);
@@ -616,6 +645,7 @@ Seat = function(x, y, rotation, table, seatNumber) {
     this.GetY = Generic.PathGetY;/*function() {
         return this.graphic.attr("oy");
     };*/
+    this.SetBaseRotation = Generic.SetRotation;
     this.setGraphicPositionBase = Generic.SetRelativeGraphicPosition;
     
     this.GetRotation = function() {
@@ -673,6 +703,7 @@ Seat = function(x, y, rotation, table, seatNumber) {
         logEvent("click empty seat");
         var model = this.attr("model"),
             table = model.table;
+        this.mouseout = function() {};
         table.removeSeat(model.seatNumber);
         
     });
@@ -688,13 +719,13 @@ SeatMarker = function(x,y,table,seatNumber) {
     fill: "blue",
     model: this
   });
-  this.GetX = Generic.ShapeGetX;//Generic.PathGetX;
-  this.GetY = Generic.ShapeGetY;//Generic.PathGetY;
-  //this.GetX = Generic.PathGetX;
-  //this.GetY = Generic.PathGetY;
-  this.setGraphicPositionBase = Generic.SetShapeGraphicPosition;
+  //this.GetX = Generic.ShapeGetX;//Generic.PathGetX;
+  //this.GetY = Generic.ShapeGetY;//Generic.PathGetY;
+  this.GetX = Generic.PathGetX;
+  this.GetY = Generic.PathGetY;
+  //this.setGraphicPositionBase = Generic.SetShapeGraphicPosition;
   //this.setGraphicPositionBase = Generic.SetAbsoluteGraphicPosition;
-  //this.setGraphicPositionBase = Generic.SetRelativeGraphicPosition;
+  this.setGraphicPositionBase = Generic.SetRelativeGraphicPosition;
   this.setGraphicPosition = function(pointTo, pointFrom) {
     if(pointFrom) {
       
@@ -702,26 +733,36 @@ SeatMarker = function(x,y,table,seatNumber) {
                                              /*  {x:pointTo.x,y:table.GetY()},
                                                {x:this.GetX(),y:this.GetY()},
                                                20);*/
-    if(this.graphic2) {
+    /*
+     if(this.graphic2) {
       this.graphic2.remove();
     }
     this.graphic2 = paper.path(mypath);
     this.graphic2.attr({
       fill: "green",
-      model: this
+      model: this,
+      opacity: 0.5
     });
-    
-    //this.setGraphicPositionBase( pointFrom.x, pointFrom.y);
-    this.graphic.transform("...t" + pointFrom.x + "," + pointFrom.y);
+    */
+    var animateIt = false;
+    if(animateIt) {
+      this.setGraphicPositionBase( pointFrom.x, pointFrom.y);
+      this.graphic.animate({transform:"t" + pointTo.x + "," + pointTo.y}, 300, true, function() {this.setGraphicPositionBase(pointTo.x, pointTo.y);} );
+    } else {
+      
+    ////this.graphic.transform("...t" + pointFrom.x + "," + pointFrom.y);
     //this.graphic.translate(pointFrom.x, pointFrom.y);
     //this.graphic.animateAlong(mypath, 300,true);
-    //this.setGraphicPositionBase( pointTo.x, pointTo.y);
-    //
+    this.setGraphicPositionBase( pointTo.x, pointTo.y);
+        }
+//
+    ;
+    
     } else {
-      this.graphic.transform("...t" + pointTo.x + "," + pointTo.y);
+    //this.graphic.transform("...t" + pointTo.x + "," + pointTo.y);
     //this.graphic.translate(pointTo.x, pointTo.y);
     
-    //this.setGraphicPositionBase(pointTo.x, pointTo.y);
+    this.setGraphicPositionBase(pointTo.x, pointTo.y);
     }
     
   };
@@ -768,7 +809,7 @@ PathGenerateCircularArc = function(point1, point2, radius) {
 },
 
 RoundTable = function(x, y, seatCount) {
-    logEvent("Create Table");
+    logEvent("Create RoundTable");
     this.seatCount = seatCount;
     this.GetX = Generic.ShapeGetX;
     this.GetY = Generic.ShapeGetY;
