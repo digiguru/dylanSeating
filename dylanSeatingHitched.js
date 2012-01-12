@@ -44,9 +44,6 @@ var Generic = {
         ox: x,
         oy: y
     });
-    
-    //myGraphic.translate(x - currentX, y - currentY);
-    //myGraphic.transform("t" + (x - currentX) + "," + (y - currentY));
     myGraphic.transform("t" + x + "," + y + "R" + rotation);
   },
   SetAbsoluteGraphicPosition: function(x, y, graphic) {
@@ -57,7 +54,6 @@ var Generic = {
         ox: x,
         oy: y
     });
-    //myGraphic.translate(x - currentX, y - currentY);
     myGraphic.transform("T" + x + "," + y);
   },
   SetShapeGraphicPosition: function(x, y) {
@@ -71,16 +67,25 @@ var Generic = {
         currentX = this.GetX(),
         currentY = this.GetY(),
         rotation = r;
-    /*
-     myGraphic.attr({
-        ox: x,
-        oy: y
-    });
-    */
-    //myGraphic.translate(x - currentX, y - currentY);
-    //myGraphic.transform("t" + (x - currentX) + "," + (y - currentY));
     myGraphic.transform("t" + currentX + "," + currentY + "R" + rotation);
-  }
+  },
+  Highlight: function(graphic,colour) {
+    var myGraphic = graphic ? graphic : this.graphic,
+        myColour = colour ? colour : colTableSelectedStroke;
+    myGraphic.PreviousColour = myGraphic.attr("stroke");
+    myGraphic.animate({
+      "stroke-width": 2,
+      "stroke": myColour
+    }, animationTime);
+  },
+  Unhighlight: function(graphic,colour) {
+    var myGraphic = graphic ? graphic : this.graphic,
+        myColour = colour ? colour : myGraphic.PreviousColour;
+    myGraphic.animate({
+      "stroke-width": 1,
+      "stroke": myColour
+    }, animationTime);
+  },
 };
 var paper = Raphael("board", 900, 900),
     animationTime = 300,
@@ -268,19 +273,13 @@ ToolBar = function() {
     item.attr({ox:650, oy:offsetY});
     item.mouseover(function(event) {
         logEvent("Over ToolboxItem");
-        this.animate({
-                "stroke-width": 2,
-                stroke: colTableSelectedStroke
-        }, animationTime);
+        Generic.Highlight(this);
         this.attr("model").text = paper.text(this.attr("ox") + 75, this.attr("oy"), helperText);
         this.attr("model").text.show();
     });
     item.mouseout(function(event) {
         logEvent("Out ToolboxItem");
-        this.animate({
-               "stroke-width": 1,
-               stroke: colTableStroke
-        }, animationTime);
+        Generic.Unhighlight(this);
         if (this.attr("model").text) {
             this.attr("model").text.hide();
         }
@@ -384,9 +383,7 @@ Guest = function(name, x, y) {
         model: this
     });
     this.graphic.mouseover(function(event) {
-      this.animate({
-          "stroke-width": 2
-      }, animationTime);
+      Generic.Highlight(this,"black");
     });
     this.graphic.mouseout(function(event) {
         this.animate({
@@ -686,16 +683,14 @@ Seat = function(x, y, rotation, table, seatNumber) {
     };
     
     this.graphic.mouseover(function(event) {
+        Generic.Highlight(this);
         this.animate({
-            "stroke-width": 2,
-            stroke: colTableSelectedStroke,
             fill: "red"
         }, animationTime);
     });
     this.graphic.mouseout(function(event) {
+        Generic.Unhighlight(this);
         this.animate({
-            "stroke-width": 1,
-            stroke: colTableStroke,
             fill: "blue"
         }, animationTime);
     });
@@ -774,16 +769,14 @@ SeatMarker = function(x,y,table,seatNumber) {
     this.graphic.remove();
   }
   this.graphic.mouseover(function(event) {
+      Generic.Highlight(this);
       this.animate({
-          "stroke-width": 2,
-          stroke: colTableSelectedStroke,
           fill: "red"
       }, animationTime);
   });
   this.graphic.mouseout(function(event) {
+      Generic.Unhighlight(this);
       this.animate({
-          "stroke-width": 1,
-          stroke: colTableStroke,
           fill: "blue"
       }, animationTime);
   });
@@ -964,16 +957,10 @@ RoundTable = function(x, y, seatCount) {
     };
     this.graphic.drag(move, start, up);
     this.graphic.mouseover(function(event) {
-        this.animate({
-            "stroke-width": 2,
-            stroke: colTableSelectedStroke
-        }, animationTime);
+        Generic.Highlight(this);
     });
     this.graphic.mouseout(function(event) {
-        this.animate({
-            "stroke-width": 1,
-            stroke: colTableStroke
-        }, animationTime);
+        Generic.Unhighlight(this);
     });
     this.ToJson = function() {
       var seatObject = [];
@@ -1057,17 +1044,11 @@ Desk = function(x, y, rotation) {
     this.rotationHandle.drag(rotationmove, rotationstart, rotationup);
     this.rotationHandle.mouseover(function(event) {
         logEvent("Over Desk Rotation");
-        this.animate({
-            "stroke-width": 2,
-            stroke: colTableSelectedStroke
-        }, animationTime);
+        Generic.Highlight(this);
     });
     this.rotationHandle.mouseout(function(event) {
        logEvent("Out Desk Rotation");
-       this.animate({
-            "stroke-width": 1,
-            stroke: colTableStroke
-        }, animationTime);
+       Generic.Unhighlight(this);
     });
     
     this.setGraphicPosition(x, y);
@@ -1135,16 +1116,10 @@ Desk = function(x, y, rotation) {
     };
     this.graphic.drag(move, start, up);
     this.graphic.mouseover(function(event) {
-      this.animate({
-            "stroke-width": 2,
-            stroke: colTableSelectedStroke
-        }, animationTime);
+      Generic.Highlight(this);
     });
     this.graphic.mouseout(function(event) {
-      this.animate({
-            "stroke-width": 1,
-            stroke: colTableStroke
-        }, animationTime);
+      Generic.Unhighlight(this);
     });
     this.ToJson = function() {
       var seatObject = [];
