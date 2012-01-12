@@ -73,18 +73,22 @@ var Generic = {
     var myGraphic = graphic ? graphic : this.graphic,
         myColour = colour ? colour : colTableSelectedStroke;
     myGraphic.PreviousColour = myGraphic.attr("stroke");
-    myGraphic.animate({
-      "stroke-width": 2,
-      "stroke": myColour
-    }, animationTime);
+    if(myGraphic) {
+      myGraphic.animate({
+        "stroke-width": 2,
+        "stroke": myColour
+      }, animationTime);
+    }
   },
   Unhighlight: function(graphic,colour) {
     var myGraphic = graphic ? graphic : this.graphic,
         myColour = colour ? colour : myGraphic.PreviousColour;
-    myGraphic.animate({
-      "stroke-width": 1,
-      "stroke": myColour
-    }, animationTime);
+    if(myGraphic) {
+      myGraphic.animate({
+        "stroke-width": 1,
+        "stroke": myColour
+      }, animationTime);
+    }
   },
 };
 var paper = Raphael("board", 900, 900),
@@ -409,7 +413,8 @@ Guest = function(name, x, y) {
         if (this.ghost) {
             this.ghost.model = this;
             this.ghost.animate({
-                path: this.graphic.attr("path")
+                //transform: "T" + this.GetX() + " " + this.GetY()//this.graphic.attr("transform")
+                transform: this.graphic.attr("transform")
             }, animationTime, "<", function() {
                 this.model.showHelpText(this.model.name);
                 this.model.graphic.animate({
@@ -428,22 +433,25 @@ Guest = function(name, x, y) {
         
     };
     this.animateToSpot = function(x, y, rotation) {
-        this.graphic.model = this;
-        var myX = this.GetX(),
-            myY = this.GetY(),
-            translateX = x - myX,
-            translateY = y - myY;
-        this.graphic.animate({
-            //translation: translateX + " " + translateY,
-            //rotation: rotation
-            transform: "...t" + translateX + "," + translateY + "r" + rotation
-        }, animationTime, ">", function() {
-            this.attr({
-                ox: x,
-                oy: y
-            });
-            this.model.showHelpText(this.model.name);
-        });
+        if(this.graphic) {          
+          this.graphic.model = this;
+          var myX = this.GetX(),
+              myY = this.GetY(),
+              translateX = x - myX,
+              translateY = y - myY;
+          this.graphic.animate({
+              //translation: translateX + " " + translateY,
+              //rotation: rotation
+              transform: "...t" + translateX + "," + translateY + "r" + rotation
+          }, animationTime, ">", function() {
+              this.attr({
+                  ox: x,
+                  oy: y
+              });
+              this.model.showHelpText(this.model.name);
+          });
+        }
+
     };
     this.swapWithGuestAt = function(seat) {
         var meGuest = this;
@@ -472,9 +480,7 @@ Guest = function(name, x, y) {
             logEvent("Seat not in right place for " + this.name);
             this.animateToSpot(seatCX, seatCY, seatRotation);
         } else {
-            //this.graphic.attr("rotation", seatRotation);
-            this.graphic.attr("transform", "R" + seatRotation);
-            
+            //this.graphic.attr("transform", "R" + seatRotation);
         }
     };
     this.moveToSeat = function(seat) {
