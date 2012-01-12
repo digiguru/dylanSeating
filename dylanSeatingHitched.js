@@ -733,21 +733,20 @@ SeatMarker = function(x,y,table,seatNumber) {
                                              /*  {x:pointTo.x,y:table.GetY()},
                                                {x:this.GetX(),y:this.GetY()},
                                                20);*/
-    /*
-     if(this.graphic2) {
-      this.graphic2.remove();
-    }
-    this.graphic2 = paper.path(mypath);
-    this.graphic2.attr({
-      fill: "green",
-      model: this,
-      opacity: 0.5
-    });
-    */
     var animateIt = false;
     if(animateIt) {
       this.setGraphicPositionBase( pointFrom.x, pointFrom.y);
       this.graphic.animate({transform:"t" + pointTo.x + "," + pointTo.y}, 300, true, function() {this.setGraphicPositionBase(pointTo.x, pointTo.y);} );
+      if(this.graphic2) {
+        this.graphic2.remove();
+      }
+      this.graphic2 = paper.path(mypath);
+      this.graphic2.attr({
+        fill: "green",
+        model: this,
+        opacity: 0.5
+      });
+
     } else {
       
     ////this.graphic.transform("...t" + pointFrom.x + "," + pointFrom.y);
@@ -1036,6 +1035,7 @@ Desk = function(x, y, rotation) {
     rotationstart = function(event) {
         logEvent("StartRotation Desk");
         var model = this.attr("model");
+        model.offsetRotation = model.rotation;
     },
     rotationmove = function(mx, my) {
         var model = this.attr("model"),
@@ -1043,28 +1043,16 @@ Desk = function(x, y, rotation) {
             mouseCY = this.attr("cy") + my,
             offset = 135,
             rounding = 22.5,
-            calculateAngle = MathHelper.calculateAngle/*function(center,point) {
-              var twelveOClock = {
-                x:center.x,
-                y:center.y 
-                  - Math.sqrt(
-                        Math.abs(point.x - center.x) * Math.abs(point.x - center.x)
-                        + Math.abs(point.y - center.y) * Math.abs(point.y - center.y)
-                      )
-              };
-              return (2 * Math.atan2(point.y - twelveOClock.y, point.x - twelveOClock.x)) * 180 / Math.PI;
-            }*/,
-            roundValue = MathHelper.roundValue/*function(val, rounding) {
-              return Math.round(val/rounding) * rounding;
-            }*/;
+            calculateAngle = MathHelper.calculateAngle,
+            roundValue = MathHelper.roundValue;
         var newANGLE = calculateAngle({x:model.GetX(), y:model.GetY()}, {x:mouseCX, y:mouseCY}) - offset;
         newANGLE = roundValue(newANGLE,rounding); 
-        model.rotation = newANGLE;
+        model.rotation = newANGLE + model.offsetRotation;
         model.graphic.attr({transform:"T"+ model.GetX()+"," + model.GetY() +"R" + model.rotation});
-
     },
     rotationup = function() {
         logEvent("EndRotation Desk");
+        //model.offsetRotation = model.rotation;
     };
     this.rotationHandle.drag(rotationmove, rotationstart, rotationup);
     this.rotationHandle.mouseover(function(event) {
