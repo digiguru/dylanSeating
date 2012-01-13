@@ -411,6 +411,7 @@ Guest = function(name, x, y) {
     };
     this.moveGhostToNewLocation = function() {
         if (this.ghost) {
+            this.ghost.show();
             this.ghost.model = this;
             this.ghost.animate({
                 //transform: "T" + this.GetX() + " " + this.GetY()//this.graphic.attr("transform")
@@ -420,7 +421,7 @@ Guest = function(name, x, y) {
                 this.model.graphic.animate({
                     opacity: 1
                 }, animationTime);
-                this.remove();
+                this.hide();
             });
         }
     };
@@ -605,7 +606,8 @@ Guest = function(name, x, y) {
                     }
                 }
             } else {
-                model.ghost.remove();
+                //model.ghost.remove();
+                model.ghost.hide();
                 model.removeFromSeat();
             }
               this.animate({
