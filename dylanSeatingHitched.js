@@ -639,6 +639,9 @@ Seat = function(x, y, rotation, table, seatNumber) {
     this.seatNumber = seatNumber;
     this.SetRotation = function(rotation) {
       this.rotation = rotation;
+      if(this.guest) {
+        this.guest.SetRotation(rotation);
+      }
       this.SetBaseRotation(rotation);
       //this.graphic.attr({"transform":"R" + rotation});
     }
