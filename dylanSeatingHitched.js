@@ -158,7 +158,7 @@ var dragThreshold =  15,
     scene = {
   SeatConflictCheck: function(thisSeat) {
     logEvent("scene.SeatConflictCheck");
-    for (var i = 0; i < seatList.length; i++) {
+    for (var i = 0, l=seatList.length; i < l; i++) {
         var seatCheck = seatList[i];
         if (seatCheck.guest === thisSeat.guest && seatCheck !== thisSeat) {
             logEvent("Seat conflict");
@@ -169,7 +169,7 @@ var dragThreshold =  15,
   },
   GetCachedListOfSeatAreas: function() {
     possibleSeats = [];
-    for (var i = 0; i < seatList.length; i++) {
+    for (var i = 0, l=seatList.length; i < l; i++) {
         possibleSeats[i] = {
             t: seatList[i].GetY() - dragThreshold,
             r: seatList[i].GetX() + dragThreshold,
@@ -526,7 +526,7 @@ Guest = function(name, x, y) {
                 lockY = 0;
 
             var myStroke = colGuestStroke;
-            for (var i = 0; i < seatList.length; i++) {
+            for (var i = 0, l=seatList.length; i < l; i++) {
                 var seatCheck = possibleSeats[i];
 
                 if ((seatCheck.t < mouseCY && seatCheck.b > mouseCY) && (seatCheck.r > mouseCX && seatCheck.l < mouseCX)) {
@@ -560,7 +560,7 @@ Guest = function(name, x, y) {
         up = function() {
             var model = this.attr("model");
             if (inrange) {
-                for (var i = 0; i < seatList.length; i++) {
+                for (var i = 0, l=seatList.length; i < l; i++) {
                     var s = seatList[i];
                     if (s.GetX() == model.GetX() && s.GetY() == model.GetY()) {
                         if (s.isoccupied) {
@@ -1021,7 +1021,7 @@ Desk = function(x, y, rotation) {
         var model = this.attr("model");
         this.ox = model.GetX();
         this.oy = model.GetY();
-        for (var i = 0; i < model.tableSeatList.length; i++) {
+        for (var i = 0, l = model.tableSeatList.length; i < l; i++) {
             var s = model.tableSeatList[i];
             s.graphic.attr({
                   fromTableX: s.GetX(),
@@ -1041,7 +1041,7 @@ Desk = function(x, y, rotation) {
             mouseCX = this.ox + mx,
             mouseCY = this.oy + my;
 
-        for (var i = 0; i < model.tableSeatList.length; i++) {
+        for (var i = 0, l = model.tableSeatList.length; i < l; i++) {
             var s = model.tableSeatList[i];
             s.setGraphicPosition(
             s.graphic.attr("fromTableX") + mx, s.graphic.attr("fromTableY") + my);
@@ -1136,7 +1136,7 @@ var Init = function() {
         }
     }
     
-    for (var p = 0; p < myGuests.length; p++) {
+    for (var p = 0, l = myGuests.length; p < l; p++) {
         draggableGuests.push(new Guest(myGuests[p].name, 100, 100 * (p + 1)));
     }
     
