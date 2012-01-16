@@ -402,8 +402,15 @@ Guest = function(name, x, y) {
     this.overEmptySeat = function(x, y, seat) {
         this.showHelpText("Move " + this.name + " to this seat", x, y);
         //this.graphic.attr("rotation", seat.GetRotation());
-        this.graphic.attr("transform", "...r" + seat.GetRotation());
+        this.SetRotation(seat.GetRotation());
     };
+    this.SetBaseRotation = Generic.SetRotation;
+    
+    this.SetRotation = function(rotation) {
+      this.rotation = rotation;
+      this.SetBaseRotation(rotation);
+      //this.graphic.attr({"transform":"R" + rotation});
+    }
     this.overOccupiedSeat = function(x, y, seat) {
         this.showHelpText("Swap " + this.name + " with " + seat.guest.name, x, y);
         seat.guest.hideName();
@@ -481,6 +488,7 @@ Guest = function(name, x, y) {
             logEvent("Seat not in right place for " + this.name);
             this.animateToSpot(seatCX, seatCY, seatRotation);
         } else {
+            this.SetRotation(seatRotation);
             //this.graphic.attr("transform", "R" + seatRotation);
         }
     };
@@ -654,7 +662,7 @@ Seat = function(x, y, rotation, table, seatNumber) {
     this.setGraphicPositionBase = Generic.SetRelativeGraphicPosition;
     
     this.GetRotation = function() {
-        return this.graphic.attr("rotation");
+        return this.rotation;//this.graphic.attr("rotation");
     };
     this.setGraphicPosition = function(x, y) {
         this.setGraphicPositionBase(x,y);
@@ -792,7 +800,7 @@ SeatMarker = function(x,y,table,seatNumber) {
       logEvent("click seatmarker");
       var model = this.attr("model"),
           table = model.table;
-      table.addSeatFromMarker(model.seatNumber);
+      table.addSeatFromMarker(model.seatNumber + 1);
   });
 },
 GenerateCirclePath = function(x , y, r) {      
