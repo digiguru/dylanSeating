@@ -510,6 +510,7 @@ Guest = function(name, x, y) {
     this.showHelpText(this.name);
     var //possibleSeats = [],
         start = function(event) {
+            this.toFront()
             var model = this.attr("model");
             model.startDrag();
             this.ox = this.attr("ox");
@@ -519,6 +520,7 @@ Guest = function(name, x, y) {
                 "stroke-width": 3,
                 opacity: 0.7
             }, animationTime);
+            
         },
         move = function(mx, my) {
             var model = this.attr("model");
@@ -607,6 +609,7 @@ Guest = function(name, x, y) {
 
         },
         up = function() {
+          //*** NEED TO WRITE UP ON MARKER FUNCTION
             var model = this.attr("model");
             if (inrange) {
                 for (var i = 0, l=seatList.length; i < l; i++) {
