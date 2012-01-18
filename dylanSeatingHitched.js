@@ -412,12 +412,13 @@ Guest = function(name, x, y) {
     this.animateToSpot = function(x, y, rotation) {
         if(this.graphic) {          
           this.graphic.model = this;
-          var myX = this.GetX(),
+          /*var myX = this.GetX(),
               myY = this.GetY(),
               translateX = x - myX,
-              translateY = y - myY;
+              translateY = y - myY;*/
           this.graphic.animate({
-              transform: "...t" + translateX + "," + translateY + "r" + rotation
+              //transform: "T" + translateX + "," + translateY + "R" + rotation
+              transform: "T" + x + "," + y + "R" + rotation
           }, animationTime, ">", function() {
               this.attr({
                   ox: x,
@@ -459,7 +460,8 @@ Guest = function(name, x, y) {
         }
     };
     this.moveToSeat = function(seat) {
-    
+        this.ghost.toFront();
+        this.graphic.toFront();
     
         logEvent("seat move for " + this.name);
         this.makeSureMainGraphicIsInRightPlace(seat);
@@ -532,71 +534,28 @@ Guest = function(name, x, y) {
                 lockY = 0;
 
             var myStroke = colGuestStroke;
-            //Technically this should be looping through tables to see if the guest is over any of the seats in the table.
+            
             //You could improve performance by only looping tables nearby to the cursor.
-            var loopThroughSeats = false;
-            if(loopThroughSeats) {
-              for (var i = 0, l=seatList.length; i < l; i++) {
-                var seatCheck = possibleSeats[i];
-
-                if ((seatCheck.t < mouseCY && seatCheck.b > mouseCY) && (seatCheck.r > mouseCX && seatCheck.l < mouseCX)) {
-                    var mySeat = seatList[i];
-                    inrange = true;
-
-                    lockX = mySeat.GetX();
-                    lockY = mySeat.GetY();
-                    if (mySeat.isoccupied) {
-                        myStroke = colGuestSwapStroke;
-                        model.overOccupiedSeat(lockX, lockY, mySeat);
-                    } else {
-                        myStroke = colGuestMoveStroke;
-                        model.overEmptySeat(lockX, lockY, mySeat);
-                    }
+            for(var i=0, l=myTables.length; i<l; i++) {
+              var tableCheck = myTables[i],
+                  mySeat = tableCheck.CheckOverSeat(mouseCX, mouseCY);
+              if(mySeat) {
+                inrange = true;
+                lockX = mySeat.GetX();
+                lockY = mySeat.GetY();
+                if(mySeat.ismarker) {
+                    myStroke = colGuestMoveStroke;
+                    model.overNewSeat(lockX, lockY, mySeat);
+                } else if (mySeat.isoccupied) {
+                    myStroke = colGuestSwapStroke;
+                    model.overOccupiedSeat(lockX, lockY, mySeat);
+                } else {
+                    myStroke = colGuestMoveStroke;
+                    model.overEmptySeat(lockX, lockY, mySeat);
                 }
-              }
-            } else {
-              for(var i=0, l=myTables.length; i<l; i++) {
-                var tableCheck = myTables[i],
-                    mySeat = tableCheck.CheckOverSeat(mouseCX, mouseCY);
-                if(mySeat) {
-                  inrange = true;
-                  lockX = mySeat.GetX();
-                  lockY = mySeat.GetY();
-                  if(mySeat.ismarker) {
-                      myStroke = colGuestMoveStroke;
-                      model.overNewSeat(lockX, lockY, mySeat);
-                  } else if (mySeat.isoccupied) {
-                      myStroke = colGuestSwapStroke;
-                      model.overOccupiedSeat(lockX, lockY, mySeat);
-                  } else {
-                      myStroke = colGuestMoveStroke;
-                      model.overEmptySeat(lockX, lockY, mySeat);
-                  }
-                }
-                
-                    
-                    
-              
               }
             }
-            /*for (var i = 0, l=seatList.length; i < l; i++) {
-                var seatCheck = possibleSeats[i];
-
-                if ((seatCheck.t < mouseCY && seatCheck.b > mouseCY) && (seatCheck.r > mouseCX && seatCheck.l < mouseCX)) {
-                    var mySeat = seatList[i];
-                    inrange = true;
-
-                    lockX = mySeat.GetX();
-                    lockY = mySeat.GetY();
-                    if (mySeat.isoccupied) {
-                        myStroke = colGuestSwapStroke;
-                        model.overOccupiedSeat(lockX, lockY, mySeat);
-                    } else {
-                        myStroke = colGuestMoveStroke;
-                        model.overEmptySeat(lockX, lockY, mySeat);
-                    }
-                }
-            }*/
+            
             if (inrange) {
                 model.setGraphicPosition(lockX, lockY);
                 this.attr({
@@ -612,17 +571,26 @@ Guest = function(name, x, y) {
           //*** NEED TO WRITE UP ON MARKER FUNCTION
             var model = this.attr("model");
             if (inrange) {
-                for (var i = 0, l=seatList.length; i < l; i++) {
-                    var s = seatList[i];
-                    if (s.GetX() == model.GetX() && s.GetY() == model.GetY()) {
-                        if (s.isoccupied) {
-                            model.swapWithGuestAt(s);
-                        } else {
-
-                            model.moveToSeat(s);
-                        }
+              
+                for(var i=0, l=myTables.length; i<l; i++) {
+                  var tableCheck = myTables[i],
+                      mySeat = tableCheck.CheckOverSeat(model.GetX(), model.GetY());
+                  if(mySeat) {
+                    inrange = true;
+                    lockX = mySeat.GetX();
+                    lockY = mySeat.GetY();
+                    if(mySeat.ismarker) {
+                        var myNewSeat = tableCheck.addSeatFromMarker(mySeat.seatNumber + 1);
+                        model.moveToSeat(myNewSeat);
+                    } else if (mySeat.isoccupied) {
+                        model.swapWithGuestAt(mySeat);
+                    } else {
+                        model.moveToSeat(mySeat);
                     }
+                  }
                 }
+              
+              
             } else {
                 model.ghost.hide();
                 model.removeFromSeat();
@@ -645,6 +613,7 @@ Seat = function(x, y, rotation, table, seatNumber) {
     
     this.table = table;
     this.rotation = rotation;
+    
     this.graphic = paper.path(shapes.seat);
     this.seatNumber = seatNumber;
     
@@ -667,10 +636,7 @@ Seat = function(x, y, rotation, table, seatNumber) {
     this.GetY = Generic.PathGetY;
     this.SetBaseRotation = Generic.SetRotation;
     this.setGraphicPositionBase = Generic.SetRelativeGraphicPosition;
-    this.t = this.GetY() - dragThreshold;
-    this.r = this.GetX() + dragThreshold;
-    this.b = this.GetY() + dragThreshold;
-    this.l = this.GetX() - dragThreshold;
+    
     this.GetRotation = function() {
         return this.rotation;
     };
@@ -736,16 +702,19 @@ Seat = function(x, y, rotation, table, seatNumber) {
     this.graphic.mouseout(myMouseOut);
     this.graphic.click(myMouseClick);
 },
-SeatMarker = function(x,y,table,seatNumber) {
+SeatMarker = function(x,y,table,seatNumber, rotation) {
   logEvent("Create SeatMarker");
   this.ismarker = true;
+  this.rotation = rotation;
+  this.SetBaseRotation = Generic.SetRotation;
   this.GetRotation = function() {
-        return this.rotation;
-    };
-    this.SetRotation = function(rotation) {
-      this.rotation = rotation;
-      this.SetBaseRotation(rotation);
-    }
+      return this.rotation;
+  };
+  this.SetRotation = function(rotation) {
+    this.rotation = rotation;
+    this.SetBaseRotation(rotation);
+  };
+    
   this.table = table;
   this.seatNumber = seatNumber;
   
@@ -757,27 +726,28 @@ SeatMarker = function(x,y,table,seatNumber) {
   this.GetX = Generic.PathGetX;
   this.GetY = Generic.PathGetY;
   this.setGraphicPositionBase = Generic.SetRelativeGraphicPosition;
-  this.t = this.GetY() - dragThreshold;
-  this.r = this.GetX() + dragThreshold;
-  this.b = this.GetY() + dragThreshold;
-  this.l = this.GetX() - dragThreshold;
+  
+  this.setGraphicPositionCore = function(x,y) {
+    this.setGraphicPositionBase(x, y);
+    this.t = this.GetY() - dragThreshold;
+    this.r = this.GetX() + dragThreshold;
+    this.b = this.GetY() + dragThreshold;
+    this.l = this.GetX() - dragThreshold;
+  }
+    
   this.setGraphicPosition = function(pointTo, pointFrom) {
     if(pointFrom) {
       
     var mypath = PathGenerateCircularArc(pointFrom, pointTo, table.widthWithChairs);
     var animateIt = false;
     if(animateIt) {
-      this.setGraphicPositionBase( pointFrom.x, pointFrom.y);
+      this.setGraphicPositionCore( pointFrom.x, pointFrom.y);
       this.graphic.animate(
                       {transform:"t" + pointTo.x + "," + pointTo.y},
                       300,
                       true,
                       function() {
-                        this.setGraphicPositionBase(pointTo.x, pointTo.y);
-                        this.t = this.GetY() - dragThreshold;
-                        this.r = this.GetX() + dragThreshold;
-                        this.b = this.GetY() + dragThreshold;
-                        this.l = this.GetX() - dragThreshold;
+                        this.setGraphicPositionCore(pointTo.x, pointTo.y);
                       }
                     );
       if(this.graphic2) {
@@ -793,19 +763,11 @@ SeatMarker = function(x,y,table,seatNumber) {
 
     } else {
       
-      this.setGraphicPositionBase( pointTo.x, pointTo.y);
-      this.t = this.GetY() - dragThreshold;
-      this.r = this.GetX() + dragThreshold;
-      this.b = this.GetY() + dragThreshold;
-      this.l = this.GetX() - dragThreshold;
+      this.setGraphicPositionCore( pointTo.x, pointTo.y);
     }
     
     } else {
-      this.setGraphicPositionBase(pointTo.x, pointTo.y);
-      this.t = this.GetY() - dragThreshold;
-      this.r = this.GetX() + dragThreshold;
-      this.b = this.GetY() + dragThreshold;
-      this.l = this.GetX() - dragThreshold;
+      this.setGraphicPositionCore(pointTo.x, pointTo.y);
     }
     
   };
@@ -890,6 +852,7 @@ RoundTable = function(x, y, seatCount) {
           seatNumberFixed = seatNumber > -1 ? seatNumber : 0;
       
       this.tableSeatAdditions[seatNumberFixed].setGraphicPosition({x:obj.x,y:obj.y}, this.GetTwelve());
+      this.tableSeatAdditions[seatNumber].SetRotation(obj.alpha);
       this.tableSeatAdditions[seatNumberFixed].seatNumber = seatNumberFixed;
     };
     this.CheckOverSeat = function(x,y) {
@@ -910,7 +873,7 @@ RoundTable = function(x, y, seatCount) {
     };
     this.addSeat = function(seatNumber) {
       var mySeat = new Seat(0, 0, 0, this, seatNumber);
-      var mySeatMarker = new SeatMarker(0,0,this, seatNumber);
+      var mySeatMarker = new SeatMarker(0,0,this, seatNumber, 0);
     
       this.tableSeatList.push(mySeat);
       this.tableSeatAdditions.push(mySeatMarker);
@@ -921,7 +884,7 @@ RoundTable = function(x, y, seatCount) {
     };
     this.addSeatFromMarker = function(markerNumber) {
       var mySeat = new Seat(0, 0, 0, this, markerNumber);
-      var mySeatMarker = new SeatMarker(0,0,this, markerNumber);
+      var mySeatMarker = new SeatMarker(0,0,this, markerNumber, 0);
     
       this.tableSeatList.insertAt(mySeat,markerNumber);
       this.tableSeatAdditions.insertAt(mySeatMarker,markerNumber);
@@ -934,7 +897,7 @@ RoundTable = function(x, y, seatCount) {
         this.placeSeat(t);
         this.placeSeatMarker(t);
       }
-      
+      return mySeat;
     };
     this.removeSeat = function(index) {
       logEvent("remove seat" + index);
