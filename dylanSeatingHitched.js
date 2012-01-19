@@ -418,12 +418,13 @@ Guest = function(name, x, y) {
               translateY = y - myY;*/
           this.graphic.animate({
               //transform: "T" + translateX + "," + translateY + "R" + rotation
-              transform: "T" + x + "," + y + "R" + rotation
+              transform: "t" + x + "," + y + "R" + rotation
           }, animationTime, ">", function() {
               this.attr({
                   ox: x,
                   oy: y
               });
+              this.model.moveGhostToNewLocation();
               this.model.showHelpText(this.model.name);
           });
         }
@@ -457,6 +458,7 @@ Guest = function(name, x, y) {
             this.animateToSpot(seatCX, seatCY, seatRotation);
         } else {
             this.SetRotation(seatRotation);
+            this.moveGhostToNewLocation();
         }
     };
     this.moveToSeat = function(seat) {
@@ -468,7 +470,6 @@ Guest = function(name, x, y) {
         this.seat = seat;
         this.seat.isoccupied = true;
         this.seat.guest = this;
-        this.moveGhostToNewLocation();
         scene.SeatConflictCheck(this.seat);
         
     };
