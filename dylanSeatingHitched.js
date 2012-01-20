@@ -635,14 +635,34 @@ Seat = function(x, y, rotation, table, seatNumber) {
     
     this.GetX = Generic.PathGetX;
     this.GetY = Generic.PathGetY;
+    this.GetLoc = function() {
+      var x = this.GetX() ? this.GetX() : 0,
+          y = this.GetY() ? this.GetY() : 0;
+      if(
+         (x === 0)
+         &&
+         (y === 0)
+        ) {
+          return null;         
+        }
+        return {x:x,y:y}
+    }
+    
+    
     this.SetBaseRotation = Generic.SetRotation;
     this.setGraphicPositionBase = Generic.SetRelativeGraphicPosition;
     
     this.GetRotation = function() {
         return this.rotation;
     };
-    this.setGraphicPosition = function(x, y) {
+    this.setGraphicPositionCore = function(x,y) {
+        
+        
         this.setGraphicPositionBase(x,y);
+        
+        
+        
+        
         if (this.guest) {
             this.guest.setGraphicPosition(x, y);
         }
@@ -651,6 +671,26 @@ Seat = function(x, y, rotation, table, seatNumber) {
         this.b = this.GetY() + dragThreshold;
         this.l = this.GetX() - dragThreshold;
     };
+    this.setGraphicPosition = function(pointTo, pointFrom) {
+        
+        if(pointFrom) {
+      
+          var mypath = PathGenerateCircularArc(pointFrom, pointTo, table.widthWithChairs);
+          this.setGraphicPositionCore( pointFrom.x, pointFrom.y);
+          this.graphic.animate(
+                          {transform:"t" + pointTo.x + "," + pointTo.y},
+                          300,
+                          true,
+                          function() {
+                            this.attr("model").setGraphicPositionCore(pointTo.x, pointTo.y);
+                          }
+                        );
+        
+        } else {
+          this.setGraphicPositionCore(pointTo.x, pointTo.y);
+        }
+    };
+    
     this.RemoveGuest = function() {
         if (this.guest) {
             logEvent("Remove seat for " + this.guest.name);
@@ -726,6 +766,19 @@ SeatMarker = function(x,y,table,seatNumber, rotation) {
   });
   this.GetX = Generic.PathGetX;
   this.GetY = Generic.PathGetY;
+  this.GetLoc = function() {
+    var x = this.GetX() ? this.GetX() : 0,
+        y = this.GetY() ? this.GetY() : 0;
+    if(
+       (x === 0)
+       &&
+       (y === 0)
+      ) {
+        return null;         
+      }
+      return {x:x,y:y}
+  }
+    
   this.setGraphicPositionBase = Generic.SetRelativeGraphicPosition;
   
   this.setGraphicPositionCore = function(x,y) {
@@ -739,33 +792,30 @@ SeatMarker = function(x,y,table,seatNumber, rotation) {
   this.setGraphicPosition = function(pointTo, pointFrom) {
     if(pointFrom) {
       
-    var mypath = PathGenerateCircularArc(pointFrom, pointTo, table.widthWithChairs);
-    var animateIt = false;
-    if(animateIt) {
+      var mypath = PathGenerateCircularArc(pointFrom, pointTo, table.widthWithChairs);
       this.setGraphicPositionCore( pointFrom.x, pointFrom.y);
       this.graphic.animate(
                       {transform:"t" + pointTo.x + "," + pointTo.y},
                       300,
                       true,
                       function() {
-                        this.setGraphicPositionCore(pointTo.x, pointTo.y);
+                        this.attr("model").setGraphicPositionCore(pointTo.x, pointTo.y);
                       }
                     );
-      if(this.graphic2) {
-        this.graphic2.stop();
-        this.graphic2.remove();
-      }
-      this.graphic2 = paper.path(mypath);
-      this.graphic2.attr({
-        fill: "green",
-        model: this,
-        opacity: 0.5
-      });
+      var animateAlongPath = false;
+      if(animateAlongPath) {
+        if(this.graphic2) {
+          this.graphic2.stop();
+          this.graphic2.remove();
+        }
+        this.graphic2 = paper.path(mypath);
+        this.graphic2.attr({
+          fill: "green",
+          model: this,
+          opacity: 0.5
+        });
 
-    } else {
-      
-      this.setGraphicPositionCore( pointTo.x, pointTo.y);
-    }
+      }
     
     } else {
       this.setGraphicPositionCore(pointTo.x, pointTo.y);
@@ -841,20 +891,32 @@ RoundTable = function(x, y, seatCount) {
       return {alpha:alpha,a:a,x:x,y:y};
     }
     this.placeSeat = function(seatNumber) {
-      var obj = this.caclulateClockworkValues(this.seatCount, seatNumber);
-      this.tableSeatList[seatNumber].setGraphicPosition(obj.x,obj.y);
-      this.tableSeatList[seatNumber].SetRotation(obj.alpha);
-      this.tableSeatList[seatNumber].seatNumber = seatNumber;
+      var obj = this.caclulateClockworkValues(this.seatCount, seatNumber),
+        moveToSeatLoc = {x:obj.x,y:obj.y},
+        mySeat = this.tableSeatList[seatNumber],
+        moveFromSeatLoc = mySeat.GetLoc() ? mySeat.GetLoc() : (this.lastSeatMarkerLoc ? this.lastSeatMarkerLoc : this.GetTwelve())
+          ;
+      //mySeat.setGraphicPosition(obj.x,obj.y);
+      mySeat.setGraphicPosition(moveToSeatLoc, moveFromSeatLoc);
+      mySeat.SetRotation(obj.alpha);
+      mySeat.seatNumber = seatNumber;
+      this.lastSeatLoc = mySeat.GetLoc();
     }
+    this.lastSeatMarkerLoc = null;
+    this.lastSeatLoc = null;
+    
     this.placeSeatMarker = function(seatNumber) {
       var seatCount = seatNumber > -1 ? this.seatCount * 2 : 1,
           seatNumberWithOffset = seatNumber > -1 ? (seatNumber * 2) + 1 : 0,
           obj = this.caclulateClockworkValues(seatCount, seatNumberWithOffset),
-          seatNumberFixed = seatNumber > -1 ? seatNumber : 0;
-      
-      this.tableSeatAdditions[seatNumberFixed].setGraphicPosition({x:obj.x,y:obj.y}, this.GetTwelve());
-      this.tableSeatAdditions[seatNumber].SetRotation(obj.alpha);
-      this.tableSeatAdditions[seatNumberFixed].seatNumber = seatNumberFixed;
+          seatNumberFixed = seatNumber > -1 ? seatNumber : 0,
+          moveToSeatLoc = {x:obj.x,y:obj.y},
+          mySeat = this.tableSeatAdditions[seatNumberFixed],
+          moveFromSeatLoc = mySeat.GetLoc() ? mySeat.GetLoc() : (this.lastSeatLoc ? this.lastSeatLoc : this.GetTwelve());
+      mySeat.setGraphicPosition(moveToSeatLoc, moveFromSeatLoc);
+      mySeat.SetRotation(obj.alpha);
+      mySeat.seatNumber = seatNumberFixed;
+      this.lastSeatMarkerLoc = moveToSeatLoc;
     };
     this.CheckOverSeat = function(x,y) {
       for (var i = 0, l=this.tableSeatList.length; i < l; i++) {
@@ -958,9 +1020,9 @@ RoundTable = function(x, y, seatCount) {
 
         for (var i = 0, l = model.tableSeatList.length; i < l; i++) {
             var s = model.tableSeatList[i];
-            s.setGraphicPosition(
-              s.graphic.attr("fromTableX") + mx,
-              s.graphic.attr("fromTableY") + my);
+            s.setGraphicPosition({
+              x:s.graphic.attr("fromTableX") + mx,
+              y:s.graphic.attr("fromTableY") + my});
         }
         for (var i = 0, l = model.tableSeatAdditions.length; i < l; i++) {
             var s = model.tableSeatAdditions[i];
@@ -1123,8 +1185,9 @@ Desk = function(x, y, rotation) {
 
         for (var i = 0, l = model.tableSeatList.length; i < l; i++) {
             var s = model.tableSeatList[i];
-            s.setGraphicPosition(
-            s.graphic.attr("fromTableX") + mx, s.graphic.attr("fromTableY") + my);
+            s.setGraphicPosition({
+              x:s.graphic.attr("fromTableX") + mx,
+              y:s.graphic.attr("fromTableY") + my});
         }
         
         model.setGraphicPosition(mouseCX, mouseCY);
