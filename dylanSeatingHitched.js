@@ -685,6 +685,16 @@ Seat = function(x, y, rotation, table, seatNumber) {
                             this.attr("model").setGraphicPositionCore(pointTo.x, pointTo.y);
                           }
                         );
+          if(this.guest) {
+           this.guest.graphic.animate(
+                          {transform:"t" + pointTo.x + "," + pointTo.y},
+                          300,
+                          true,
+                          function() {
+                            this.attr("model").setGraphicPositionCore(pointTo.x, pointTo.y);
+                          }
+                        );
+          }
         
         } else {
           this.setGraphicPositionCore(pointTo.x, pointTo.y);
