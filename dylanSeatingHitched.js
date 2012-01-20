@@ -710,8 +710,8 @@ Seat = function(x, y, rotation, table, seatNumber) {
     };
     this.remove = function() {
       this.RemoveGuest();
-      this.graphic.stop();
-      this.graphic.remove();
+        this.graphic.stop();
+        this.graphic.animate({transform:"T0,0"}, 300, true, function() { this.remove() });
     }
     this.RemoveGuest();
     seatList.push(this);
@@ -834,7 +834,7 @@ SeatMarker = function(x,y,table,seatNumber, rotation) {
   };
   this.remove = function() {
     this.graphic.stop();
-    this.graphic.remove();
+    this.graphic.animate({transform:"T0,0"}, 300, true, function() { this.remove() });
   }
   this.graphic.mouseover(function(event) {
       Generic.Highlight(this);
