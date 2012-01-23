@@ -491,7 +491,9 @@ Guest = function (name, x, y) {
         }
     };
     this.moveToSeat = function (seat) {
-        this.ghost.toFront();
+        if(this.ghost) {
+          this.ghost.toFront();
+        }
         this.graphic.toFront();
 
         logEvent("seat move for " + this.name);
@@ -1350,6 +1352,72 @@ var Init = function () {
         logEvent("Finished Init");
     }();
 
+var controller = function() {
+  var GetTableByID= function(id) {
+    for (var i = 0, l = myTables.length; i < l; i++) {
+        if(myTables[i].id === id) {
+          return myTables[i];
+        }
+    }
+    return null;
+  },
+  GetGuestByID= function(id) {
+     for (var i = 0, l = draggableGuests.length; i < l; i++) {
+        if(draggableGuests[i].id === id) {
+          return draggableGuests[i];
+        }
+    }
+    return null;
+  },
+  GetSeatByID= function(id) {
+    for (var i = 0, l = myTables.length; i < l; i++) {
+      if(myTables[i].id === id) {
+        for (var j = 0, m = myTables.length; j < m; j++) {
+          if(myTables[i].seatList[j].id === id) {
+            return myTables[i].seatList[j];
+          }
+        }
+      }
+    }
+    return null;
+  },
+  GetGuest= function(guest) {
+    if(typeof guest === "number" || typeof guest === "string" ) {
+      guest = GetGuestByID(guest);
+    }
+    return guest;
+  },
+  GetSeat= function(seat) {
+    if(typeof seat === "number" || typeof seat === "string" ) {
+      seat = GetSeatByID(seat);
+    }
+    return seat;
+  };
+  this.PlaceGuestOnSeat= function(guest, seat) {
+    guest = GetGuest(guest);
+    seat = GetSeat(seat);
+    guest.moveToSeat(seat);
+  };//Example = Controller.PlaceGuestOnSeat(draggableGuests[0], myTables[4].tableSeatList[0]);
+  this.RemoveGuestFromTheirSeat= function(guest) {
+    guest = GetGuest(guest);
+    guest.removeFromSeat();
+  };
+  this.RemoveGuestFromSeat= function(seat) {
+    seat = GetSeat(seat);
+    seat.guest.removeFromSeat();
+  };
+  this.SwapGuests= function(guest1,guest2) {
+    guest1 = GetGuest(guest1);
+    guest2 = GetGuest(guest2);
+    guest1.swapWithGuestAt(guest2.seat);
+  };
+  this.SwapGuestWithSeat= function(guest,seat) {
+    guest = GetGuest(guest);
+    seat = GetSeat(seat);
+    guest.swapWithGuestAt(seat);
+  };
+}
+var Controller = new controller();
 var exampleSave = {
     guests: [{
         name: "Fred Boodle",
