@@ -42,14 +42,10 @@ var controller = function() {
     }
     return null;
   },
-  GetSeatMarkerByNumber= function(seatMarkerNumber) {
-    for (var i = 0, l = myTables.length; i < l; i++) {
-      if(myTables[i].tableSeatList) {
-        for (var j = 0, m = myTables[i].tableSeatAdditions.length; j < m; j++) {
-          if(myTables[i].tableSeatAdditions[j].seatNumber === seatMarkerNumber) {
-            return myTables[i].tableSeatAdditions[j];
-          }
-        }
+  GetSeatMarkerByNumber= function(table, seatMarkerNumber) {
+    for (var j = 0, m = table.tableSeatAdditions.length; j < m; j++) {
+      if(table.tableSeatAdditions[j].seatNumber === seatMarkerNumber) {
+        return table.tableSeatAdditions[j];
       }
     }
     return null;
@@ -66,13 +62,32 @@ var controller = function() {
     }
     return seat;
   };
-  GetSeatMarker= function(seatMarker) {
+  GetTable= function(table) {
+    if(typeof table === "number" || typeof table === "string" ) {
+      table = GetTableByID(table);
+    }
+    return table;
+  };
+  GetSeatMarker= function(table, seatMarker) {
+    table = GetTable(table);
     if(typeof seatMarker === "number" || typeof seatMarker === "string" ) {
-      seat = GetSeatMarkerByNumber(seatMarker);
+      seat = GetSeatMarkerByNumber(table, seatMarker);
     }
     return seat;
   };
   //seatMarker
+  this.ClickAddSeatAtPosition = function(table, seatNumber) {
+    var data = {table: table.id, seatNumber: seatNumber};
+    if(socket) {
+      socket.emit('AddSeatAtPosition', data);
+    }
+    Controller.AddSeatAtPosition(table,seatNumber);
+  };
+  this.AddSeatAtPosition = function(table, seatNumber) {
+    table = GetTable(table);
+    table.addSeatFromMarker(seatNumber);
+  };
+  
   this.ClickSeatRemove = function(seat) {
     var data = {seat: seat.id};
     if(socket) { 
@@ -80,18 +95,15 @@ var controller = function() {
     }
     Controller.RemoveSeat(data.seat);
   };
-        
-  this.AddSeatAtPosition = function(table, seatNumber) {
-  
-  };
   this.RemoveSeat = function(seat) {
     seat = GetSeat(seat);
     var table = seat.table;
     table.removeSeat(seat.seatNumber);
   };
-  this.CreateSeatAndPlaceGuest= function(guest, seatMarker) {
+  this.CreateSeatAndPlaceGuest= function(guest, table, seatMarker) {
     guest = GetGuest(guest);
-    seatMarker = GetSeatMarker(seatMarker);
+    table = GetTable(table);
+    seatMarker = GetSeatMarker(table, seatMarker);
     seatMarker = seatMarker.convertToSeat();
     guest.moveToSeat(seatMarker);
   }; 
@@ -145,11 +157,11 @@ var controller = function() {
               
     } else if (mySeat.ismarker) {
         
-      var data = { guest: model.id, seatMarker: mySeat.seatNumber }
+      var data = { table: mySeat.table.id, guest: model.id, seatMarker: mySeat.seatNumber }
       if(socket) {
           socket.emit('CreateSeatAndPlaceGuest', data);
       }
-      Controller.CreateSeatAndPlaceGuest(data.guest, data.seatMarker);
+      Controller.CreateSeatAndPlaceGuest(data.guest, data.table, data.seatMarker);
     } else {
       var data = { guest: model.id, seat: mySeat.id }
       if(socket) {
@@ -162,7 +174,7 @@ var controller = function() {
         
     socket.on('CreateSeatAndPlaceGuestResponse', function (data) {
       console.log(data);
-      Controller.CreateSeatAndPlaceGuest(data.guest, data.seatMarker);
+      Controller.CreateSeatAndPlaceGuest(data.table, data.guest, data.seatMarker);
       //socket.emit('my other event', { my: 'data' });
     });
     socket.on('PlaceGuestOnSeatResponse', function (data) {
@@ -1052,9 +1064,8 @@ Guest = function (name, x, y) {
     });
     this.graphic.click(function (event) {
         logEvent("click seatmarker");
-        var model = this.attr("model"),
-            table = model.table;
-        table.addSeatFromMarker(model.seatNumber + 1);
+        var model = this.attr("model");
+        Controller.ClickAddSeatAtPosition(model.table, model.seatNumber + 1);
     });
 }, GenerateCirclePath = function (x, y, r) {
     var s = "M" + x + "," + (y - r) + "A" + r + "," + r + ",0,1,1," + (x - 0.1) + "," + (y - r) + " z";
