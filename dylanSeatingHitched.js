@@ -12,6 +12,187 @@ Array.prototype.insertAt = function (o, index) {
     }
     return false;
 };
+
+var controller = function() {
+  var GetTableByID= function(id) {
+    for (var i = 0, l = myTables.length; i < l; i++) {
+        if(myTables[i].id === id) {
+          return myTables[i];
+        }
+    }
+    return null;
+  },
+  GetGuestByID= function(id) {
+     for (var i = 0, l = draggableGuests.length; i < l; i++) {
+        if(draggableGuests[i].id === id) {
+          return draggableGuests[i];
+        }
+    }
+    return null;
+  },
+  GetSeatByID= function(id) {
+    for (var i = 0, l = myTables.length; i < l; i++) {
+      if(myTables[i].tableSeatList) {
+        for (var j = 0, m = myTables[i].tableSeatList.length; j < m; j++) {
+          if(myTables[i].tableSeatList[j].id === id) {
+            return myTables[i].tableSeatList[j];
+          }
+        }
+      }
+    }
+    return null;
+  },
+  GetSeatMarkerByNumber= function(seatMarkerNumber) {
+    for (var i = 0, l = myTables.length; i < l; i++) {
+      if(myTables[i].tableSeatList) {
+        for (var j = 0, m = myTables[i].tableSeatAdditions.length; j < m; j++) {
+          if(myTables[i].tableSeatAdditions[j].seatNumber === seatMarkerNumber) {
+            return myTables[i].tableSeatAdditions[j];
+          }
+        }
+      }
+    }
+    return null;
+  },
+  GetGuest= function(guest) {
+    if(typeof guest === "number" || typeof guest === "string" ) {
+      guest = GetGuestByID(guest);
+    }
+    return guest;
+  },
+  GetSeat= function(seat) {
+    if(typeof seat === "number" || typeof seat === "string" ) {
+      seat = GetSeatByID(seat);
+    }
+    return seat;
+  };
+  GetSeatMarker= function(seatMarker) {
+    if(typeof seatMarker === "number" || typeof seatMarker === "string" ) {
+      seat = GetSeatMarkerByNumber(seatMarker);
+    }
+    return seat;
+  };
+  //seatMarker
+  this.ClickSeatRemove = function(seat) {
+    var data = {seat: seat.id};
+    if(socket) { 
+      socket.emit('RemoveSeat', data);
+    }
+    Controller.RemoveSeat(data.seat);
+  };
+        
+  this.AddSeatAtPosition = function(table, seatNumber) {
+  
+  };
+  this.RemoveSeat = function(seat) {
+    seat = GetSeat(seat);
+    var table = seat.table;
+    table.removeSeat(seat.seatNumber);
+  };
+  this.CreateSeatAndPlaceGuest= function(guest, seatMarker) {
+    guest = GetGuest(guest);
+    seatMarker = GetSeatMarker(seatMarker);
+    seatMarker = seatMarker.convertToSeat();
+    guest.moveToSeat(seatMarker);
+  }; 
+  this.PlaceGuestOnSeat= function(guest, seat) {
+    guest = GetGuest(guest);
+    seat = GetSeat(seat);
+    guest.moveToSeat(seat);
+  };//Example = Controller.PlaceGuestOnSeat(draggableGuests[0], myTables[4].tableSeatList[0]);
+  this.RemoveGuestFromTheirSeat= function(guest) {
+    guest = GetGuest(guest);
+    guest.removeFromSeat();
+  };
+  this.RemoveGuestFromSeat= function(seat) {
+    seat = GetSeat(seat);
+    seat.guest.removeFromSeat();
+  };
+  this.SwapGuests= function(guest1,guest2) {
+    guest1 = GetGuest(guest1);
+    guest2 = GetGuest(guest2);
+    guest1.swapWithGuestAt(guest2.seat);
+  };
+  this.SwapGuestWithSeat= function(guest,seat) {
+    guest = GetGuest(guest);
+    seat = GetSeat(seat);
+    
+    guest.swapWithGuestAt(seat);
+  };
+  var topTableID = 0,
+    topSeatID = 0,
+    topGuestID = 0;
+  this.NextTableID = function() {
+    return topTableID++;
+  };
+  this.NextSeatID = function() {
+    return topSeatID++;
+  };
+  this.NextGuestID = function() {
+    return topGuestID++;
+  };
+  this.MoveGuestToSeatArea = function(model,mySeat) {
+    //var model = guest.attr("model");
+    lockX = mySeat.GetX();
+    lockY = mySeat.GetY();
+    if (mySeat.isoccupied) {
+        //model.swapWithGuestAt(mySeat);
+        var data = { guest: model.id, seat: mySeat.id }
+        if(socket) { 
+          socket.emit('SwapGuestWithSeat', data);
+        }
+        Controller.SwapGuestWithSeat(data.guest, data.seat);
+              
+    } else if (mySeat.ismarker) {
+        
+      var data = { guest: model.id, seatMarker: mySeat.seatNumber }
+      if(socket) {
+          socket.emit('CreateSeatAndPlaceGuest', data);
+      }
+      Controller.CreateSeatAndPlaceGuest(data.guest, data.seatMarker);
+    } else {
+      var data = { guest: model.id, seat: mySeat.id }
+      if(socket) {
+          socket.emit('PlaceGuestOnSeat', data);
+      }
+      Controller.PlaceGuestOnSeat(data.guest, data.seat);
+    }
+  }
+  if(socket) {
+        
+    socket.on('CreateSeatAndPlaceGuestResponse', function (data) {
+      console.log(data);
+      Controller.CreateSeatAndPlaceGuest(data.guest, data.seatMarker);
+      //socket.emit('my other event', { my: 'data' });
+    });
+    socket.on('PlaceGuestOnSeatResponse', function (data) {
+      console.log(data);
+      Controller.PlaceGuestOnSeat(data.guest, data.seat);
+      //socket.emit('my other event', { my: 'data' });
+    });
+    socket.on('SwapGuestWithSeatResponse', function (data) {
+      console.log(data);
+      Controller.SwapGuestWithSeat(data.guest, data.seat);
+      //socket.emit('my other event', { my: 'data' });
+    });
+    socket.on('AddSeatAtPositionResponse', function (data) {
+      console.log(data);
+      Controller.AddSeatAtPosition(data.table, data.seatNumber);
+      //socket.emit('my other event', { my: 'data' });
+    });
+    socket.on('RemoveSeatResponse', function (data) {
+      console.log(data);
+      Controller.RemoveSeat(data.seat);
+      //socket.emit('my other event', { my: 'data' });
+    });
+    
+    
+  }
+}
+
+var Controller = new controller();
+
+
 var Generic = {
     PathGetX: function (graphic) {
         var myGraphic = graphic ? graphic : this.graphic;
@@ -369,6 +550,7 @@ ToolBar = function () {
         this.AddToolBoxItem(this.generateDeskSelect(), "Add new desk", "desk");
     }
 Guest = function (name, x, y) {
+    this.id = Controller.NextGuestID();
     logEvent("Create Guest");
     this.name = name;
     this.text = false;
@@ -609,16 +791,9 @@ Guest = function (name, x, y) {
                         mySeat = tableCheck.CheckOverSeat(model.GetX(), model.GetY());
                     if (mySeat) {
                         inrange = true;
-                        lockX = mySeat.GetX();
-                        lockY = mySeat.GetY();
-                        if (mySeat.ismarker) {
-                            var myNewSeat = tableCheck.addSeatFromMarker(mySeat.seatNumber + 1);
-                            model.moveToSeat(myNewSeat);
-                        } else if (mySeat.isoccupied) {
-                            model.swapWithGuestAt(mySeat);
-                        } else {
-                            model.moveToSeat(mySeat);
-                        }
+                        Controller.MoveGuestToSeatArea(model,mySeat);
+                       
+                        
                     }
                 }
 
@@ -641,6 +816,8 @@ Guest = function (name, x, y) {
     }
 }, Seat = function (x, y, rotation, table, seatNumber) {
     logEvent("Create Seat");
+
+        this.id = Controller.NextSeatID();
 
     this.table = table;
     this.rotation = rotation;
@@ -769,11 +946,9 @@ Guest = function (name, x, y) {
         }
     myMouseClick = function (event) {
         logEvent("click empty seat");
-        var model = this.attr("model"),
-            table = model.table;
         this.unmouseout(myMouseOut); // Suggest to Rapheal that calling this with no functions clears the list?
-        table.removeSeat(model.seatNumber);
-
+       
+        Controller.ClickSeatRemove(this.attr("model"));
     }
     this.graphic.mouseover(myMouseOver);
     this.graphic.mouseout(myMouseOut);
@@ -812,7 +987,9 @@ Guest = function (name, x, y) {
             y: y
         }
     }
-
+    this.convertToSeat = function() {
+      return this.table.addSeatFromMarker(this.seatNumber + 1);
+    }
     this.setGraphicPositionBase = Generic.SetRelativeGraphicPosition;
 
     this.setGraphicPositionCore = function (x, y) {
@@ -892,6 +1069,7 @@ Guest = function (name, x, y) {
 },
 
 RoundTable = function (x, y, seatCount) {
+    this.id = Controller.NextTableID();
     logEvent("Create RoundTable");
     this.seatCount = seatCount;
     this.GetX = Generic.ShapeGetX;
@@ -1133,6 +1311,7 @@ RoundTable = function (x, y, seatCount) {
     }
 }
 Desk = function (x, y, rotation) {
+    this.id = Controller.NextTableID();
     logEvent("Create Desk");
     this.GetX = Generic.PathGetX;
     this.GetY = Generic.PathGetY;
@@ -1334,17 +1513,18 @@ var Init = function () {
         MyToolBar = new ToolBar();
         //LoadData(exampleSave);
         //Create Tables & Seats
-        myTables.push(new Desk(100, 100, 0));
-        myTables.push(new Desk(200, 260, 180));
-        myTables.push(new Desk(200, 260, 0));
-        myTables.push(new Desk(200, 450, 0));
+        myTables.push(new RoundTable(100, 100, 8));
+        myTables.push(new RoundTable(200, 260, 3));
+        myTables.push(new RoundTable(200, 460, 5));
+        myTables.push(new Desk(60, 450, 0));
 
-        for (var i = 20; i < 400; i = i + Math.floor(Math.random() * 30) + 200) {
+        /*
+         for (var i = 20; i < 400; i = i + Math.floor(Math.random() * 30) + 200) {
             for (var j = 20; j < 400; j = j + Math.floor(Math.random() * 30) + 200) {
                 myTables.push(new RoundTable(i, j, Math.floor(Math.random() * 12)));
             }
         }
-
+        */
         for (var p = 0, l = myGuests.length; p < l; p++) {
             draggableGuests.push(new Guest(myGuests[p].name, 100, 100 * (p + 1)));
         }
@@ -1352,72 +1532,8 @@ var Init = function () {
         logEvent("Finished Init");
     }();
 
-var controller = function() {
-  var GetTableByID= function(id) {
-    for (var i = 0, l = myTables.length; i < l; i++) {
-        if(myTables[i].id === id) {
-          return myTables[i];
-        }
-    }
-    return null;
-  },
-  GetGuestByID= function(id) {
-     for (var i = 0, l = draggableGuests.length; i < l; i++) {
-        if(draggableGuests[i].id === id) {
-          return draggableGuests[i];
-        }
-    }
-    return null;
-  },
-  GetSeatByID= function(id) {
-    for (var i = 0, l = myTables.length; i < l; i++) {
-      if(myTables[i].id === id) {
-        for (var j = 0, m = myTables.length; j < m; j++) {
-          if(myTables[i].seatList[j].id === id) {
-            return myTables[i].seatList[j];
-          }
-        }
-      }
-    }
-    return null;
-  },
-  GetGuest= function(guest) {
-    if(typeof guest === "number" || typeof guest === "string" ) {
-      guest = GetGuestByID(guest);
-    }
-    return guest;
-  },
-  GetSeat= function(seat) {
-    if(typeof seat === "number" || typeof seat === "string" ) {
-      seat = GetSeatByID(seat);
-    }
-    return seat;
-  };
-  this.PlaceGuestOnSeat= function(guest, seat) {
-    guest = GetGuest(guest);
-    seat = GetSeat(seat);
-    guest.moveToSeat(seat);
-  };//Example = Controller.PlaceGuestOnSeat(draggableGuests[0], myTables[4].tableSeatList[0]);
-  this.RemoveGuestFromTheirSeat= function(guest) {
-    guest = GetGuest(guest);
-    guest.removeFromSeat();
-  };
-  this.RemoveGuestFromSeat= function(seat) {
-    seat = GetSeat(seat);
-    seat.guest.removeFromSeat();
-  };
-  this.SwapGuests= function(guest1,guest2) {
-    guest1 = GetGuest(guest1);
-    guest2 = GetGuest(guest2);
-    guest1.swapWithGuestAt(guest2.seat);
-  };
-  this.SwapGuestWithSeat= function(guest,seat) {
-    guest = GetGuest(guest);
-    seat = GetSeat(seat);
-    guest.swapWithGuestAt(seat);
-  };
-}
-var Controller = new controller();
+
+
 var exampleSave = {
     guests: [{
         name: "Fred Boodle",
@@ -1425,10 +1541,10 @@ var exampleSave = {
         y: 30
     }],
     tables: [{
-        type: "desk",
+        type: "table",
         x: 400,
         y: 400,
-        rotation: 90
+        seatCount: 10
     }, {
         type: "desk",
         x: 600,

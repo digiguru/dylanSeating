@@ -1,3 +1,7 @@
+
+
+
+
 <!DOCTYPE html>
 <html>
   <head>
@@ -5,6 +9,11 @@
     <link rel="stylesheet" href="seating.css" type="text/css" media="screen">
   <!--  <script type="text/javascript" src="raphael.js"></script> -->
     <script type="text/javascript" src="raphael.2.0.1.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+<script>
+  var socket = io.connect('http://localhost:8081');
+ 
+</script>
   </head>
   <body>
    
@@ -18,7 +27,7 @@
     <label>search your guest list:</label>
     <input type="text" value="search" />
 </div>
-  <script>var socket = false;</script>
+    
     
    <script type="text/javascript" src="dylanSeatingHitched.js"></script>
    
