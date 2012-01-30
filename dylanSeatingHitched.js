@@ -170,6 +170,54 @@ var controller = function() {
       Controller.PlaceGuestOnSeat(data.guest, data.seat);
     }
   }
+  
+  
+  var ControllerAction = function
+  (
+    //initializeEvent, //Function used to initialize the event
+    //doData,       //Function used to gather data up for this object
+    sendName,     //The name of the socket we are going to post to when we trigger this event
+    doAction,     //Function we call as a result.
+    //recieveName,  //The name of the socket we listen to and recieve incoming events from the server
+    undoControllerAction
+                  //Object to undo everything that has been done in the DO action
+  ) {
+    var
+      mySendName = sendName,
+      myRecieveName = sendName + "Recieve",
+      //myDoData = doData,
+      myDoAction = doAction,
+      myUndoControllerAction = undoControllerAction;
+      
+    this.Do = function(args) {
+      var data = myData(args);
+      if(socket) { 
+        socket.emit(mySendName, data);
+      }
+      myCompleteAction(data);
+    }
+    if(socket){
+      socket.on(myRecieveName, function (data) {
+        console.log(data);
+        Controller.CreateSeatAndPlaceGuest(data);
+      });
+    }
+  }
+  var ControllerActionList = [];
+  ControllerActionList.push(new ControllerAction(
+    /*name: */  "CreateSeatAndPlaceGuest",
+    /**/function(args) {
+      
+    },
+    function(args) { //Should be {guest,table,seatMarker};
+      guest = GetGuest(args.guest);
+      table = GetTable(args.table);
+      seatMarker = GetSeatMarker(table, args.seatMarker);
+      seatMarker = seatMarker.convertToSeat();
+      guest.moveToSeat(seatMarker);
+    },
+    null
+  ));
   if(socket) {
         
     socket.on('CreateSeatAndPlaceGuestResponse', function (data) {

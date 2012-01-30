@@ -1,7 +1,12 @@
-var app = require('express').createServer()
+var express = require('express'),
+  app = express.createServer(express.logger())
   , io = require('socket.io').listen(app);
 
-app.listen(8081);
+var port = process.env.PORT || 3000;
+
+app.listen(port, function() {
+  console.log("Listening on " + port);
+});
 
 app.get('/', function (req, res) {
   res.sendfile(__dirname + '/socketExampleClient.html');
@@ -14,25 +19,36 @@ app.get('/dylanSeatingHitched.js', function (req, res) {
 });
 
 io.sockets.on('connection', function (socket) {
-  
+  socket.on('AddRoundTable', function (data) {
+    socket.broadcast.emit('AddRoundTableResponse', data); 
+    console.log(data);
+  });
+  socket.on('AddDesk', function (data) {
+    socket.broadcast.emit('AddDeskResponse', data); 
+    console.log(data);
+  });
+  socket.on('AddGuest', function (data) {
+    socket.broadcast.emit('AddGuestResponse', data); 
+    console.log(data);
+  });
   socket.on('PlaceGuestOnSeat', function (data) {
     socket.broadcast.emit('PlaceGuestOnSeatResponse', data); 
-    //console.log(data);
+    console.log(data);
   });
   socket.on('SwapGuestWithSeat', function (data) {
     socket.broadcast.emit('SwapGuestWithSeatResponse', data);
-    //console.log(data);
+    console.log(data);
   });
   socket.on('CreateSeatAndPlaceGuest', function (data) {
     socket.broadcast.emit('CreateSeatAndPlaceGuestResponse', data);
-    //console.log(data);
+    console.log(data);
   });
   socket.on('AddSeatAtPosition', function (data) {
     socket.broadcast.emit('AddSeatAtPositionResponse', data);
-    //console.log(data);
+    console.log(data);
   });
   socket.on('RemoveSeat', function (data) {
     socket.broadcast.emit('RemoveSeatResponse', data);
-    //console.log(data);
+    console.log(data);
   });
 });
