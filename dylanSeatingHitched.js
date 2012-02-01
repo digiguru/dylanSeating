@@ -158,10 +158,15 @@ var controller = function() {
     } else if (mySeat.ismarker) {
         
       var data = { table: mySeat.table.id, guest: model.id, seatMarker: mySeat.seatNumber }
+      
+      Controller.ac.Call("PlaceGuestOnNewSeat",data);
+      //Controller.ControllerActionList[0].doAction(data);
+      /*
       if(socket) {
           socket.emit('CreateSeatAndPlaceGuest', data);
       }
-      Controller.CreateSeatAndPlaceGuest(data.guest, data.table, data.seatMarker);
+      Controller.CreateSeatAndPlaceGuest(data.guest, data.table, data.seatMarker);*/
+      
     } else {
       var data = { guest: model.id, seat: mySeat.id }
       if(socket) {
@@ -171,12 +176,11 @@ var controller = function() {
     }
   }
   
-  
   var ControllerAction = function
   (
     //initializeEvent, //Function used to initialize the event
-    //doData,       //Function used to gather data up for this object
     sendName,     //The name of the socket we are going to post to when we trigger this event
+    doData,       //Function used to gather data up for this object
     doAction,     //Function we call as a result.
     //recieveName,  //The name of the socket we listen to and recieve incoming events from the server
     undoControllerAction
@@ -184,8 +188,8 @@ var controller = function() {
   ) {
     var
       mySendName = sendName,
-      myRecieveName = sendName + "Recieve",
-      //myDoData = doData,
+      myRecieveName = sendName + "Response",
+      myDoData = doData,
       myDoAction = doAction,
       myUndoControllerAction = undoControllerAction;
       
@@ -196,28 +200,106 @@ var controller = function() {
       }
       myCompleteAction(data);
     }
-    if(socket){
-      socket.on(myRecieveName, function (data) {
-        console.log(data);
-        Controller.CreateSeatAndPlaceGuest(data);
-      });
+    
+  }
+  
+
+  var ActionController = function() {
+    var cachedActions = [],
+      UndoActions = [],
+      RedoActions = [];
+    this.AddActionToCache = function(action) {
+      if(!cachedActions[action.name]) {        
+        cachedActions[action.name] = action;
+      }
+      if(socket){
+        var myRecieveName = action.name + "Response";
+        socket.on(myRecieveName, function (data) {
+          console.log(data);
+          action.doAction(data);
+          //Controller.CreateSeatAndPlaceGuest(data);
+        });
+      }
+    }
+    this.Call = function(actionName, args) {
+      this.CallWithoutHistory(actionName, args);
+      UndoActions.push({actionName:actionName, args:args});
+    }
+    this.CallWithoutHistory = function(actionName, args) {
+      var myAction = cachedActions[actionName];
+      if(myAction) {
+        if(socket) {
+            socket.emit(actionName, args);
+        }
+        cachedActions[actionName].doAction(args);
+        //UndoActions.push({action:actionName, args:args});
+      } else {
+        console.log("No such action " + actionName)
+      }
+    }
+    this.Undo = function() {
+      var action = UndoActions.pop();
+      this.CallWithoutHistory(action.actionName, action.args);
+      RedoActions.push(action);
+    }
+    this.Redo = function() {
+      var action = RedoActions.pop();
+      this.CallWithoutHistory(action.actionName, action.args);
+      UndoActions.push(action);
     }
   }
-  var ControllerActionList = [];
-  ControllerActionList.push(new ControllerAction(
-    /*name: */  "CreateSeatAndPlaceGuest",
-    /**/function(args) {
-      
-    },
-    function(args) { //Should be {guest,table,seatMarker};
+  //When creating an action you should be using the raw objects.
+  //Generally undo actions should be generated at the same time,
+  //but occassionally added to after the original command has completed.
+  //Example usage:
+  //  ActionController.Call("PlaceGuestOnNewSeat",{guest:guest,table:table,seatMarker:seatMarker,guestOriginalSeat:guest.seat});
+  //this will in turn create one of the following UNDO events:
+  //  ActionController.Call("ReplaceGuestAndDeletePreviousSeat", {guest:guest,seat:seat});
+  //which will remove the guest from their current seat, delete that seat and then move them to the
+  //seat defined in the args. If Null it will move that guest off the stage entirely.
+
+  //CreateSeatAndPlace = PlaceGuestOnNewSeat
+
+  //  ActionController.Call("PlaceGuestOnNewSeat",{guest:guest,table:table,seatMarker:seatMarker,guestOriginalSeat:guest.seat});
+  //  UNDO
+  //  ActionController.Call("ReplaceGuestAndDeletePreviousSeat", {guest:guest,table:table,seatMarker:seatMarker,guestOriginalSeat:guest.seat});
+  
+  //  ActionController.Call("PlaceGuestOnSeat",{guest:guest,seat:seat,guestOriginalSeat:guest.seat});
+  //  UNDO
+  //  ActionController.Call("ReplaceGuestOnSeat",{guest:guest,seat:seat,guestOriginalSeat:guest.seat});
+
+  //  ActionController.Call("SwapGuestWithGuest",{guest1:guest,guest2:guest});
+  //  UNDO
+  //  ActionController.Call("SwapGuestWithGuest",{guest1:guest,guest2:guest});
+
+  //  ActionController.Call("AddSeatAtPosition", {table:table, seatNumber:seatNumber};
+  //  UNDO
+  //  ActionController.Call("RemoveSeatAtPosition", {table:table, seatNumber:seatNumber};
+  
+  //  ActionController.Call("AddTable", {tableID:tableID, properties:{seatCount, width, colour}};
+  //  UNDO
+  //  ActionController.Call("RemoveTable", {tableID:tableID, properties:{seatCount, width, colour}};
+   
+  //  ActionController.Call("AddGuest", {guestID:guestID, properties:{name, colour, gender}};
+  //  UNDO
+  //  ActionController.Call("RemoveGuest", {guestID:guestID, properties:{name, colour, gender}};
+   
+   
+ var ActionPlaceGuestOnNewSeat = function()  {
+    this.name = "PlaceGuestOnNewSeat";
+    this.doAction = function(args) { 
       guest = GetGuest(args.guest);
       table = GetTable(args.table);
       seatMarker = GetSeatMarker(table, args.seatMarker);
       seatMarker = seatMarker.convertToSeat();
       guest.moveToSeat(seatMarker);
-    },
-    null
-  ));
+    };
+    
+ };
+this.ControllerActionList = [];
+this.ControllerActionList.push(new ActionPlaceGuestOnNewSeat);
+this.ac = new ActionController();
+this.ac.AddActionToCache(new ActionPlaceGuestOnNewSeat);
   if(socket) {
         
     socket.on('CreateSeatAndPlaceGuestResponse', function (data) {

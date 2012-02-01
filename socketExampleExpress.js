@@ -19,6 +19,10 @@ app.get('/dylanSeatingHitched.js', function (req, res) {
 });
 
 io.sockets.on('connection', function (socket) {
+  socket.on('PlaceGuestOnNewSeat', function (data) {
+    socket.broadcast.emit('PlaceGuestOnNewSeatResponse', data); 
+    console.log(data);
+  });
   socket.on('AddRoundTable', function (data) {
     socket.broadcast.emit('AddRoundTableResponse', data); 
     console.log(data);
