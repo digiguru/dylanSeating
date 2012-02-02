@@ -23,6 +23,10 @@ io.sockets.on('connection', function (socket) {
     socket.broadcast.emit('PlaceGuestOnNewSeatResponse', data); 
     console.log(data);
   });
+  socket.on('UndoPlaceGuestOnNewSeat', function (data) {
+    socket.broadcast.emit('UndoPlaceGuestOnNewSeatResponse', data); 
+    console.log(data);
+  });
   socket.on('AddRoundTable', function (data) {
     socket.broadcast.emit('AddRoundTableResponse', data); 
     console.log(data);

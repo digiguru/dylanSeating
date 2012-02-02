@@ -62,6 +62,14 @@ var controller = function() {
     }
     return seat;
   };
+  GetSeatCreatedByMarker = function(table, seatMarker) {
+    table = GetTable(table);
+    if(typeof seatMarker === "number" || typeof seatMarker === "string" ) {
+      seat = table.tableSeatList[seatMarker];
+    }
+    return table;
+  };
+  
   GetTable= function(table) {
     if(typeof table === "number" || typeof table === "string" ) {
       table = GetTableByID(table);
@@ -160,12 +168,6 @@ var controller = function() {
       var data = { table: mySeat.table.id, guest: model.id, seatMarker: mySeat.seatNumber }
       
       Controller.ac.Call("PlaceGuestOnNewSeat",data);
-      //Controller.ControllerActionList[0].doAction(data);
-      /*
-      if(socket) {
-          socket.emit('CreateSeatAndPlaceGuest', data);
-      }
-      Controller.CreateSeatAndPlaceGuest(data.guest, data.table, data.seatMarker);*/
       
     } else {
       var data = { guest: model.id, seat: mySeat.id }
@@ -208,9 +210,14 @@ var controller = function() {
     var cachedActions = [],
       UndoActions = [],
       RedoActions = [];
-    this.AddActionToCache = function(action) {
+    this.Add = function(action) {
       if(!cachedActions[action.name]) {        
         cachedActions[action.name] = action;
+        cachedActions["Undo" + action.name] = {
+          name:"Undo" + action.name,
+          doAction:action.undoAction,
+          undoAction:action.doAction
+        };
       }
       if(socket){
         var myRecieveName = action.name + "Response";
@@ -219,8 +226,14 @@ var controller = function() {
           action.doAction(data);
           //Controller.CreateSeatAndPlaceGuest(data);
         });
+        socket.on("Undo" + myRecieveName, function (data) {
+          console.log(data);
+          action.undoAction(data);
+          //Controller.CreateSeatAndPlaceGuest(data);
+        });
       }
     }
+    
     this.Call = function(actionName, args) {
       this.CallWithoutHistory(actionName, args);
       UndoActions.push({actionName:actionName, args:args});
@@ -239,7 +252,7 @@ var controller = function() {
     }
     this.Undo = function() {
       var action = UndoActions.pop();
-      this.CallWithoutHistory(action.actionName, action.args);
+      this.CallWithoutHistory("Undo" + action.actionName, action.args);
       RedoActions.push(action);
     }
     this.Redo = function() {
@@ -284,29 +297,37 @@ var controller = function() {
   //  UNDO
   //  ActionController.Call("RemoveGuest", {guestID:guestID, properties:{name, colour, gender}};
    
-   
- var ActionPlaceGuestOnNewSeat = function()  {
-    this.name = "PlaceGuestOnNewSeat";
-    this.doAction = function(args) { 
-      guest = GetGuest(args.guest);
-      table = GetTable(args.table);
-      seatMarker = GetSeatMarker(table, args.seatMarker);
-      seatMarker = seatMarker.convertToSeat();
-      guest.moveToSeat(seatMarker);
-    };
-    
- };
-this.ControllerActionList = [];
-this.ControllerActionList.push(new ActionPlaceGuestOnNewSeat);
+ 
 this.ac = new ActionController();
-this.ac.AddActionToCache(new ActionPlaceGuestOnNewSeat);
+this.ac.Add(
+  {name: "PlaceGuestOnNewSeat",
+  doAction: function(args) { 
+    guest = GetGuest(args.guest);
+    table = GetTable(args.table);
+    seatMarker = GetSeatMarker(table, args.seatMarker);
+    seatMarker = seatMarker.convertToSeat();
+    guest.moveToSeat(seatMarker);
+  },
+  undoAction: function(args) {
+    guest = GetGuest(args.guest);
+    table = GetTable(args.table);
+    seatFrom = GetSeat(args.guestOriginalSeat);
+    //seatDelete = GetSeatCreatedByMarker(table, args.seatMarker);
+    table.removeSeat(args.seatMarker);
+    if(seatFrom) {
+      guest.moveToSeat(seatFrom);
+    }
+  }
+});
   if(socket) {
         
-    socket.on('CreateSeatAndPlaceGuestResponse', function (data) {
+    /*
+     socket.on('CreateSeatAndPlaceGuestResponse', function (data) {
       console.log(data);
       Controller.CreateSeatAndPlaceGuest(data.table, data.guest, data.seatMarker);
       //socket.emit('my other event', { my: 'data' });
     });
+    */
     socket.on('PlaceGuestOnSeatResponse', function (data) {
       console.log(data);
       Controller.PlaceGuestOnSeat(data.guest, data.seat);
