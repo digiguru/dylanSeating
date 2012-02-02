@@ -27,6 +27,48 @@ io.sockets.on('connection', function (socket) {
     socket.broadcast.emit('UndoPlaceGuestOnNewSeatResponse', data); 
     console.log(data);
   });
+  socket.on('PlaceGuestOnSeat', function (data) {
+    socket.broadcast.emit('PlaceGuestOnSeatResponse', data); 
+    console.log(data);
+  });
+  socket.on('UndoPlaceGuestOnSeat', function (data) {
+    socket.broadcast.emit('UndoPlaceGuestOnSeatResponse', data); 
+    console.log(data);
+  });
+  socket.on('SwapGuestWithGuest', function (data) {
+    socket.broadcast.emit('SwapGuestWithGuestResponse', data); 
+    console.log(data);
+  });
+  socket.on('UndoSwapGuestWithGuest', function (data) {
+    socket.broadcast.emit('UndoSwapGuestWithGuestResponse', data); 
+    console.log(data);
+  });
+  socket.on('AddSeatAtPosition', function (data) {
+    socket.broadcast.emit('AddSeatAtPositionResponse', data); 
+    console.log(data);
+  });
+  socket.on('UndoAddSeatAtPosition', function (data) {
+    socket.broadcast.emit('UndoAddSeatAtPositionResponse', data); 
+    console.log(data);
+  });
+  socket.on('AddTable', function (data) {
+    socket.broadcast.emit('AddTableResponse', data); 
+    console.log(data);
+  });
+  socket.on('UndoAddTable', function (data) {
+    socket.broadcast.emit('UndoAddTableResponse', data); 
+    console.log(data);
+  });
+  socket.on('AddGuest', function (data) {
+    socket.broadcast.emit('AddGuestResponse', data); 
+    console.log(data);
+  });
+  socket.on('UndoAddGuest', function (data) {
+    socket.broadcast.emit('UndoAddGuestResponse', data); 
+    console.log(data);
+  });
+  
+  /*
   socket.on('AddRoundTable', function (data) {
     socket.broadcast.emit('AddRoundTableResponse', data); 
     console.log(data);
@@ -59,4 +101,5 @@ io.sockets.on('connection', function (socket) {
     socket.broadcast.emit('RemoveSeatResponse', data);
     console.log(data);
   });
+  */
 });
