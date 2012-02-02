@@ -86,27 +86,35 @@ var controller = function() {
   //seatMarker
   this.ClickAddSeatAtPosition = function(table, seatNumber) {
     var data = {table: table.id, seatNumber: seatNumber};
+    
+    Controller.ac.Call("AddSeatAtPosition",data);
+    /*
     if(socket) {
       socket.emit('AddSeatAtPosition', data);
     }
     Controller.AddSeatAtPosition(table,seatNumber);
+    
   };
   this.AddSeatAtPosition = function(table, seatNumber) {
     table = GetTable(table);
     table.addSeatFromMarker(seatNumber);
+    */
   };
   
   this.ClickSeatRemove = function(seat) {
-    var data = {seat: seat.id};
-    if(socket) { 
+    //var data = {seat: seat.id};
+    var data = {table: seat.table.id, seatNumber: seat.seatNumber};
+    
+    Controller.ac.Call("UndoAddSeatAtPosition",data);
+    
+   /* if(socket) { 
       socket.emit('RemoveSeat', data);
     }
     Controller.RemoveSeat(data.seat);
   };
   this.RemoveSeat = function(seat) {
-    seat = GetSeat(seat);
-    var table = seat.table;
-    table.removeSeat(seat.seatNumber);
+   */
+    
   };
   this.CreateSeatAndPlaceGuest= function(guest, table, seatMarker) {
     guest = GetGuest(guest);
@@ -157,12 +165,17 @@ var controller = function() {
     lockY = mySeat.GetY();
     if (mySeat.isoccupied) {
         //model.swapWithGuestAt(mySeat);
-        var data = { guest: model.id, seat: mySeat.id }
+        var data = { guest1: model.id,  guest2: mySeat.guest.id }
+        
+        /*
         if(socket) { 
           socket.emit('SwapGuestWithSeat', data);
         }
         Controller.SwapGuestWithSeat(data.guest, data.seat);
-              
+        */
+        
+        Controller.ac.Call("SwapGuestWithGuest",data);
+        
     } else if (mySeat.ismarker) {
         
       var data = { table: mySeat.table.id, guest: model.id, seatMarker: mySeat.seatNumber }
@@ -214,55 +227,60 @@ var controller = function() {
       UndoActions = [],
       RedoActions = [];
     this.Add = function(action) {
-      if(!cachedActions[action.name]) {        
+      if(!cachedActions[action.name]) {
+        action.oppositeName = "Undo" + action.name;
         cachedActions[action.name] = action;
-        cachedActions["Undo" + action.name] = {
-          name:"Undo" + action.name,
+        cachedActions[action.oppositeName] = {
+          name:action.oppositeName,
           doAction:action.undoAction,
-          undoAction:action.doAction
+          undoAction:action.doAction,
+          oppositeName: action.name
         };
       }
       if(socket){
-        var myRecieveName = action.name + "Response";
-        socket.on(myRecieveName, function (data) {
+        socket.on(action.name + "Response", function (data) {
           console.log(data);
           action.doAction(data);
           //Controller.CreateSeatAndPlaceGuest(data);
         });
-        socket.on("Undo" + myRecieveName, function (data) {
+        socket.on(action.oppositeName + "Response", function (data) {
           console.log(data);
           action.undoAction(data);
           //Controller.CreateSeatAndPlaceGuest(data);
         });
       }
     }
-    
+    var getAction = function(actionName) {
+      return cachedActions[actionName];
+    };
     this.Call = function(actionName, args) {
+      
+      var action = getAction(actionName);
       this.CallWithoutHistory(actionName, args);
-      UndoActions.push({actionName:actionName, args:args});
+      UndoActions.push({name:actionName, oppositeName:action.oppositeName,  args:args});
     }
     this.CallWithoutHistory = function(actionName, args) {
-      var myAction = cachedActions[actionName];
-      if(myAction) {
+      var action = getAction(actionName);
+      if(action) {
         if(socket) {
-            socket.emit(actionName, args);
+            socket.emit(action.name, args);
         }
-        cachedActions[actionName].doAction(args);
+        action.doAction(args);
         //UndoActions.push({action:actionName, args:args});
       } else {
-        console.log("No such action " + actionName)
+        console.log("No such action.");
       }
     }
     this.Undo = function() {
       var action = UndoActions.pop();
       //If it starts with undo, let's remove it?
-      this.CallWithoutHistory("Undo" + action.actionName, action.args);
+      this.CallWithoutHistory(action.oppositeName, action.args);
       RedoActions.push(action);
     }
     this.Redo = function() {
       var action = RedoActions.pop();
       //If it doesn't start with Undo then we should add it?
-      this.CallWithoutHistory(action.actionName, action.args);
+      this.CallWithoutHistory(action.name, action.args);
       UndoActions.push(action);
     }
   }
@@ -307,39 +325,39 @@ this.ac = new ActionController();
 this.ac.Add(
   {name: "PlaceGuestOnNewSeat",
   doAction: function(args) { 
-    guest = GetGuest(args.guest);
-    table = GetTable(args.table);
-    seatMarker = GetSeatMarker(table, args.seatMarker);
+    var guest = GetGuest(args.guest),
+        table = GetTable(args.table),
+        seatMarker = GetSeatMarker(table, args.seatMarker);
+    
     seatMarker = seatMarker.convertToSeat();
     guest.moveToSeat(seatMarker);
+    
   },
   undoAction: function(args) {
-    guest = GetGuest(args.guest);
-    table = GetTable(args.table);
-    seatFrom = GetSeat(args.guestOriginalSeat);
-    
-    table.removeSeat(args.seatMarker);
+    var guest = GetGuest(args.guest),
+        table = GetTable(args.table),
+        seatFrom = GetSeat(args.guestOriginalSeat);
     
     if(seatFrom) {
       guest.moveToSeat(seatFrom);
     } else {
        guest.removeFromSeat();
     }
+    table.removeSeat(args.seatMarker);
   
   }
 });
 this.ac.Add(
   {name: "PlaceGuestOnSeat",
   doAction: function(args) { 
-    guest = GetGuest(args.guest);
-    seat = GetSeat(args.seat);
+    var guest = GetGuest(args.guest),
+        seat = GetSeat(args.seat);
     guest.moveToSeat(seat);
   },
   undoAction: function(args) {
-    guest = GetGuest(args.guest);
-    seat = GetSeat(args.seat);
-    seatFrom = GetSeat(args.guestOriginalSeat);
-    
+    var guest = GetGuest(args.guest),
+        seat = GetSeat(args.seat),
+        seatFrom = GetSeat(args.guestOriginalSeat);
     
     if(seatFrom) {
       guest.moveToSeat(seatFrom);
@@ -349,8 +367,35 @@ this.ac.Add(
   
   }
 });
+this.ac.Add(
+  {name: "SwapGuestWithGuest",
+  doAction: function(args) { 
+    var guest1 = GetGuest(args.guest1),
+        guest2 = GetGuest(args.guest2);
+    guest1.swapWithGuestAt(guest2.seat);
+  },
+  undoAction: function(args) {
+    var guest1 = GetGuest(guest1),
+        guest2 = GetGuest(guest2);
+    guest2.swapWithGuestAt(guest1.seat);
+    
+  }
+});
+this.ac.Add(
+  {name: "AddSeatAtPosition",
+  doAction: function(args) { 
+    var  table = GetTable(args.table);
+    table.addSeatFromMarker(args.seatNumber);
+  },
+  undoAction: function(args) {
+    var  table = GetTable(args.table);
+    table.removeSeat(args.seatNumber);
+  }
+});
 
 
+    
+    
   if(socket) {
         
     /*
