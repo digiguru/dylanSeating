@@ -170,11 +170,14 @@ var controller = function() {
       Controller.ac.Call("PlaceGuestOnNewSeat",data);
       
     } else {
-      var data = { guest: model.id, seat: mySeat.id }
-      if(socket) {
+      
+      var data = { guest: model.id, seat: mySeat.id, guestOriginalSeat: model.seat ? model.seat.id : null }
+      /*
+       if(socket) {
           socket.emit('PlaceGuestOnSeat', data);
-      }
-      Controller.PlaceGuestOnSeat(data.guest, data.seat);
+      }*/
+      
+      Controller.ac.Call("PlaceGuestOnSeat",data);
     }
   }
   
@@ -252,11 +255,13 @@ var controller = function() {
     }
     this.Undo = function() {
       var action = UndoActions.pop();
+      //If it starts with undo, let's remove it?
       this.CallWithoutHistory("Undo" + action.actionName, action.args);
       RedoActions.push(action);
     }
     this.Redo = function() {
       var action = RedoActions.pop();
+      //If it doesn't start with Undo then we should add it?
       this.CallWithoutHistory(action.actionName, action.args);
       UndoActions.push(action);
     }
@@ -275,27 +280,27 @@ var controller = function() {
 
   //  ActionController.Call("PlaceGuestOnNewSeat",{guest:guest,table:table,seatMarker:seatMarker,guestOriginalSeat:guest.seat});
   //  UNDO
-  //  ActionController.Call("ReplaceGuestAndDeletePreviousSeat", {guest:guest,table:table,seatMarker:seatMarker,guestOriginalSeat:guest.seat});
+  //  ActionController.Call("UndoPlaceGuestOnNewSeat", {guest:guest,table:table,seatMarker:seatMarker,guestOriginalSeat:guest.seat});
   
   //  ActionController.Call("PlaceGuestOnSeat",{guest:guest,seat:seat,guestOriginalSeat:guest.seat});
   //  UNDO
-  //  ActionController.Call("ReplaceGuestOnSeat",{guest:guest,seat:seat,guestOriginalSeat:guest.seat});
+  //  ActionController.Call("UndoPlaceGuestOnSeat",{guest:guest,seat:seat,guestOriginalSeat:guest.seat});
 
   //  ActionController.Call("SwapGuestWithGuest",{guest1:guest,guest2:guest});
   //  UNDO
-  //  ActionController.Call("SwapGuestWithGuest",{guest1:guest,guest2:guest});
+  //  ActionController.Call("UndoSwapGuestWithGuest",{guest1:guest,guest2:guest});
 
   //  ActionController.Call("AddSeatAtPosition", {table:table, seatNumber:seatNumber};
   //  UNDO
-  //  ActionController.Call("RemoveSeatAtPosition", {table:table, seatNumber:seatNumber};
+  //  ActionController.Call("UndoAddSeatAtPosition", {table:table, seatNumber:seatNumber};
   
   //  ActionController.Call("AddTable", {tableID:tableID, properties:{seatCount, width, colour}};
   //  UNDO
-  //  ActionController.Call("RemoveTable", {tableID:tableID, properties:{seatCount, width, colour}};
+  //  ActionController.Call("UndoAddTable", {tableID:tableID, properties:{seatCount, width, colour}};
    
   //  ActionController.Call("AddGuest", {guestID:guestID, properties:{name, colour, gender}};
   //  UNDO
-  //  ActionController.Call("RemoveGuest", {guestID:guestID, properties:{name, colour, gender}};
+  //  ActionController.Call("UndoAddGuest", {guestID:guestID, properties:{name, colour, gender}};
    
  
 this.ac = new ActionController();
@@ -312,13 +317,40 @@ this.ac.Add(
     guest = GetGuest(args.guest);
     table = GetTable(args.table);
     seatFrom = GetSeat(args.guestOriginalSeat);
-    //seatDelete = GetSeatCreatedByMarker(table, args.seatMarker);
+    
     table.removeSeat(args.seatMarker);
+    
     if(seatFrom) {
       guest.moveToSeat(seatFrom);
+    } else {
+       guest.removeFromSeat();
     }
+  
   }
 });
+this.ac.Add(
+  {name: "PlaceGuestOnSeat",
+  doAction: function(args) { 
+    guest = GetGuest(args.guest);
+    seat = GetSeat(args.seat);
+    guest.moveToSeat(seat);
+  },
+  undoAction: function(args) {
+    guest = GetGuest(args.guest);
+    seat = GetSeat(args.seat);
+    seatFrom = GetSeat(args.guestOriginalSeat);
+    
+    
+    if(seatFrom) {
+      guest.moveToSeat(seatFrom);
+    } else {
+      guest.removeFromSeat();
+    }
+  
+  }
+});
+
+
   if(socket) {
         
     /*
