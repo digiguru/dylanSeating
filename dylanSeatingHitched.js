@@ -86,35 +86,13 @@ var controller = function() {
   //seatMarker
   this.ClickAddSeatAtPosition = function(table, seatNumber) {
     var data = {table: table.id, seatNumber: seatNumber};
-    
     Controller.ac.Call("AddSeatAtPosition",data);
-    /*
-    if(socket) {
-      socket.emit('AddSeatAtPosition', data);
-    }
-    Controller.AddSeatAtPosition(table,seatNumber);
-    
-  };
-  this.AddSeatAtPosition = function(table, seatNumber) {
-    table = GetTable(table);
-    table.addSeatFromMarker(seatNumber);
-    */
   };
   
   this.ClickSeatRemove = function(seat) {
     //var data = {seat: seat.id};
     var data = {table: seat.table.id, seatNumber: seat.seatNumber};
-    
     Controller.ac.Call("UndoAddSeatAtPosition",data);
-    
-   /* if(socket) { 
-      socket.emit('RemoveSeat', data);
-    }
-    Controller.RemoveSeat(data.seat);
-  };
-  this.RemoveSeat = function(seat) {
-   */
-    
   };
   this.CreateSeatAndPlaceGuest= function(guest, table, seatMarker) {
     guest = GetGuest(guest);
@@ -166,30 +144,16 @@ var controller = function() {
     if (mySeat.isoccupied) {
         //model.swapWithGuestAt(mySeat);
         var data = { guest1: model.id,  guest2: mySeat.guest.id }
-        
-        /*
-        if(socket) { 
-          socket.emit('SwapGuestWithSeat', data);
-        }
-        Controller.SwapGuestWithSeat(data.guest, data.seat);
-        */
-        
         Controller.ac.Call("SwapGuestWithGuest",data);
         
     } else if (mySeat.ismarker) {
         
       var data = { table: mySeat.table.id, guest: model.id, seatMarker: mySeat.seatNumber }
-      
       Controller.ac.Call("PlaceGuestOnNewSeat",data);
       
     } else {
       
       var data = { guest: model.id, seat: mySeat.id, guestOriginalSeat: model.seat ? model.seat.id : null }
-      /*
-       if(socket) {
-          socket.emit('PlaceGuestOnSeat', data);
-      }*/
-      
       Controller.ac.Call("PlaceGuestOnSeat",data);
     }
   }
@@ -392,7 +356,46 @@ this.ac.Add(
     table.removeSeat(args.seatNumber);
   }
 });
-
+this.ac.Add(
+  {name: "AddTable",
+  doAction: function(args) {
+    LoadData({
+        tables: [args/*
+                  {
+            id: args.id,
+            type: args.type,
+            x: args.x,
+            y: args.y,
+            seatCount: args.seatCount,
+            rotation: args.rotation
+        }*/]
+    });
+  },
+  undoAction: function(args) {
+    table = GetTable(args.id);
+    table.remove();
+  }
+});
+this.ac.Add(
+  {name: "AddGuest",
+  doAction: function(args) {
+    LoadData({
+        guests: [args/*
+                  {
+            id: args.id,
+            type: args.type,
+            x: args.x,
+            y: args.y,
+            seatCount: args.seatCount,
+            rotation: args.rotation
+        }*/]
+    });
+  },
+  undoAction: function(args) {
+    table = GetTable(args.id);
+    table.remove();
+  }
+});
 
     
     
@@ -404,7 +407,7 @@ this.ac.Add(
       Controller.CreateSeatAndPlaceGuest(data.table, data.guest, data.seatMarker);
       //socket.emit('my other event', { my: 'data' });
     });
-    */
+    
     socket.on('PlaceGuestOnSeatResponse', function (data) {
       console.log(data);
       Controller.PlaceGuestOnSeat(data.guest, data.seat);
@@ -426,7 +429,7 @@ this.ac.Add(
       //socket.emit('my other event', { my: 'data' });
     });
     
-    
+    */
   }
 }
 
@@ -613,12 +616,20 @@ ToolBar = function () {
                 graphic: undefined,
                 type: "guest",
                 createObject: function (x, y) {
+                    
                     if (!x) {
                         x = 30;
                     }
                     if (!y) {
                         y = 30;
                     }
+                    Controller.ac.Call("AddGuest", {
+                        id: Controller.NextGuestID(), //Collisions possible...?
+                        name: "Example New Guest",
+                        x: x,
+                        y: y
+                    });
+                    /*
                     return LoadData({
                         guests: [{
                             name: "Example New Guest",
@@ -626,6 +637,7 @@ ToolBar = function () {
                             y: y
                         }]
                     });
+                    */
                 }
             };
             var guestSelect = paper.path(shapes.guest);
@@ -651,6 +663,15 @@ ToolBar = function () {
                     if (!y) {
                         y = 200;
                     }
+                    Controller.ac.Call("AddTable", {
+                        id: Controller.NextTableID(), //Collisions possible...?
+                        type: "table",
+                        x: x,
+                        y: y,
+                        seatCount: 5
+                    });
+                    
+                    /*
                     return LoadData({
                         tables: [{
                             type: "table",
@@ -659,6 +680,7 @@ ToolBar = function () {
                             seatCount: 5
                         }]
                     });
+                    */
                 }
             };
             var tableSelect = paper.circle(0, 0, 20);
@@ -686,14 +708,24 @@ ToolBar = function () {
                     if (!y) {
                         y = 400;
                     }
-                    LoadData({
+                    
+                    Controller.ac.Call("AddTable", {
+                        id: Controller.NextTableID(), //Collisions possible...?
+                        type: "desk",
+                        x: x,
+                        y: y,
+                        rotation: 90
+                    });
+                    
+                    /*LoadData({
                         tables: [{
                             type: "desk",
                             x: x,
                             y: y,
                             rotation: 90
                         }]
-                    });
+                    });*/
+                    
                 }
             };
             var tableSelect = paper.path(shapes.desk);
@@ -766,7 +798,6 @@ ToolBar = function () {
                 up = function () {
                     var model = this.attr("model");
                     var inToolBox = MyToolBar.background.getBBox().x < model.GetX();
-
                     if (inToolBox) {
                         model.createObject();
                     } else {
@@ -789,8 +820,8 @@ ToolBar = function () {
         this.AddToolBoxItem(this.generateTableSelect(), "Add new table", "table");
         this.AddToolBoxItem(this.generateDeskSelect(), "Add new desk", "desk");
     }
-Guest = function (name, x, y) {
-    this.id = Controller.NextGuestID();
+Guest = function (name, x, y, id) {
+    this.id = id ? id : Controller.NextGuestID();
     logEvent("Create Guest");
     this.name = name;
     this.text = false;
@@ -1307,8 +1338,8 @@ Guest = function (name, x, y) {
     return "M" + point1.x + " " + point1.y + " L " + point1.x + " " + point1.y + " A " + radius + " " + radius + " 0 0 1 " + point2.x + " " + point2.y;
 },
 
-RoundTable = function (x, y, seatCount) {
-    this.id = Controller.NextTableID();
+RoundTable = function (x, y, seatCount, id) {
+    this.id = id ? id : Controller.NextTableID();
     logEvent("Create RoundTable");
     this.seatCount = seatCount;
     this.GetX = Generic.ShapeGetX;
@@ -1724,13 +1755,13 @@ var SaveAll = function () {
     }
 var LoadData = function (data) {
         var loadGuest = function (data) {
-                return new Guest(data.name, data.x, data.y);
+                return new Guest(data.name, data.x, data.y, data.id);
             },
             loadTable = function (data) {
-                return new RoundTable(data.x, data.y, data.seatCount);
+                return new RoundTable(data.x, data.y, data.seatCount, data.id);
             },
             loadDesk = function (data) {
-                return new Desk(data.x, data.y, data.rotation);
+                return new Desk(data.x, data.y, data.rotation, data.id);
             };
         if (data.tables) {
             for (var i = 0, l = data.tables.length; i < l; i++) {
