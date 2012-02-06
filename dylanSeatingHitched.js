@@ -1610,7 +1610,7 @@ RoundTable = function (x, y, seatCount, id) {
         };
       this.animateTable = function(position) {
         
-        if((this.GetCenter().x !== position.x) && (this.GetCenter().y !== position.y)) {
+        if((this.GetCenter().x !== position.x) || (this.GetCenter().y !== position.y)) {
          
           this.setGraphicPosition(position,this.GetCenter());
           
@@ -1657,14 +1657,48 @@ Desk = function (x, y, rotation) {
     logEvent("Create Desk");
     this.GetX = Generic.PathGetX;
     this.GetY = Generic.PathGetY;
+    
+    this.GetCenter = function () {
+        return {
+            x: this.GetX(),
+            y: this.GetY()
+        };
+    }
+    
     this.setGraphicPositionBase = Generic.SetRelativeGraphicPosition;
-    this.setGraphicPosition = function (position) {
-        this.setGraphicPositionBase(position);
+    this.setGraphicPosition = function (pointTo,pointFrom) {
+        
+        if (pointFrom) {
+            //var fixedPointTo = {x:pointTo.x - (this.width/2), y:pointTo.y - (this.width/2)};
+            var fixedPointTo = {x:pointTo.x, y:pointTo.y};
+            this.setGraphicPositionBase(pointFrom);
+            //this.setGraphicPositionBase(fixedPointTo);
+            
+            this.graphic.animate({
+                transform: "t" + fixedPointTo.x + "," + fixedPointTo.y
+                //cx:pointTo.x,cy:pointTo.y
+            }, 300, true, function () {
+               var model = this.attr("model")
+                model.setGraphicPositionBase(fixedPointTo);
+                for (var t = 0; t < model.seatCount; t++) {
+                    model.placeSeat(t);
+                    model.placeSeatMarker(t);    
+                }
+               
+            });
+            
+        } else {
+            this.setGraphicPositionBase(pointTo);
+        }
+        
         this.rotationHandle.attr({
-            cx: position.x + 50,
-            cy: position.y + 50
+           cx: pointTo.x + 50,
+           cy: pointTo.y + 50
         });
+
+        
     };
+    
     this.rotation = rotation;
     this.graphic = paper.path(shapes.desk); //
     this.graphic.attr({
@@ -1748,6 +1782,7 @@ Desk = function (x, y, rotation) {
     start = function (event) {
             logEvent("StartDrag Desk");
             var model = this.attr("model");
+            model.previousPosition = {x:model.GetX(),y:model.GetY()}
             this.ox = model.GetX();
             this.oy = model.GetY();
             for (var i = 0, l = model.tableSeatList.length; i < l; i++) {
@@ -1786,7 +1821,12 @@ Desk = function (x, y, rotation) {
             model.seatSet.attr({
                 stroke: colTableStroke
             });
-
+            Controller.ac.Call("MoveTable",
+               {
+                table:model.id,
+                previous:model.previousPosition,
+                current:{x:model.GetX(),y:model.GetY()}
+               });
         };
     this.graphic.drag(move, start, up);
     this.graphic.mouseover(function (event) {
@@ -1795,6 +1835,16 @@ Desk = function (x, y, rotation) {
     this.graphic.mouseout(function (event) {
         Generic.Unhighlight(this);
     });
+    this.animateTable = function(position) {
+        
+        if((this.GetCenter().x !== position.x) || (this.GetCenter().y !== position.y)) {
+         
+          this.setGraphicPosition(position,this.GetCenter());
+          
+          
+        }
+
+      };
     this.ToJson = function () {
         var seatObject = [];
         for (var i = 0, l = this.tableSeatList.length; i < l; i++) {
