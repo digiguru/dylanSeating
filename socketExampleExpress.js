@@ -67,6 +67,14 @@ io.sockets.on('connection', function (socket) {
     socket.broadcast.emit('UndoAddGuestResponse', data); 
     console.log(data);
   });
+  socket.on('MoveTable', function (data) {
+    socket.broadcast.emit('MoveTableResponse', data); 
+    console.log(data);
+  });
+  socket.on('UndoMoveTable', function (data) {
+    socket.broadcast.emit('UndoMoveTableResponse', data); 
+    console.log(data);
+  });
   
   /*
   socket.on('AddRoundTable', function (data) {
