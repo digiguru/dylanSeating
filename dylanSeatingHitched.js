@@ -1218,7 +1218,7 @@ Guest = function (name, x, y, id) {
     };
     this.setGraphicPosition = function (pointTo, pointFrom) {
         if (pointFrom) {
-            var mypath = PathGenerateCircularArc(pointFrom, pointTo, table.widthWithChairs);
+            var mypath = PathGenerateCircularArc(pointFrom, pointTo, this.table.widthWithChairs);
             this.setGraphicPositionCore(pointFrom);
             this.graphic.animate({
                 transform: "t" + pointTo.x + "," + pointTo.y + "R" + pointTo.r
@@ -1343,7 +1343,7 @@ Guest = function (name, x, y, id) {
     this.setGraphicPosition = function (pointTo, pointFrom) {
         if (pointFrom) {
 
-            var mypath = PathGenerateCircularArc(pointFrom, pointTo, table.widthWithChairs);
+            var mypath = PathGenerateCircularArc(pointFrom, pointTo, this.table.widthWithChairs);
             this.setGraphicPositionCore(pointFrom);
             this.graphic.animate({
                 transform: "t" + pointTo.x + "," + pointTo.y
@@ -1702,6 +1702,7 @@ RoundTable = function (x, y, seatCount, id) {
 }
 Desk = function (x, y, rotation) {
     this.id = Controller.NextTableID();
+    this.widthWithChairs = 30;
     logEvent("Create Desk");
     this.GetX = Generic.PathGetX;
     this.GetY = Generic.PathGetY;
@@ -1728,10 +1729,8 @@ Desk = function (x, y, rotation) {
             }, 300, true, function () {
                var model = this.attr("model")
                 model.setGraphicPositionBase(fixedPointTo);
-                for (var t = 0; t < model.seatCount; t++) {
-                    model.placeSeat(t);
-                }
-               
+                model.placeSeat(model.tableSeatList[0]);
+                
             });
             
         } else {
@@ -1749,7 +1748,6 @@ Desk = function (x, y, rotation) {
         });
     }
     
-    this.widthWithChairs = 30;
     this.caclulateRotationPlacement = function (rotation) {
         var alpha = rotation, //360 / divisions * pointNumber,
             a = (90 - alpha) * Math.PI / 180,
@@ -1769,7 +1767,10 @@ Desk = function (x, y, rotation) {
                 y: obj.y,
                 r: obj.alpha
             };
-        mySeat.setGraphicPosition(moveToSeatLoc);
+            
+        var moveFromSeatLoc = mySeat.GetLoc() ? mySeat.GetLoc() : {x:0,y:0};
+        //mySeat.setGraphicPosition(obj);
+        mySeat.setGraphicPosition(moveToSeatLoc, moveFromSeatLoc);
         mySeat.SetRotation(obj.alpha);
         //mySeat.seatNumber = seatNumber;
         mySeat.graphic.attr({
@@ -1844,6 +1845,7 @@ Desk = function (x, y, rotation) {
     this.tableSeatList = [];
     this.addSeat = function () {
         var mySeat = new Seat(x, y, rotation);
+        mySeat.table = this;
         this.tableSeatList.push(mySeat);
         this.seatSet.push(mySeat.graphic);
         this.placeSeat(this.tableSeatList[0]);
