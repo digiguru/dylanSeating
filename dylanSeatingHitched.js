@@ -849,15 +849,16 @@ ToolBar = function () {
         this.AddToolBoxItem(this.generateGuestSelect(), "Add new person", "guest");
         this.AddToolBoxItem(this.generateTableSelect(), "Add new table", "table");
         this.AddToolBoxItem(this.generateDeskSelect(), "Add new desk", "desk");
-        this.iconWidth = 0;
-        this.applyStylingToIcon = function(icon, clickevent) {
-          this.iconWidth = this.iconWidth + 20;
-          var iconX = 600 + this.iconWidth;
+        this.iconLeft = 0;
+        this.iconTop = 450;
+        this.applyStylingToIcon = function(icon, text, clickevent) {
+          this.iconLeft = this.iconLeft + 40;
+          var iconX = 600 + this.iconLeft;
           icon.attr({
                  fill: colGuest,
                  stroke: colGuestStroke,
                  model:this,
-                 transform: "t" + iconX + ",450"
+                 transform: "t" + iconX + "," + this.iconTop
              });
           icon.mouseover(function (event) {
               logEvent("Over ToolboxIcon");
@@ -874,18 +875,29 @@ ToolBar = function () {
           });
           icon.click(clickevent);
         }
-        var lnkUndoClick = function(e){
-          Controller.ac.Undo()
-        };
-        var lnkRedoClick = function(e){
-          Controller.ac.Redo()
-        };
         var lnkUndo = paper.path(shapes.iconback);
         var lnkRedo = paper.path(shapes.iconforward);
         
-        this.applyStylingToIcon(lnkUndo, lnkUndoClick);
-        this.applyStylingToIcon(lnkRedo, lnkRedoClick);
+        var lnkGitH = paper.path(shapes.logogithub);
+        var lnkNode = paper.path(shapes.logonodejs);
+        var lnkRaph = paper.path(shapes.logoraph);
+        var lnkTwit = paper.path(shapes.logotwitter);
         
+        
+        
+        this.applyStylingToIcon(lnkUndo, "undo", function(e){Controller.ac.Undo()});
+        this.applyStylingToIcon(lnkRedo, "redo", function(e){Controller.ac.Redo()});
+
+        this.iconLeft = 0;
+        this.iconTop =  500;
+
+        this.applyStylingToIcon(lnkGitH, "Fork me on github", function(e){LinkTo("hello")});
+        this.applyStylingToIcon(lnkNode, "Using Node.js on the server", function(e){LinkTo("hello")});
+        this.applyStylingToIcon(lnkRaph, "Interface using RaphaelJS", function(e){LinkTo("hello")});
+        this.applyStylingToIcon(lnkTwit, "Contact me via Twitter", function(e){LinkTo("hello")});
+        function LinkTo(link) {
+          alert(link)
+        }
         
     }
 Guest = function (name, x, y, id) {
