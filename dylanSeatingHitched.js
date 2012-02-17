@@ -157,39 +157,15 @@ var controller = function() {
       Controller.ac.Call("PlaceGuestOnSeat",data);
     }
   }
-  
-  var ControllerAction = function
-  (
-    //initializeEvent, //Function used to initialize the event
-    sendName,     //The name of the socket we are going to post to when we trigger this event
-    doData,       //Function used to gather data up for this object
-    doAction,     //Function we call as a result.
-    //recieveName,  //The name of the socket we listen to and recieve incoming events from the server
-    undoControllerAction
-                  //Object to undo everything that has been done in the DO action
-  ) {
-    var
-      mySendName = sendName,
-      myRecieveName = sendName + "Response",
-      myDoData = doData,
-      myDoAction = doAction,
-      myUndoControllerAction = undoControllerAction;
-      
-    this.Do = function(args) {
-      var data = myData(args);
-      if(socket) { 
-        socket.emit(mySendName, data);
-      }
-      myCompleteAction(data);
-    }
-    
-  }
-  
 
   var ActionController = function() {
     var cachedActions = [],
       UndoActions = [],
       RedoActions = [];
+    this.WrapMessage = function(data) {
+      var plan = {_id: "4f3cc3345007734932000005"};
+      return {data: data, plan:plan};
+    }
     this.Add = function(action) {
       if(!cachedActions[action.name]) {
         action.oppositeName = "Undo" + action.name;
@@ -227,7 +203,7 @@ var controller = function() {
       var action = getAction(actionName);
       if(action) {
         if(socket) {
-            socket.emit(action.name, args);
+            socket.emit(action.name, this.WrapMessage(args));
         }
         action.doAction(args);
         //UndoActions.push({action:actionName, args:args});
