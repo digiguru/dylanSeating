@@ -60,18 +60,14 @@ app.get('/dylanSeatingHitched.js', function (req, res) {
   res.sendfile(__dirname + '/dylanSeatingHitched.js');
 });
 
-
-
-io.sockets.on('connection', function (socket) {
-  
-  
-  var GetPlan = function (session,onFoundPlan) {
+var GetPlan = function (session,onFoundPlan) {
     
     
      // retrieve my model
       var MyPlan = mongoose.model('Plan');   
       // create a blog post
       //var plan = new MyPlan();
+      console.log("finding plan");
       console.log(session);
       MyPlan.find(session,function(err,savedPlanList) {
         if (err) {
@@ -91,18 +87,35 @@ io.sockets.on('connection', function (socket) {
     
   };
   
-  socket.on('PlaceGuestOnNewSeat', function (data) {
-    socket.broadcast.emit('PlaceGuestOnNewSeatResponse', data);
-    planCollection.insertAll(data);
-    console.log(data);
+  
+
+io.sockets.on('connection', function (socket) {
+  
+  
+  socket.on('GetPlan', function (message) {
+    GetPlan(message.plan,function GetPlanAction(savedPlan) {  
+        // push table to our plan
+        socket.emit('GetPlanResponse', savedPlan);
+    
+        savedPlan.tableList.push(message.data);
+        console.log("now as long as : "+ savedPlan.tableList.length);
+        savedPlan.save();
+    });
+    console.log(message.data);
   });
-  socket.on('UndoPlaceGuestOnNewSeat', function (data) {
-    socket.broadcast.emit('UndoPlaceGuestOnNewSeatResponse', data); 
-    //planCollection.insertAll(data);
-    console.log(data);
+  
+  socket.on('PlaceGuestOnNewSeat', function (message) {
+    socket.broadcast.emit('PlaceGuestOnNewSeatResponse', message.data);
+    console.log(message.data);
   });
-  socket.on('PlaceGuestOnSeat', function (data) {
-    socket.broadcast.emit('PlaceGuestOnSeatResponse', data);
+  socket.on('UndoPlaceGuestOnNewSeat', function (message) {
+    socket.broadcast.emit('UndoPlaceGuestOnNewSeatResponse', message.data); 
+    console.log(message.data);
+  });
+  socket.on('PlaceGuestOnSeat', function (message) {
+    
+    
+    socket.broadcast.emit('PlaceGuestOnSeatResponse', message.data);
     
     /*
     // retrieve my model
@@ -118,100 +131,75 @@ io.sockets.on('connection', function (socket) {
       if (!err) console.log('Success!');
     });
     */
-    console.log(data);
+    console.log(message.data);
   });
-  socket.on('UndoPlaceGuestOnSeat', function (data) {
-    socket.broadcast.emit('UndoPlaceGuestOnSeatResponse', data); 
-    planCollection.insertAll(data);
-    console.log(data);
+  socket.on('UndoPlaceGuestOnSeat', function (message) {
+    socket.broadcast.emit('UndoPlaceGuestOnSeatResponse', message.data); 
+    console.log(message.data);
   });
-  socket.on('SwapGuestWithGuest', function (data) {
-    socket.broadcast.emit('SwapGuestWithGuestResponse', data); 
-    planCollection.insertAll(data);
-    console.log(data);
+  socket.on('SwapGuestWithGuest', function (message) {
+    socket.broadcast.emit('SwapGuestWithGuestResponse', message.data); 
+    console.log(message.data);
   });
-  socket.on('UndoSwapGuestWithGuest', function (data) {
-    socket.broadcast.emit('UndoSwapGuestWithGuestResponse', data); 
-    planCollection.insertAll(data);
-    console.log(data);
+  socket.on('UndoSwapGuestWithGuest', function (message) {
+    socket.broadcast.emit('UndoSwapGuestWithGuestResponse', message.data); 
+    console.log(message.data);
   });
-  socket.on('AddSeatAtPosition', function (data) {
-    socket.broadcast.emit('AddSeatAtPositionResponse', data); 
-    planCollection.insertAll(data);
-    console.log(data);
+  socket.on('AddSeatAtPosition', function (message) {
+    socket.broadcast.emit('AddSeatAtPositionResponse', message.data); 
+    console.log(message.data);
   });
-  socket.on('UndoAddSeatAtPosition', function (data) {
-    socket.broadcast.emit('UndoAddSeatAtPositionResponse', data); 
-    planCollection.insertAll(data);
-    console.log(data);
+  socket.on('UndoAddSeatAtPosition', function (message) {
+    socket.broadcast.emit('UndoAddSeatAtPositionResponse', message.data); 
+    console.log(message.data);
   });
   socket.on('AddTable', function (message) {
     socket.broadcast.emit('AddTableResponse', message.data); 
-    /*
-     // retrieve my model
-    var MyPlan = mongoose.model('Plan');   
-    // create a blog post
-    //var plan = new MyPlan();
-    console.log(message.plan);
-    MyPlan.find(message.plan,function(err,savedPlanList) {
-      if (err) {
-        console.log(err);
-      }else if (savedPlanList.length === 0) {
-        console.log("OOps - no plan saved with these params");
-      }else if (savedPlanList.length !== 1) {
-        console.log("OOps - multiple plans - wait that can't happen!");
-      } else {
-        console.log("Found Plan");
-        var savedPlan = savedPlanList[0];
-        console.log(savedPlan);
-        // create a comment
-        savedPlan.tableList.push(message.data);
-        savedPlan.save(function (err) {
-          if (err) {
-            console.log(err);
-          } else {
-            console.log('Success adding table');
-          }  
-        });
-      }
-    });*/
-    GetPlan(message.plan,function AddTableAction(savedPlan) {
-        // create a comment
+    GetPlan(message.plan,function AddTableAction(savedPlan) {  
+        // push table to our plan
         savedPlan.tableList.push(message.data);
         console.log("now as long as : "+ savedPlan.tableList.length);
-        savedPlan.save(function (err) {
-          if (err) {
-            console.log(err);
-          } else {
-            console.log('Success adding table');
-          }  
-        });
+        savedPlan.save();
     });
   });
-  socket.on('UndoAddTable', function (data) {
-    socket.broadcast.emit('UndoAddTableResponse', data); 
-    planCollection.insertAll(data);
-    console.log(data);
+  socket.on('UndoAddTable', function (message) {
+    socket.broadcast.emit('UndoAddTableResponse', message.data);
+    GetPlan(message.plan,function RemoveTableAction(savedPlan) {  
+        // push table to our plan
+        console.log(message.data);
+        savedPlan.tableList.remove(message.data);
+        console.log("Down to : "+ savedPlan.tableList.length);
+        savedPlan.save();
+    });
+    console.log(message.data);
   });
-  socket.on('AddGuest', function (data) {
-    socket.broadcast.emit('AddGuestResponse', data); 
-    planCollection.insertAll(data);
-    console.log(data);
+  socket.on('AddGuest', function (message) {
+    socket.broadcast.emit('AddGuestResponse', message.data); 
+    GetPlan(message.plan,function AddGuestAction(savedPlan) {  
+        // push table to our plan
+        savedPlan.guestList.push(message.data);
+        console.log("now as long as : "+ savedPlan.guestList.length);
+        savedPlan.save();
+    });
   });
-  socket.on('UndoAddGuest', function (data) {
-    socket.broadcast.emit('UndoAddGuestResponse', data); 
-    planCollection.insertAll(data);
-    console.log(data);
+  socket.on('UndoAddGuest', function (message) {
+    socket.broadcast.emit('UndoAddGuestResponse', message.data);
+    GetPlan(message.plan,function RemoveTableAction(savedPlan) {  
+        // push table to our plan
+        console.log(message.data);
+        savedPlan.guestList.remove(message.data);
+        console.log("Down to : "+ savedPlan.guestList.length);
+        savedPlan.save();
+    });
+    console.log(message.data);
   });
-  socket.on('MoveTable', function (data) {
-    socket.broadcast.emit('MoveTableResponse', data); 
-    planCollection.insertAll(data);
-    console.log(data);
+  socket.on('MoveTable', function (message) {
+    socket.broadcast.emit('MoveTableResponse', message.data); 
+    console.log(message.data);
   });
-  socket.on('UndoMoveTable', function (data) {
-    socket.broadcast.emit('UndoMoveTableResponse', data); 
-    planCollection.insertAll(data);
-    console.log(data);
+  socket.on('UndoMoveTable', function (message) {
+    socket.broadcast.emit('UndoMoveTableResponse', message.data); 
+    console.log(message.data);
   });
   
   /*

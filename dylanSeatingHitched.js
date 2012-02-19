@@ -389,7 +389,8 @@ this.ac.Add(
     
     
   if(socket) {
-        
+    
+
     /*
      socket.on('CreateSeatAndPlaceGuestResponse', function (data) {
       console.log(data);
@@ -424,7 +425,15 @@ this.ac.Add(
 
 var Controller = new controller();
 
-
+if(socket) {
+  socket.on('GetPlanResponse', function (data) {
+      console.log(data);
+      //Controller.CreateSeatAndPlaceGuest(data.table, data.guest, data.seatMarker);
+      //socket.emit('my other event', { my: 'data' });
+    });
+  socket.emit('GetPlan', Controller.ac.WrapMessage());
+        
+}
 var Generic = {
     PathGetX: function (graphic) {
         var myGraphic = graphic ? graphic : this.graphic;
@@ -1413,8 +1422,23 @@ RoundTable = function (x, y, seatCount, id) {
             x: this.GetX(),
             y: this.GetY() - this.widthWithChairs
         };
+    };
+    this.remove = function () {
+        for (var i = 0, l = this.tableSeatList.length; i < l; i++) {
+            var seat = this.tableSeatList[i];
+            seat.remove();
+        };
+         for (var i = 0, l = this.tableSeatAdditions.length; i < l; i++) {
+            var seatMarker = this.tableSeatAdditions[i];
+            seatMarker.remove();
+        }
+        this.graphic.stop();
+        this.graphic.animate({
+            opacity: "0"
+        }, 300, true, function () {
+            this.remove()
+        });
     }
-
     this.setGraphicPositionBase = Generic.SetShapeGraphicPosition;
 
     this.setGraphicPosition = function (pointTo, pointFrom) {
