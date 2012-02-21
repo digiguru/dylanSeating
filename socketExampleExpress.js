@@ -104,6 +104,19 @@ io.sockets.on('connection', function (socket) {
     console.log(message.data);
   });
   
+  socket.on('DeletePlanData', function (message) {
+    console.log("deltePlanData" + message);
+    GetPlan(message.plan,function DeletePlanDataAction(savedPlan) {  
+        console.log("deltePlanData" + savedPlan);
+        // push table to our plan
+        savedPlan.tableList = [];
+        socket.broadcast.emit('GetPlanResponse', savedPlan);
+        savedPlan.save();
+    });
+    console.log(message.data);
+  });
+  
+  
   socket.on('PlaceGuestOnNewSeat', function (message) {
     socket.broadcast.emit('PlaceGuestOnNewSeatResponse', message.data);
     console.log(message.data);
@@ -202,38 +215,4 @@ io.sockets.on('connection', function (socket) {
     console.log(message.data);
   });
   
-  /*
-  socket.on('AddRoundTable', function (data) {
-    socket.broadcast.emit('AddRoundTableResponse', data); 
-    console.log(data);
-  });
-  socket.on('AddDesk', function (data) {
-    socket.broadcast.emit('AddDeskResponse', data); 
-    console.log(data);
-  });
-  socket.on('AddGuest', function (data) {
-    socket.broadcast.emit('AddGuestResponse', data); 
-    console.log(data);
-  });
-  socket.on('PlaceGuestOnSeat', function (data) {
-    socket.broadcast.emit('PlaceGuestOnSeatResponse', data); 
-    console.log(data);
-  });
-  socket.on('SwapGuestWithSeat', function (data) {
-    socket.broadcast.emit('SwapGuestWithSeatResponse', data);
-    console.log(data);
-  });
-  socket.on('CreateSeatAndPlaceGuest', function (data) {
-    socket.broadcast.emit('CreateSeatAndPlaceGuestResponse', data);
-    console.log(data);
-  });
-  socket.on('AddSeatAtPosition', function (data) {
-    socket.broadcast.emit('AddSeatAtPositionResponse', data);
-    console.log(data);
-  });
-  socket.on('RemoveSeat', function (data) {
-    socket.broadcast.emit('RemoveSeatResponse', data);
-    console.log(data);
-  });
-  */
 });

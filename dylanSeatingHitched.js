@@ -1,4 +1,7 @@
-//window.addEvent('domready', function() {
+//Dylan Seating Behaviour
+// By Adam Hall (pending license)
+
+
 // Array Remove - By John Resig (MIT Licensed)
 Array.prototype.remove = function (from, to) {
     var rest = this.slice((to || from) + 1 || this.length);
@@ -336,7 +339,7 @@ this.ac.Add(
   {name: "AddTable",
   doAction: function(args) {
     LoadData({
-        tables: [args/*
+        tableList: [args/*
                   {
             id: args.id,
             type: args.type,
@@ -356,7 +359,7 @@ this.ac.Add(
   {name: "AddGuest",
   doAction: function(args) {
     LoadData({
-        guests: [args/*
+        guestList: [args/*
                   {
             id: args.id,
             type: args.type,
@@ -425,15 +428,7 @@ this.ac.Add(
 
 var Controller = new controller();
 
-if(socket) {
-  socket.on('GetPlanResponse', function (data) {
-      console.log(data);
-      //Controller.CreateSeatAndPlaceGuest(data.table, data.guest, data.seatMarker);
-      //socket.emit('my other event', { my: 'data' });
-    });
-  socket.emit('GetPlan', Controller.ac.WrapMessage());
-        
-}
+
 var Generic = {
     PathGetX: function (graphic) {
         var myGraphic = graphic ? graphic : this.graphic;
@@ -541,18 +536,12 @@ var paper = Raphael("board", 900, 900),
         logotwitter: "M14.605,13.11c0.913-2.851,2.029-4.698,3.313-6.038c0.959-1,1.453-1.316,0.891-0.216c0.25-0.199,0.606-0.464,0.885-0.605c1.555-0.733,1.442-0.119,0.373,0.54c2.923-1.045,2.82,0.286-0.271,0.949c2.527,0.047,5.214,1.656,5.987,5.077c0.105,0.474-0.021,0.428,0.464,0.514c1.047,0.186,2.03,0.174,2.991-0.13c-0.104,0.708-1.039,1.167-2.497,1.471c-0.541,0.112-0.651,0.083-0.005,0.229c0.799,0.179,1.69,0.226,2.634,0.182c-0.734,0.846-1.905,1.278-3.354,1.296c-0.904,3.309-2.976,5.678-5.596,7.164c-6.152,3.492-15.108,2.984-19.599-3.359c2.947,2.312,7.312,2.821,10.555-0.401c-2.125,0-2.674-1.591-0.99-2.449c-1.595-0.017-2.608-0.521-3.203-1.434c-0.226-0.347-0.229-0.374,0.14-0.64c0.405-0.293,0.958-0.423,1.528-0.467c-1.651-0.473-2.66-1.335-3.009-2.491c-0.116-0.382-0.134-0.363,0.256-0.462c0.38-0.097,0.87-0.148,1.309-0.17C6.11,10.88,5.336,9.917,5.139,8.852c-0.186-1.006,0.005-0.748,0.758-0.46C9.263,9.68,12.619,11.062,14.605,13.11L14.605,13.11z",
         iconback: "M21.871,9.814 15.684,16.001 21.871,22.188 18.335,25.725 8.612,16.001 18.335,6.276z",
         iconforward: "M10.129,22.186 16.316,15.999 10.129,9.812 13.665,6.276 23.389,15.999 13.665,25.725z",
-        trash: "M20.826,5.75l0.396,1.188c1.54,0.575,2.589,1.44,2.589,2.626c0,2.405-4.308,3.498-8.312,3.498c-4.003,0-8.311-1.093-8.311-3.498c0-1.272,1.21-2.174,2.938-2.746l0.388-1.165c-2.443,0.648-4.327,1.876-4.327,3.91v2.264c0,1.224,0.685,2.155,1.759,2.845l0.396,9.265c0,1.381,3.274,2.5,7.312,2.5c4.038,0,7.313-1.119,7.313-2.5l0.405-9.493c0.885-0.664,1.438-1.521,1.438-2.617V9.562C24.812,7.625,23.101,6.42,20.826,5.75zM11.093,24.127c-0.476-0.286-1.022-0.846-1.166-1.237c-1.007-2.76-0.73-4.921-0.529-7.509c0.747,0.28,1.58,0.491,2.45,0.642c-0.216,2.658-0.43,4.923,0.003,7.828C11.916,24.278,11.567,24.411,11.093,24.127zM17.219,24.329c-0.019,0.445-0.691,0.856-1.517,0.856c-0.828,0-1.498-0.413-1.517-0.858c-0.126-2.996-0.032-5.322,0.068-8.039c0.418,0.022,0.835,0.037,1.246,0.037c0.543,0,1.097-0.02,1.651-0.059C17.251,18.994,17.346,21.325,17.219,24.329zM21.476,22.892c-0.143,0.392-0.69,0.95-1.165,1.235c-0.474,0.284-0.817,0.151-0.754-0.276c0.437-2.93,0.214-5.209-0.005-7.897c0.881-0.174,1.708-0.417,2.44-0.731C22.194,17.883,22.503,20.076,21.476,22.892zM11.338,9.512c0.525,0.173,1.092-0.109,1.268-0.633h-0.002l0.771-2.316h4.56l0.771,2.316c0.14,0.419,0.53,0.685,0.949,0.685c0.104,0,0.211-0.017,0.316-0.052c0.524-0.175,0.808-0.742,0.633-1.265l-1.002-3.001c-0.136-0.407-0.518-0.683-0.945-0.683h-6.002c-0.428,0-0.812,0.275-0.948,0.683l-1,2.999C10.532,8.77,10.815,9.337,11.338,9.512z"
+        icontrash: "M20.826,5.75l0.396,1.188c1.54,0.575,2.589,1.44,2.589,2.626c0,2.405-4.308,3.498-8.312,3.498c-4.003,0-8.311-1.093-8.311-3.498c0-1.272,1.21-2.174,2.938-2.746l0.388-1.165c-2.443,0.648-4.327,1.876-4.327,3.91v2.264c0,1.224,0.685,2.155,1.759,2.845l0.396,9.265c0,1.381,3.274,2.5,7.312,2.5c4.038,0,7.313-1.119,7.313-2.5l0.405-9.493c0.885-0.664,1.438-1.521,1.438-2.617V9.562C24.812,7.625,23.101,6.42,20.826,5.75zM11.093,24.127c-0.476-0.286-1.022-0.846-1.166-1.237c-1.007-2.76-0.73-4.921-0.529-7.509c0.747,0.28,1.58,0.491,2.45,0.642c-0.216,2.658-0.43,4.923,0.003,7.828C11.916,24.278,11.567,24.411,11.093,24.127zM17.219,24.329c-0.019,0.445-0.691,0.856-1.517,0.856c-0.828,0-1.498-0.413-1.517-0.858c-0.126-2.996-0.032-5.322,0.068-8.039c0.418,0.022,0.835,0.037,1.246,0.037c0.543,0,1.097-0.02,1.651-0.059C17.251,18.994,17.346,21.325,17.219,24.329zM21.476,22.892c-0.143,0.392-0.69,0.95-1.165,1.235c-0.474,0.284-0.817,0.151-0.754-0.276c0.437-2.93,0.214-5.209-0.005-7.897c0.881-0.174,1.708-0.417,2.44-0.731C22.194,17.883,22.503,20.076,21.476,22.892zM11.338,9.512c0.525,0.173,1.092-0.109,1.268-0.633h-0.002l0.771-2.316h4.56l0.771,2.316c0.14,0.419,0.53,0.685,0.949,0.685c0.104,0,0.211-0.017,0.316-0.052c0.524-0.175,0.808-0.742,0.633-1.265l-1.002-3.001c-0.136-0.407-0.518-0.683-0.945-0.683h-6.002c-0.428,0-0.812,0.275-0.948,0.683l-1,2.999C10.532,8.77,10.815,9.337,11.338,9.512z"
         
         //seat:   "M -20 -50 L 20 -50 L 0 -20 z"
         
     };
-inrange = false, seatList = [], draggableGuests = [], AllEvents = [], AllEventsAuditBox = paper.text(200, 20, "loaded"), myTables = [], myGuests = [{
-    name: "adam hall"
-}, {
-    name: "simon dawson"
-}, {
-    name: "aimee read"
-}];
+inrange = false, seatList = [], draggableGuests = [], AllEvents = [], AllEventsAuditBox = paper.text(200, 20, "loaded"), myTables = [], myGuests = [];
 
 paper.customAttributes = {
 
@@ -646,7 +635,7 @@ ToolBar = function () {
                     });
                     /*
                     return LoadData({
-                        guests: [{
+                        guestList: [{
                             name: "Example New Guest",
                             x: x,
                             y: y
@@ -688,7 +677,7 @@ ToolBar = function () {
                     
                     /*
                     return LoadData({
-                        tables: [{
+                        tableList: [{
                             type: "table",
                             x: x,
                             y: y,
@@ -733,7 +722,7 @@ ToolBar = function () {
                     });
                     
                     /*LoadData({
-                        tables: [{
+                        tableList: [{
                             type: "desk",
                             x: x,
                             y: y,
@@ -862,6 +851,7 @@ ToolBar = function () {
         }
         var lnkUndo = paper.path(shapes.iconback);
         var lnkRedo = paper.path(shapes.iconforward);
+        var lnkDelete = paper.path(shapes.icontrash);
         
         var lnkGitH = paper.path(shapes.logogithub);
         var lnkNode = paper.path(shapes.logonodejs);
@@ -872,6 +862,7 @@ ToolBar = function () {
         
         this.applyStylingToIcon(lnkUndo, "undo", function(e){Controller.ac.Undo()});
         this.applyStylingToIcon(lnkRedo, "redo", function(e){Controller.ac.Redo()});
+        this.applyStylingToIcon(lnkDelete, "delete", function(e){DeletePlanData()});
 
         this.iconLeft = 0;
         this.iconTop =  500;
@@ -1974,77 +1965,93 @@ Desk = function (x, y, rotation) {
 
 var SaveAll = function () {
         var SaveObject = {
-            tables: [],
-            guests: []
+            tableList: [],
+            guestList: []
         }
         for (var i = 0, l = myTables.length; i < l; i++) {
-            SaveObject.tables.push(myTables[i].ToJson());
+            SaveObject.tableList.push(myTables[i].ToJson());
         }
         for (var i = 0, l = draggableGuests.length; i < l; i++) {
             if (!draggableGuests[i].seat) {
-                SaveObject.guests.push(draggableGuests[i].ToJson());
+                SaveObject.guestList.push(draggableGuests[i].ToJson());
             }
         }
         return SaveObject;
     }
+var ClearData = function() {
+  alert("Clear Data not yet defined!");
+  
+  if (myTables) {
+      for (var i = 0, l = myTables.length; i < l; i++) {
+          myTables[i].remove();
+      }
+  }
+  if (draggableGuests) {
+      for (var i = 0, l = draggableGuests.length; i < l; i++) {
+         draggableGuests[i].remove();
+      }
+  }
+  
+}
 var LoadData = function (data) {
-        var loadGuest = function (data) {
-                return new Guest(data.name, data.x, data.y, data.id);
-            },
-            loadTable = function (data) {
-                return new RoundTable(data.x, data.y, data.seatCount, data.id);
-            },
-            loadDesk = function (data) {
-                return new Desk(data.x, data.y, data.rotation, data.id);
-            };
-        if (data.tables) {
-            for (var i = 0, l = data.tables.length; i < l; i++) {
-                if (data.tables[i].type === "desk") {
-                    myTables.push(loadDesk(data.tables[i]));
-                } else if (data.tables[i].type === "table") {
-                    myTables.push(loadTable(data.tables[i]));
-                }
-            }
-        }
-        if (data.guests) {
-            for (var i = 0, l = data.guests.length; i < l; i++) {
-                draggableGuests.push(loadGuest(data.guests[i]));
-            }
-        }
-    };
+  var loadGuest = function (data) {
+        return new Guest(data.name, data.x, data.y, data.id);
+  },
+      loadTable = function (data) {
+        return new RoundTable(data.x, data.y, data.seatCount, data.id);
+  },
+      loadDesk = function (data) {
+        return new Desk(data.x, data.y, data.rotation, data.id);
+  };
+  if (data.tableList) {
+      for (var i = 0, l = data.tableList.length; i < l; i++) {
+          if (data.tableList[i].type === "desk") {
+              myTables.push(loadDesk(data.tableList[i]));
+          } else if (data.tableList[i].type === "table") {
+              myTables.push(loadTable(data.tableList[i]));
+          }
+      }
+  }
+  if (data.guestList) {
+      for (var i = 0, l = data.guestList.length; i < l; i++) {
+          draggableGuests.push(loadGuest(data.guestList[i]));
+      }
+  }
+};
 var MyToolBar;
+var RequestPlan = function() {
+   if(socket) {
+    socket.emit('GetPlan', Controller.ac.WrapMessage());
+   }
+};
+if(socket) {
+   socket.on('GetPlanResponse', function (data) {
+      console.log(data);
+      LoadData(data)
+    });
+}
+var DeletePlanData = function() {
+  console.log("Attempting to DeletePlanData")
+  ClearData();
+  if(socket) {
+    socket.emit('DeletePlanData', Controller.ac.WrapMessage());
+  }
+}
 var Init = function () {
-        MyToolBar = new ToolBar();
-        //LoadData(exampleSave);
-        //Create Tables & Seats
-        myTables.push(new RoundTable(100, 100, 8));
-        myTables.push(new RoundTable(200, 260, 3));
-        myTables.push(new RoundTable(200, 460, 5));
-        myTables.push(new Desk(60, 450, 0));
-
-        /*
-         for (var i = 20; i < 400; i = i + Math.floor(Math.random() * 30) + 200) {
-            for (var j = 20; j < 400; j = j + Math.floor(Math.random() * 30) + 200) {
-                myTables.push(new RoundTable(i, j, Math.floor(Math.random() * 12)));
-            }
-        }
-        */
-        for (var p = 0, l = myGuests.length; p < l; p++) {
-            draggableGuests.push(new Guest(myGuests[p].name, 100, 100 * (p + 1)));
-        }
-
-        logEvent("Finished Init");
-    }();
+    MyToolBar = new ToolBar();
+    RequestPlan();
+    logEvent("Finished Init");
+}();
 
 
 
 var exampleSave = {
-    guests: [{
+    guestList: [{
         name: "Fred Boodle",
         x: 30,
         y: 30
     }],
-    tables: [{
+    tableList: [{
         type: "table",
         x: 400,
         y: 400,
