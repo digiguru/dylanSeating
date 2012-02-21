@@ -1988,7 +1988,7 @@ var ClearData = function() {
   }
   if (draggableGuests) {
       for (var i = 0, l = draggableGuests.length; i < l; i++) {
-         draggableGuests[i].remove();
+         //draggableGuests[i].remove();
       }
   }
   

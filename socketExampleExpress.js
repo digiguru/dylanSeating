@@ -59,10 +59,36 @@ app.get('/raphael.2.0.1.js', function (req, res) {
 app.get('/dylanSeatingHitched.js', function (req, res) {
   res.sendfile(__dirname + '/dylanSeatingHitched.js');
 });
-
+var ReplaceProperties = function(a,b) {
+  if (a && b) {
+    var keys = Object.keys(b)
+      , len = keys.length
+      , key;
+    for (var i = 0; i < len; ++i) {
+      key = keys[i];
+      a[key] = b[key];
+    }
+  }
+  return a;
+};
+var GetTable = function(plan,id) {
+  console.log("GetTable")
+  console.log(plan);
+  console.log(id);
+  
+   for(var i=0,l=plan.tableList.length; i<l; i++) {
+      console.log("row" + i);
+  console.log(plan.tableList[i]);
+  
+      if(plan.tableList[i].id == id) {
+        console.log("Found Table")
+  
+        return plan.tableList[i];
+      }
+    }
+    return null;
+};
 var GetPlan = function (session,onFoundPlan) {
-    
-    
      // retrieve my model
       var MyPlan = mongoose.model('Plan');   
       // create a blog post
@@ -105,7 +131,7 @@ io.sockets.on('connection', function (socket) {
   });
   
   socket.on('DeletePlanData', function (message) {
-    console.log("deltePlanData" + message);
+    console.log("DeletePlanData");
     GetPlan(message.plan,function DeletePlanDataAction(savedPlan) {  
         console.log("deltePlanData" + savedPlan);
         // push table to our plan
@@ -206,8 +232,20 @@ io.sockets.on('connection', function (socket) {
     });
     console.log(message.data);
   });
+  
   socket.on('MoveTable', function (message) {
-    socket.broadcast.emit('MoveTableResponse', message.data); 
+    socket.broadcast.emit('MoveTableResponse', message.data);
+    GetPlan(message.plan,function MoveTable(savedPlan) {  
+        // push table to our plan
+        console.log(message.data);
+        var Table = GetTable(savedPlan, message.data.table);
+        console.log("Table : ")
+        console.log(Table);
+        Table = ReplaceProperties(Table, message.data.current);
+        console.log("Becomes : ")
+        console.log(Table);
+        savedPlan.save();
+    });
     console.log(message.data);
   });
   socket.on('UndoMoveTable', function (message) {
