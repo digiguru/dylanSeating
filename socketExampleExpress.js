@@ -125,6 +125,22 @@ var GetSeat = function(plan,id) {
   }
   return null;
 };
+var GetSeatByNumber = function(plan,seatNumber) {
+  console.log("GetSeatByNumber" + seatNumber);
+  if(plan.tableList) {
+    for(var i=0,l=plan.tableList.length; i<l; i++) {
+      if(plan.tableList[i].seatList) {
+        for(var i2=0,l2=plan.tableList[i].seatList.length; i2<l2; i2++) {
+          if(plan.tableList[i].seatList[i2].seatNumber == seatNumber) {
+            //console.log(plan.tableList[i].seatList[i2]);
+            return plan.tableList[i].seatList[i2];
+          }
+        } 
+      }
+    }
+  }
+  return null;
+};
 var GetPlan = function (session,onFoundPlan) {
      // retrieve my model
       var MyPlan = mongoose.model('Plan');   
@@ -238,7 +254,7 @@ io.sockets.on('connection', function (socket) {
   
     console.log(message.data);
   });
-  socket.on('AddSeatAtPosition', function (message) {
+  socket.on('AddSeatAtPosition', function AddSeatAtPositionSocket(message) {
     socket.broadcast.emit('AddSeatAtPositionResponse', message.data); 
   
   
@@ -248,22 +264,31 @@ io.sockets.on('connection', function (socket) {
         var SeatSchema = mongoose.model('Seat');
         var mySeat = new SeatSchema();
         mySeat.seatNumber = table.seatList.length;
+        
         table.seatList.push(mySeat);
-        if(seat) {
-          seat.guest.remove(guest);
-        }
-        if(guestOriginalSeat) {
-          guestOriginalSeat.guest = guest
-        }
+        table.seatCount = table.seatList.length;
         savedPlan.save();
     });
-      
-  
     console.log(message.data);
   });
-  socket.on('UndoAddSeatAtPosition', function (message) {
-    socket.broadcast.emit('UndoAddSeatAtPositionResponse', message.data); 
-    console.log(message.data);
+  socket.on('UndoAddSeatAtPosition', function UndoAddSeatAtPositionSocket (message) {
+    socket.broadcast.emit('UndoAddSeatAtPositionResponse', message.data);
+    GetPlan(message.plan, function UndoAddSeatAtPositionAction(savedPlan) {  
+      //var seat = GetSeatByNumber(savedPlan,message.data.seatNumber);
+      var table = GetTable(savedPlan,message.data.table);
+      //table.seatList.remove(seat);
+      console.log({seatNumber:message.data.seatNumber});
+      console.log(table.seatList);
+      table.seatList[message.data.seatNumber].remove();
+      for(var i=0, l=table.seatList.length; i<l; i++) {
+         table.seatList[i].seatNumber = i;  
+      }
+      table.seatCount = table.seatList.length;
+      console.log(table.seatList);
+      
+      savedPlan.save();
+      console.log(message.data);
+    });
   });
   socket.on('AddTable', function (message) {
     socket.broadcast.emit('AddTableResponse', message.data); 
