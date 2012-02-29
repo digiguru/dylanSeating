@@ -6,35 +6,44 @@ var express = require('express'),
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema;
     
-var Plan = new Schema(),
-    Table = new Schema(),
-    Seat = new Schema(),
-    Guest = new Schema();
-    
-Guest.add({
+var Guest = new Schema({
   id        : { type: Number, index: true },
   name      : String,
   x         : Number,
   y         : Number
-});
-Seat.add({
+}),
+ Seat = new Schema({
   id        : { type: Number, index: true },
   seatNumber: Number,
-  guest     : [Guest]
-});
-Table.add({
+  guest     : [Guest] //HACK - not correct - needs to be single, not array.
+//  guest     : { type: Guest} 
+}),
+    Table = new Schema({
   id        : Number,
   type      : String,
   x         : Number,
   y         : Number,
   seatCount : Number,
   seatList  : [Seat]
-});
-Plan.add({
+}),
+   
+    Plan = new Schema({
   name      :  { type: Number, index: true },
   tableList : [Table],
   guestList : [Guest]
 });
+    
+//Guest.add();
+//Seat.add();
+/*
+Seat.virtual('guest') 
+   .set(function(guest) { this._guests[0] = guest; }) 
+   .get(function() { return this._guests.first(); });
+*/
+   //Virtual to get the array as a single object
+   //http://stackoverflow.com/questions/7744271/how-do-you-define-a-nested-object-to-an-existing-schema-in-mongoose
+//Table.add();
+//Plan.add();
 
 mongoose.connect('mongodb://localhost/digiguru_seating');
 
@@ -59,34 +68,62 @@ app.get('/raphael.2.0.1.js', function (req, res) {
 app.get('/dylanSeatingHitched.js', function (req, res) {
   res.sendfile(__dirname + '/dylanSeatingHitched.js');
 });
-var ReplaceProperties = function(a,b) {
-  if (a && b) {
-    var keys = Object.keys(b)
+var ReplaceProperties = function(original,newProps) {
+  if (original && newProps) {
+    var keys = Object.keys(newProps)
       , len = keys.length
       , key;
     for (var i = 0; i < len; ++i) {
       key = keys[i];
-      a[key] = b[key];
+      original[key] = newProps[key];
     }
   }
-  return a;
+  return original;
 };
 var GetTable = function(plan,id) {
-  console.log("GetTable")
-  console.log(plan);
-  console.log(id);
-  
-   for(var i=0,l=plan.tableList.length; i<l; i++) {
-      console.log("row" + i);
-  console.log(plan.tableList[i]);
-  
+   console.log("GetTable" + id);
+  for(var i=0,l=plan.tableList.length; i<l; i++) {
       if(plan.tableList[i].id == id) {
-        console.log("Found Table")
-  
         return plan.tableList[i];
       }
     }
     return null;
+};
+var GetGuest = function(plan,id) {
+  console.log("GetGuest" + id);
+   for(var i=0,l=plan.guestList.length; i<l; i++) {
+      if(plan.guestList[i].id == id) {
+        //console.log(plan.guestList[i]);
+        return plan.guestList[i];
+      }
+    }
+    for(var i=0,l=plan.tableList.length; i<l; i++) {
+    if(plan.tableList[i].seatList) {
+        for(var i2=0,l2=plan.tableList[i].seatList.length; i2<l2; i2++) {
+          if(plan.guestList[i].seatList[i2].guest && plan.guestList[i].seatList[i2].guest[0] && plan.guestList[i].seatList[i2].guest[0].id == id) {
+            //console.log(plan.guestList[i].seatList[i2]);
+            return plan.guestList[i].seatList[i2].guest[0];
+          }
+        }
+      }
+    }
+    return null;
+};
+var GetSeat = function(plan,id) {
+  console.log("GetSeat" + id);
+  if(plan.tableList) {
+    for(var i=0,l=plan.tableList.length; i<l; i++) {
+      if(plan.tableList[i].seatList) {
+        for(var i2=0,l2=plan.tableList[i].seatList.length; i2<l2; i2++) {
+          if(plan.tableList[i].seatList[i2].id == id) {
+            //console.log(plan.tableList[i].seatList[i2]);
+            return plan.tableList[i].seatList[i2];
+          }
+        } 
+      }
+    }
+  }
+  return null;
 };
 var GetPlan = function (session,onFoundPlan) {
      // retrieve my model
@@ -109,10 +146,7 @@ var GetPlan = function (session,onFoundPlan) {
           onFoundPlan(savedPlan);
         }
       });
-    
-    
   };
-  
   
 
 io.sockets.on('connection', function (socket) {
@@ -122,9 +156,6 @@ io.sockets.on('connection', function (socket) {
     GetPlan(message.plan,function GetPlanAction(savedPlan) {  
         // push table to our plan
         socket.emit('GetPlanResponse', savedPlan);
-    
-        savedPlan.tableList.push(message.data);
-        console.log("now as long as : "+ savedPlan.tableList.length);
         savedPlan.save();
     });
     console.log(message.data);
@@ -144,48 +175,90 @@ io.sockets.on('connection', function (socket) {
   
   
   socket.on('PlaceGuestOnNewSeat', function (message) {
+    console.log("PlaceGuestOnNewSeat");
     socket.broadcast.emit('PlaceGuestOnNewSeatResponse', message.data);
     console.log(message.data);
   });
   socket.on('UndoPlaceGuestOnNewSeat', function (message) {
-    socket.broadcast.emit('UndoPlaceGuestOnNewSeatResponse', message.data); 
+    console.log("UndoPlaceGuestOnNewSeat");
+    socket.broadcast.emit('UndoPlaceGuestOnNewSeatResponse', message.data);
     console.log(message.data);
   });
   socket.on('PlaceGuestOnSeat', function (message) {
-    
-    
+    console.log("PlaceGuestOnSeat");
     socket.broadcast.emit('PlaceGuestOnSeatResponse', message.data);
     
-    /*
-    // retrieve my model
-    var Plan = mongoose.model('Plan');
-
-    // create a blog post
-    var plan = new Plan();
-
-    // create a comment
-    plan.comments.push({ title: 'My comment' });
-
-    plan.save(function (err) {
-      if (!err) console.log('Success!');
+    GetPlan(message.plan,function PlaceGuestOnSeatAction(savedPlan) {  
+        var seat = GetSeat(savedPlan,message.data.seat);
+        console.log("seat", seat);
+        var guest = GetGuest(savedPlan,message.data.guest);
+        console.log("guest", guest);
+        var guestOriginalSeat = GetSeat(savedPlan,message.data.guestOriginalSeat);
+        console.log("guestOriginalSeat", guestOriginalSeat);
+        
+        if(guestOriginalSeat) {
+          guestOriginalSeat.guest.remove(guest);
+        }
+        if(seat) {
+          //seat.guest = [];
+          seat.guest = guest;
+        }
+        
+        savedPlan.save();
     });
-    */
+    
     console.log(message.data);
   });
   socket.on('UndoPlaceGuestOnSeat', function (message) {
-    socket.broadcast.emit('UndoPlaceGuestOnSeatResponse', message.data); 
+    console.log("UndoPlaceGuestOnSeat");
+    socket.broadcast.emit('UndoPlaceGuestOnSeatResponse', message.data);
+    
+    GetPlan(message.plan,function UndoPlaceGuestOnSeatAction(savedPlan) {  
+        var seat = GetSeat(savedPlan,message.data.seat);
+        var guest = GetGuest(savedPlan,message.data.guest);
+        var guestOriginalSeat = GetSeat(savedPlan,message.data.guestOriginalSeat);
+        if(seat) {
+          seat.guest.remove(guest);
+        }
+        if(guestOriginalSeat) {
+          guestOriginalSeat.guest = guest
+        }
+        savedPlan.save();
+    });
+  
     console.log(message.data);
   });
   socket.on('SwapGuestWithGuest', function (message) {
     socket.broadcast.emit('SwapGuestWithGuestResponse', message.data); 
+  
     console.log(message.data);
   });
   socket.on('UndoSwapGuestWithGuest', function (message) {
     socket.broadcast.emit('UndoSwapGuestWithGuestResponse', message.data); 
+  
     console.log(message.data);
   });
   socket.on('AddSeatAtPosition', function (message) {
     socket.broadcast.emit('AddSeatAtPositionResponse', message.data); 
+  
+  
+    GetPlan(message.plan,function AddSeatAtPositionAction(savedPlan) {  
+        var table = GetTable(savedPlan,message.data.table);
+        //var seat = GetSeat(savedPlan,message.data.seatNumber);
+        var SeatSchema = mongoose.model('Seat');
+        var mySeat = new SeatSchema();
+        mySeat.seatNumber = table.seatList.length;
+        table.seatList.push(mySeat);
+        if(seat) {
+          seat.guest.remove(guest);
+        }
+        if(guestOriginalSeat) {
+          guestOriginalSeat.guest = guest
+        }
+        savedPlan.save();
+    });
+      
+  
     console.log(message.data);
   });
   socket.on('UndoAddSeatAtPosition', function (message) {
@@ -195,19 +268,24 @@ io.sockets.on('connection', function (socket) {
   socket.on('AddTable', function (message) {
     socket.broadcast.emit('AddTableResponse', message.data); 
     GetPlan(message.plan,function AddTableAction(savedPlan) {  
-        // push table to our plan
-        savedPlan.tableList.push(message.data);
-        console.log("now as long as : "+ savedPlan.tableList.length);
+        var TableSchema = mongoose.model('Table');   
+      // create a blog post
+        var myTable = new TableSchema();
+        myTable = ReplaceProperties(myTable,message.data);
+        for (var i=0,l=message.data.seatCount;i<l;i++) {
+            var SeatSchema = mongoose.model('Seat');
+            var mySeat = new SeatSchema();
+            myTable.seatList.push(ReplaceProperties(mySeat,{id:i,seatNumber:i}));
+        }
+        savedPlan.tableList.push(myTable);
         savedPlan.save();
     });
+    console.log(message.data);
   });
   socket.on('UndoAddTable', function (message) {
     socket.broadcast.emit('UndoAddTableResponse', message.data);
     GetPlan(message.plan,function RemoveTableAction(savedPlan) {  
-        // push table to our plan
-        console.log(message.data);
         savedPlan.tableList.remove(message.data);
-        console.log("Down to : "+ savedPlan.tableList.length);
         savedPlan.save();
     });
     console.log(message.data);
@@ -215,19 +293,14 @@ io.sockets.on('connection', function (socket) {
   socket.on('AddGuest', function (message) {
     socket.broadcast.emit('AddGuestResponse', message.data); 
     GetPlan(message.plan,function AddGuestAction(savedPlan) {  
-        // push table to our plan
         savedPlan.guestList.push(message.data);
-        console.log("now as long as : "+ savedPlan.guestList.length);
         savedPlan.save();
     });
   });
   socket.on('UndoAddGuest', function (message) {
     socket.broadcast.emit('UndoAddGuestResponse', message.data);
     GetPlan(message.plan,function RemoveTableAction(savedPlan) {  
-        // push table to our plan
-        console.log(message.data);
         savedPlan.guestList.remove(message.data);
-        console.log("Down to : "+ savedPlan.guestList.length);
         savedPlan.save();
     });
     console.log(message.data);
@@ -236,20 +309,19 @@ io.sockets.on('connection', function (socket) {
   socket.on('MoveTable', function (message) {
     socket.broadcast.emit('MoveTableResponse', message.data);
     GetPlan(message.plan,function MoveTable(savedPlan) {  
-        // push table to our plan
-        console.log(message.data);
         var Table = GetTable(savedPlan, message.data.table);
-        console.log("Table : ")
-        console.log(Table);
         Table = ReplaceProperties(Table, message.data.current);
-        console.log("Becomes : ")
-        console.log(Table);
         savedPlan.save();
     });
     console.log(message.data);
   });
   socket.on('UndoMoveTable', function (message) {
     socket.broadcast.emit('UndoMoveTableResponse', message.data); 
+    GetPlan(message.plan,function MoveTable(savedPlan) {  
+        var Table = GetTable(savedPlan, message.data.table);
+        Table = ReplaceProperties(Table, message.data.previous);
+        savedPlan.save();
+    });
     console.log(message.data);
   });
   

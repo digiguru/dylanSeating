@@ -132,13 +132,23 @@ var controller = function() {
     topSeatID = 0,
     topGuestID = 0;
   this.NextTableID = function() {
-    return topTableID++;
+    for(var i=0,l=myTables.length;i<l;i++) {
+      if(myTables[i].id == topTableID) {
+        topTableID++
+      }
+    }
+    return topTableID;
   };
   this.NextSeatID = function() {
     return topSeatID++;
   };
   this.NextGuestID = function() {
-    return topGuestID++;
+    for(var i=0,l=draggableGuests.length;i<l;i++) {
+      if(draggableGuests[i].id == topTableID) {
+        topGuestID++
+      }
+    }
+    return topGuestID;
   };
   this.MoveGuestToSeatArea = function(model,mySeat) {
     //var model = guest.attr("model");
@@ -203,6 +213,7 @@ var controller = function() {
       UndoActions.push({name:actionName, oppositeName:action.oppositeName,  args:args});
     }
     this.CallWithoutHistory = function(actionName, args) {
+      console.log("Doing" + actionName, args);
       var action = getAction(actionName);
       if(action) {
         if(socket) {
@@ -379,7 +390,7 @@ this.ac.Add(
   {name: "MoveTable",
   doAction: function(args) {
     table = GetTable(args.table);
-    console.log("moveTable", args);
+    //console.log("moveTable", args);
     table.animateTable(args.current);
   },
   undoAction: function(args) {
@@ -1979,36 +1990,55 @@ var SaveAll = function () {
         return SaveObject;
     }
 var ClearData = function() {
-  alert("Clear Data not yet defined!");
+  if(confirm("Are you sure you want to delete all the tables in this plan?")) {
+    if (myTables) {
+        for (var i = 0, l = myTables.length; i < l; i++) {
+            myTables[i].remove();
+        }
+    }
+    if (draggableGuests) {
+        for (var i = 0, l = draggableGuests.length; i < l; i++) {
+           //draggableGuests[i].remove();
+        }
+    }
+      if(socket) {
+    socket.emit('DeletePlanData', Controller.ac.WrapMessage());
+  } 
+  }
   
-  if (myTables) {
-      for (var i = 0, l = myTables.length; i < l; i++) {
-          myTables[i].remove();
-      }
-  }
-  if (draggableGuests) {
-      for (var i = 0, l = draggableGuests.length; i < l; i++) {
-         //draggableGuests[i].remove();
-      }
-  }
   
 }
 var LoadData = function (data) {
   var loadGuest = function (data) {
-        return new Guest(data.name, data.x, data.y, data.id);
+    return new Guest(data.name, data.x, data.y, data.id);
+        
   },
-      loadTable = function (data) {
-        return new RoundTable(data.x, data.y, data.seatCount, data.id);
+  loadTable = function (data) {
+      var table =  new RoundTable(data.x, data.y, data.seatCount, data.id);
+      return table;
   },
       loadDesk = function (data) {
         return new Desk(data.x, data.y, data.rotation, data.id);
   };
   if (data.tableList) {
       for (var i = 0, l = data.tableList.length; i < l; i++) {
+          var myTableData = data.tableList[i]
+              myTable = null;
           if (data.tableList[i].type === "desk") {
-              myTables.push(loadDesk(data.tableList[i]));
+            myTable = loadDesk(myTableData);
           } else if (data.tableList[i].type === "table") {
-              myTables.push(loadTable(data.tableList[i]));
+            myTable = loadTable(myTableData);
+          }
+          myTables.push(myTable);
+          if(myTableData.seatList) {
+            for(var i=0,l=myTableData.seatList.length;i<l;i++) {
+              var seat = myTableData.seatList[i];
+              if(seat && seat.guest[0]) {
+                var guest = seat.guest[0]; //Hack : needs to be property, not an array.
+                draggableGuests.push(loadGuest(guest));
+                Controller.PlaceGuestOnSeat(guest.id,seat.id);
+              } 
+            }
           }
       }
   }
@@ -2033,9 +2063,7 @@ if(socket) {
 var DeletePlanData = function() {
   console.log("Attempting to DeletePlanData")
   ClearData();
-  if(socket) {
-    socket.emit('DeletePlanData', Controller.ac.WrapMessage());
-  }
+ 
 }
 var Init = function () {
     MyToolBar = new ToolBar();
