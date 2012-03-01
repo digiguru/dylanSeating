@@ -1059,7 +1059,14 @@ Guest = function (name, x, y, id) {
             this.text.hide();
         }
     };
-
+    this.remove = function () {
+      this.graphic.stop();
+      this.graphic.animate({
+         opacity: "0"
+      }, 300, true, function () {
+         this.remove()
+      });
+    }
 
 
 
@@ -1998,7 +2005,7 @@ var ClearData = function() {
     }
     if (draggableGuests) {
         for (var i = 0, l = draggableGuests.length; i < l; i++) {
-           //draggableGuests[i].remove();
+           draggableGuests[i].remove();
         }
     }
       if(socket) {
