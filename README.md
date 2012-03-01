@@ -14,6 +14,55 @@ I have created a free Heroku to test the product.
 
 http://digiguru.herokuapp.com/
 
+Next Up Tasks
+=============
+
+ * Make the actions that go to and from the server a collection
+
+Future Ideas
+============
+
+ * 
+
+Development Milestones
+======================
+
+
+Dec 2011
+
+ * Learnt Rapheal
+ * Made a sandbox site
+ * Made desks movable
+ * Made desks rotatable
+ * Made seats removable
+ * Made toolbar to add / drag new things to the scene
+
+Jan 2012
+
+ * Made seats addable
+ * Draggable, rotatable guests
+ * Upgraded to Rapheal 2.0.1 (Thanks @demitrybaranovskiy)
+ * Animated most actions
+ * Used http://jsbeuautifier.org/ to format the code
+ * Z-Index fixes
+ * Performance
+ * Started to create a backend in Node.JS
+ * General refactoring
+ * Learnt socket.io
+
+ Feb 2011
+
+ * Learnt Node
+ * Learnt Mongo
+ * Added Sockets.io integration
+ * Released to Heroku
+ * Added momento pattern for undo ability
+ * Linked up to server
+ * Honoured the location object {x,y} rather than separated
+ * Added some awesome icons
+ * Stuck chairs to the desks (when they move)
+ * Added persistence to a single floor plan
+
 Help Wanted
 ===========
 
