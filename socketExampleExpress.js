@@ -211,7 +211,7 @@ io.sockets.on('connection', function (socket) {
         console.log("guest", guest);
         var guestOriginalSeat = GetSeat(savedPlan,message.data.guestOriginalSeat);
         console.log("guestOriginalSeat", guestOriginalSeat);
-        
+        savedPlan.guestList.remove(guest);
         if(guestOriginalSeat) {
           guestOriginalSeat.guest.remove(guest);
         }
