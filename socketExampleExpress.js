@@ -62,6 +62,9 @@ app.listen(port, function() {
 app.get('/', function (req, res) {
   res.sendfile(__dirname + '/socketExampleClient.html');
 });
+app.get('/jquery.js', function (req, res) {
+  res.sendfile(__dirname + '/jquery.js');
+});
 app.get('/raphael.2.0.1.js', function (req, res) {
   res.sendfile(__dirname + '/raphael.2.0.1.js');
 });

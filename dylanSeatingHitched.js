@@ -1,7 +1,13 @@
 //Dylan Seating Behaviour
 // By Adam Hall (pending license)
 
-
+/*
+ var animationExample = function() {
+  var def = new $.Deferred();
+  def.resolve;
+  return def;
+}
+*/
 // Array Remove - By John Resig (MIT Licensed)
 Array.prototype.remove = function (from, to) {
     var rest = this.slice((to || from) + 1 || this.length);
@@ -89,13 +95,13 @@ var controller = function() {
   //seatMarker
   this.ClickAddSeatAtPosition = function(table, seatNumber) {
     var data = {table: table.id, seatNumber: seatNumber};
-    Controller.ac.Call("AddSeatAtPosition",data);
+    return Controller.ac.Call("AddSeatAtPosition",data);
   };
   
   this.ClickSeatRemove = function(seat) {
     //var data = {seat: seat.id};
     var data = {table: seat.table.id, seatNumber: seat.seatNumber};
-    Controller.ac.Call("UndoAddSeatAtPosition",data);
+    return Controller.ac.Call("UndoAddSeatAtPosition",data);
   };
   this.CreateSeatAndPlaceGuest= function(guest, table, seatMarker) {
     guest = GetGuest(guest);
@@ -156,30 +162,36 @@ var controller = function() {
     lockY = mySeat.GetY();
     if (mySeat.isoccupied) {
         //model.swapWithGuestAt(mySeat);
-        var data = { guest1: model.id,  guest2: mySeat.guest.id }
-        Controller.ac.Call("SwapGuestWithGuest",data);
+        var data = { guest1: model.id,  guest2: mySeat.guest.id };
+        return Controller.ac.Call("SwapGuestWithGuest",data);
         
     } else if (mySeat.ismarker) {
         
-      var data = { table: mySeat.table.id, guest: model.id, seatMarker: mySeat.seatNumber }
-      Controller.ac.Call("PlaceGuestOnNewSeat",data);
-      
+      var data = { table: mySeat.table.id, guest: model.id, seatMarker: mySeat.seatNumber };
+      return Controller.ac.Call("PlaceGuestOnNewSeat",data);
+      /*
+      var defMaster = $.Deferred();
+      var def1 = Controller.ac.Call("AddSeatAtPosition", {table: mySeat.table.id, seatNumber: mySeat.seatNumber});
+      var def2 = Controller.ac.Call("PlaceGuestOnSeat", {guest: model.id, seat: mySeat.id, guestOriginalSeat: model.seat ? model.seat.id : null });
+      $.when(def1).done(function(){$.when(def2).done(defMaster.resolve);});
+      return defMaster.promise()
+      */
     } else {
       
-      var data = { guest: model.id, seat: mySeat.id, guestOriginalSeat: model.seat ? model.seat.id : null }
-      Controller.ac.Call("PlaceGuestOnSeat",data);
+      var data = { guest: model.id, seat: mySeat.id, guestOriginalSeat: model.seat ? model.seat.id : null };
+      return Controller.ac.Call("PlaceGuestOnSeat",data);
     }
   }
-
   var ActionController = function() {
     var cachedActions = [],
       UndoActions = [],
       RedoActions = [];
     this.WrapMessage = function(data) {
-      var plan = {_id: "4f3cc3345007734932000005"};
+      var plan = {_id: "4f3cc3345007734932000005"}; // Hack: Let's only deal with one floorplan for the time being!
       return {data: data, plan:plan};
     }
     this.Add = function(action) {
+      //var dfd = new $.Deferred();
       if(!cachedActions[action.name]) {
         action.oppositeName = "Undo" + action.name;
         cachedActions[action.name] = action;
@@ -194,11 +206,13 @@ var controller = function() {
         socket.on(action.name + "Response", function (data) {
           console.log(data);
           action.doAction(data);
+          //dfd.resolve;
           //Controller.CreateSeatAndPlaceGuest(data);
         });
         socket.on(action.oppositeName + "Response", function (data) {
           console.log(data);
           action.undoAction(data);
+          //dfd.resolve;
           //Controller.CreateSeatAndPlaceGuest(data);
         });
       }
@@ -206,36 +220,46 @@ var controller = function() {
     var getAction = function(actionName) {
       return cachedActions[actionName];
     };
+    
+    /*Deferred example*/
+    
     this.Call = function(actionName, args) {
-      
       var action = getAction(actionName);
-      this.CallWithoutHistory(actionName, args);
+      var dfd = this.CallWithoutHistory(actionName, args);
       UndoActions.push({name:actionName, oppositeName:action.oppositeName,  args:args});
+      return dfd;
     }
     this.CallWithoutHistory = function(actionName, args) {
+      var dfd = $.Deferred();
       console.log("Doing" + actionName, args);
       var action = getAction(actionName);
       if(action) {
         if(socket) {
-            socket.emit(action.name, this.WrapMessage(args));
+          socket.emit(action.name, this.WrapMessage(args), dfd.resolve);
+        } else {
+          dfd.resolve;
         }
         action.doAction(args);
         //UndoActions.push({action:actionName, args:args});
       } else {
         console.log("No such action.");
+        dfd.resolve({success:false,message:"No such action."});
       }
+      return dfd.promise(); 
     }
     this.Undo = function() {
       var action = UndoActions.pop();
       //If it starts with undo, let's remove it?
-      this.CallWithoutHistory(action.oppositeName, action.args);
+      var dfd = this.CallWithoutHistory(action.oppositeName, action.args);
       RedoActions.push(action);
+      return dfd;
     }
     this.Redo = function() {
       var action = RedoActions.pop();
       //If it doesn't start with Undo then we should add it?
-      this.CallWithoutHistory(action.name, action.args);
+      var dfd = this.CallWithoutHistory(action.name, action.args);
       UndoActions.push(action);
+      return dfd;
     }
   }
   //When creating an action you should be using the raw objects.
