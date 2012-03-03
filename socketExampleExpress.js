@@ -55,7 +55,7 @@ Seat.virtual('guest')
 //Table.add();
 //Plan.add();
 
-mongoose.connect('mongodb://localhost/digiguru_seating');
+mongoose.connect(process.env.MONGOLAB_URI);//'mongodb://localhost/digiguru_seating');
 
 mongoose.model('Guest', Guest);
 mongoose.model('Seat', Seat);
