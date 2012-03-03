@@ -44,7 +44,7 @@ Jan 2012
 
  * Made seats addable
  * Draggable, rotatable guests
- * Upgraded to Rapheal 2.0.1 (Thanks @demitrybaranovskiy)
+ * Upgraded to Rapheal 2.0.1 (Thanks @DmitryBaranovskiy)
  * Animated most actions
  * Used http://jsbeuautifier.org/ to format the code
  * Z-Index fixes
