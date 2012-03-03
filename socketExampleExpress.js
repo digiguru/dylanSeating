@@ -1,3 +1,13 @@
+
+/**
+ * @license DylanSeating v1
+ *
+ * (c) 2011-2012 by digiguru (Adam Hall)
+ *
+ * License: Creative Commons 3.0 (http://creativecommons.org/licenses/by-nc/3.0/)
+ **/
+
+
 var express = require('express'),
     app = express.createServer(express.logger()),
     io = require('socket.io').listen(app);

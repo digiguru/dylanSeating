@@ -1,13 +1,14 @@
-//Dylan Seating Behaviour
-// By Adam Hall (pending license)
 
-/*
- var animationExample = function() {
-  var def = new $.Deferred();
-  def.resolve;
-  return def;
-}
-*/
+/**
+ * @license DylanSeating v1
+ *
+ * (c) 2011-2012 by digiguru (Adam Hall)
+ *
+ * License: Creative Commons 3.0 (http://creativecommons.org/licenses/by-nc/3.0/)
+ **/
+
+
+
 // Array Remove - By John Resig (MIT Licensed)
 Array.prototype.remove = function (from, to) {
     var rest = this.slice((to || from) + 1 || this.length);
@@ -21,6 +22,7 @@ Array.prototype.insertAt = function (o, index) {
     }
     return false;
 };
+
 
 var controller = function() {
   var GetTableByID= function(id) {
