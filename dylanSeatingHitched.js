@@ -7,7 +7,7 @@
  * License: Creative Commons 3.0 (http://creativecommons.org/licenses/by-nc/3.0/)
  **/
 
-
+var myPlanID = "4f3cc3345007734932000005";
 
 // Array Remove - By John Resig (MIT Licensed)
 Array.prototype.remove = function (from, to) {
@@ -189,7 +189,7 @@ var controller = function() {
       UndoActions = [],
       RedoActions = [];
     this.WrapMessage = function(data) {
-      var plan = {_id: "4f3cc3345007734932000005"}; // Hack: Let's only deal with one floorplan for the time being!
+      var plan = {_id: myPlanID}; // Hack: Let's only deal with one floorplan for the time being!
       return {data: data, plan:plan};
     }
     this.Add = function(action) {
@@ -2041,6 +2041,24 @@ var ClearData = function() {
   
   
 }
+var RenderAllPlans = function(data) {
+  var summaryText = "Summary"
+  if(data.length !== 0) {
+    for(var i=0,l=data.length;i<l;i++) {
+      var summaryRow = "Unnamed plan (" + data[i].guestList.length + " guests " + data[i].tableList.length + " tables)";
+      console.log([data[i], summaryRow]);
+      myPlanID = data[i]._id;
+      summaryText += ". " + summaryRow
+    }
+    RequestPlan();//Hack - load last plan
+  } else {
+    SaveNewPlan(); 
+  }
+  console.log(summaryText);
+}
+var SaveNewPlan = function() {
+  alert("need to be able to save a new plan");
+}
 var LoadData = function (data) {
   var loadGuest = function (data) {
     return new Guest(data.name, data.x, data.y, data.id);
@@ -2087,11 +2105,21 @@ var RequestPlan = function() {
     socket.emit('GetPlan', Controller.ac.WrapMessage());
    }
 };
+var RequestPlanList = function() {
+   if(socket) {
+    socket.emit('GetPlanList');
+   }
+};
 if(socket) {
-   socket.on('GetPlanResponse', function (data) {
-      console.log(data);
-      LoadData(data)
-    });
+  socket.on('GetPlanResponse', function (data) {
+    console.log(data);
+    LoadData(data)
+  });
+  socket.on('GetPlanListResponse', function (data) {
+    console.log(data);
+    RenderAllPlans(data);
+    //LoadData(data)
+  });
 }
 var DeletePlanData = function() {
   console.log("Attempting to DeletePlanData")
@@ -2100,7 +2128,8 @@ var DeletePlanData = function() {
 }
 var Init = function () {
     MyToolBar = new ToolBar();
-    RequestPlan();
+    //RequestPlan();
+    RequestPlanList();
     logEvent("Finished Init");
 }();
 

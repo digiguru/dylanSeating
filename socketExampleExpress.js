@@ -155,37 +155,60 @@ var GetSeatByNumber = function(plan,seatNumber) {
   return null;
 };
 var GetPlan = function (session,onFoundPlan) {
-     // retrieve my model
-      var MyPlan = mongoose.model('Plan');   
-      // create a blog post
-      //var plan = new MyPlan();
-      console.log("finding plan");
-      console.log(session);
-      MyPlan.find(session,function(err,savedPlanList) {
-        if (err) {
-          console.log(err);
-        }else if (savedPlanList.length === 0) {
-          console.log("OOps - no plan saved with these params");
-        }else if (savedPlanList.length !== 1) {
-          console.log("OOps - multiple plans - wait that can't happen!");
-        } else {
-          console.log("Found Plan");
-          var savedPlan = savedPlanList[0];
-          console.log(savedPlan);
-          onFoundPlan(savedPlan);
-        }
-      });
-  };
-  
+  // retrieve my model
+  var MyPlan = mongoose.model('Plan');   
+  // create a blog post
+  //var plan = new MyPlan();
+  console.log("finding plan");
+  console.log(session);
+  MyPlan.find(session,function(err,savedPlanList) {
+    if (err) {
+      console.log(err);
+    }else if (savedPlanList.length === 0) {
+      console.log("OOps - no plan saved with these params");
+    }else if (savedPlanList.length !== 1) {
+      console.log("OOps - multiple plans - wait that can't happen!");
+    } else {
+      console.log("Found Plan");
+      var savedPlan = savedPlanList[0];
+      console.log(savedPlan);
+      onFoundPlan(savedPlan);
+    }
+  });
+};
+var GetPlanList = function(onFoundPlanList) {
+   // retrieve my model
+  var MyPlan = mongoose.model('Plan');   
+  // create a blog post
+  //var plan = new MyPlan();
+  console.log("finding all plans");
+  MyPlan.find({},function(err,savedPlanList) {
+    if (err) {
+      console.log(err);
+    }else if (savedPlanList.length === 0) {
+      console.log("List is empty.");
+    } else {
+      console.log("Found Plan");
+      console.log(savedPlanList);
+      onFoundPlanList(savedPlanList);
+    }
+  });
+};
 
-io.sockets.on('connection', function (socket) {
+io.sockets.on('connection', function SocketConnection(socket) {
   
+  socket.on('GetPlanList', function GetPlanListSocket (message) {
+    GetPlanList(function GetPlanListAction(savedPlanList) {  
+        // push table to our plan
+        socket.emit('GetPlanListResponse', savedPlanList);
+    });
+    console.log(message);
+  });
   
-  socket.on('GetPlan', function (message) {
+  socket.on('GetPlan', function GetPlanSocket (message) {
     GetPlan(message.plan,function GetPlanAction(savedPlan) {  
         // push table to our plan
         socket.emit('GetPlanResponse', savedPlan);
-        savedPlan.save();
     });
     console.log(message.data);
   });
