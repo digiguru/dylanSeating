@@ -2022,24 +2022,18 @@ var SaveAll = function () {
         }
         return SaveObject;
     }
+
 var ClearData = function() {
-  if(confirm("Are you sure you want to delete all the tables in this plan?")) {
-    if (myTables) {
-        for (var i = 0, l = myTables.length; i < l; i++) {
-            myTables[i].remove();
-        }
-    }
-    if (draggableGuests) {
-        for (var i = 0, l = draggableGuests.length; i < l; i++) {
-           draggableGuests[i].remove();
-        }
-    }
-      if(socket) {
-    socket.emit('DeletePlanData', Controller.ac.WrapMessage());
-  } 
+  if (myTables) {
+      for (var i = 0, l = myTables.length; i < l; i++) {
+          myTables[i].remove();
+      }
   }
-  
-  
+  if (draggableGuests) {
+      for (var i = 0, l = draggableGuests.length; i < l; i++) {
+         draggableGuests[i].remove();
+      }
+  }
 }
 var RenderAllPlans = function(data) {
   var summaryText = "Summary"
@@ -2049,6 +2043,9 @@ var RenderAllPlans = function(data) {
       console.log([data[i], summaryRow]);
       myPlanID = data[i]._id;
       summaryText += ". " + summaryRow
+      //$("#lstPlans").items.add()
+      $("#lstPlans").append($("<option>").attr({value:myPlanID,text:summaryRow}).append(summaryRow));
+      
     }
     RequestPlan();//Hack - load last plan
   } else {
@@ -2123,14 +2120,25 @@ if(socket) {
 }
 var DeletePlanData = function() {
   console.log("Attempting to DeletePlanData")
-  ClearData();
- 
+  if(confirm("Are you sure you want to delete all the tables in this plan?")) {
+    ClearData();
+   if(socket) {
+      socket.emit('DeletePlanData', Controller.ac.WrapMessage());
+    }
+  }
 }
 var Init = function () {
     MyToolBar = new ToolBar();
     //RequestPlan();
     RequestPlanList();
     logEvent("Finished Init");
+    $("#lstPlans").change(
+      function(o) {
+        console.log("Change option");
+        myPlanID = o.currentTarget.value;
+        ClearData();
+        RequestPlan(); 
+      });
 }();
 
 

@@ -12,6 +12,10 @@
     <script type="text/javascript" src="jquery.js"></script>
     <script type="text/javascript" src="raphael.2.0.1.js"></script>
     <script src="/socket.io/socket.io.js"></script>
+    <style>
+      #board { float:left; clear:none; width:900px;}
+      #sidebar { float:left; clear:none; width:100px;}
+    </style>
 <script>
   var socket = io.connect('/');
  
@@ -28,6 +32,10 @@
     
     <label>search your guest list:</label>
     <input type="text" value="search" />
+    <label>plans</label>
+    <select id="lstPlans">
+      
+    </select>
 </div>
     
     
