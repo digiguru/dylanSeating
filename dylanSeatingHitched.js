@@ -231,6 +231,7 @@ var controller = function() {
       UndoActions.push({name:actionName, oppositeName:action.oppositeName,  args:args});
       return dfd;
     }
+      
     this.CallWithoutHistory = function(actionName, args) {
       var dfd = $.Deferred();
       console.log("Doing" + actionName, args);
@@ -1085,13 +1086,24 @@ Guest = function (name, x, y, id) {
             this.text.hide();
         }
     };
+        
     this.remove = function () {
-      this.graphic.stop();
-      this.graphic.animate({
-         opacity: "0"
-      }, 300, true, function () {
-         this.remove()
-      });
+      var dfd = $.Deferred();
+      var contextModel = this;
+         
+      if(this.graphic) {
+        this.graphic.stop();
+        this.graphic.animate({
+           opacity: "0"
+        }, 300, true, function () {
+          this.remove();
+          contextModel.graphic = null;
+          dfd.resolve();
+            
+        });
+        
+      }
+      return dfd.promise(); 
     }
 
 
@@ -1280,13 +1292,25 @@ Guest = function (name, x, y, id) {
         this.isoccupied = false;
     };
     this.remove = function () {
+        console.log("delete seat");
+        var dfd = $.Deferred();
+        var contextModel = this;
+        
         this.RemoveGuest();
-        this.graphic.stop();
-        this.graphic.animate({
-            transform: "T0,0"
-        }, 300, true, function () {
-            this.remove()
-        });
+        if(this.graphic) {
+          
+          this.graphic.stop();
+          this.graphic.animate({
+              transform: "T0,0"
+          }, 300, true, function () {
+              console.log("destroy seat graphic");
+              this.remove();
+              contextModel.graphic = null;
+              dfd.resolve();
+          });
+        }
+
+        return dfd; 
     }
     this.RemoveGuest();
     seatList.push(this);
@@ -1403,12 +1427,24 @@ Guest = function (name, x, y, id) {
 
     };
     this.remove = function () {
+      var dfd = $.Deferred();
+      var contextModel = this;
+      console.log("delete seat marker");
+      if(this.graphic){
+        
         this.graphic.stop();
         this.graphic.animate({
             transform: "T0,0"
         }, 300, true, function () {
-            this.remove()
+            this.remove();
+            console.log("destroy seat marker graphic");
+            contextModel.graphic = null;
+            dfd.resolve();
+    
         });
+      }
+      return dfd; 
+        
     }
     this.graphic.mouseover(function (event) {
         Generic.Highlight(this);
@@ -1467,12 +1503,16 @@ RoundTable = function (x, y, seatCount, id) {
             var seatMarker = this.tableSeatAdditions[i];
             seatMarker.remove();
         }
-        this.graphic.stop();
-        this.graphic.animate({
-            opacity: "0"
-        }, 300, true, function () {
-            this.remove()
-        });
+        var contextualModel = this;
+        if(this.graphic) {
+          this.graphic.stop();
+          this.graphic.animate({
+              opacity: "0"
+          }, 300, true, function () {
+              this.remove();
+              contextualModel.graphic = null;
+          });
+        }
     }
     this.setGraphicPositionBase = Generic.SetShapeGraphicPosition;
 
