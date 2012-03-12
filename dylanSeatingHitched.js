@@ -208,13 +208,13 @@ var controller = function() {
         socket.on(action.name + "Response", function (data) {
           console.log(data);
           action.doAction(data);
-          //dfd.resolve;
+          //dfd.resolve();
           //Controller.CreateSeatAndPlaceGuest(data);
         });
         socket.on(action.oppositeName + "Response", function (data) {
           console.log(data);
           action.undoAction(data);
-          //dfd.resolve;
+          //dfd.resolve();
           //Controller.CreateSeatAndPlaceGuest(data);
         });
       }
@@ -229,7 +229,7 @@ var controller = function() {
       var action = getAction(actionName);
       var dfd = this.CallWithoutHistory(actionName, args);
       UndoActions.push({name:actionName, oppositeName:action.oppositeName,  args:args});
-      return dfd;
+      return dfd.promise();
     }
       
     this.CallWithoutHistory = function(actionName, args) {
@@ -240,7 +240,7 @@ var controller = function() {
         if(socket) {
           socket.emit(action.name, this.WrapMessage(args), dfd.resolve);
         } else {
-          dfd.resolve;
+          dfd.resolve();
         }
         action.doAction(args);
         //UndoActions.push({action:actionName, args:args});
@@ -255,14 +255,14 @@ var controller = function() {
       //If it starts with undo, let's remove it?
       var dfd = this.CallWithoutHistory(action.oppositeName, action.args);
       RedoActions.push(action);
-      return dfd;
+      return dfd.promise();
     }
     this.Redo = function() {
       var action = RedoActions.pop();
       //If it doesn't start with Undo then we should add it?
       var dfd = this.CallWithoutHistory(action.name, action.args);
       UndoActions.push(action);
-      return dfd;
+      return dfd.promise();
     }
   }
   //When creating an action you should be using the raw objects.
@@ -1310,7 +1310,7 @@ Guest = function (name, x, y, id) {
           });
         }
 
-        return dfd; 
+        return dfd.promise(); 
     }
     this.RemoveGuest();
     seatList.push(this);
@@ -1440,10 +1440,9 @@ Guest = function (name, x, y, id) {
             console.log("destroy seat marker graphic");
             contextModel.graphic = null;
             dfd.resolve();
-    
         });
       }
-      return dfd; 
+      return dfd.promise(); 
         
     }
     this.graphic.mouseover(function (event) {
@@ -1495,24 +1494,38 @@ RoundTable = function (x, y, seatCount, id) {
         };
     };
     this.remove = function () {
+        var dfdRemoveTable = $.Deferred();
+        var arrRemoveDFD = [];
+        
         for (var i = 0, l = this.tableSeatList.length; i < l; i++) {
             var seat = this.tableSeatList[i];
-            seat.remove();
+            arrRemoveDFD.push(seat.remove());
         };
-         for (var i = 0, l = this.tableSeatAdditions.length; i < l; i++) {
+        for (var i = 0, l = this.tableSeatAdditions.length; i < l; i++) {
             var seatMarker = this.tableSeatAdditions[i];
-            seatMarker.remove();
+            arrRemoveDFD.push(seatMarker.remove());
         }
-        var contextualModel = this;
-        if(this.graphic) {
-          this.graphic.stop();
-          this.graphic.animate({
-              opacity: "0"
-          }, 300, true, function () {
-              this.remove();
-              contextualModel.graphic = null;
-          });
-        }
+        $.when.apply($, arrRemoveDFD).done(function() {
+          console.log("removed all contents of table");
+          var contextualModel = this;
+          if(this.graphic) {
+            this.graphic.stop();
+            this.graphic.animate({
+                opacity: "0"
+            }, 300, true, function () {
+                this.remove();
+                contextualModel.graphic = null;
+                console.log("removed table");
+                dfdRemoveTable.resolve();
+                
+            });
+          } else {
+            console.log("no table to remove");
+            dfdRemoveTable.resolve();
+          }
+        });
+        
+        return dfdRemoveTable.promise();
     }
     this.setGraphicPositionBase = Generic.SetShapeGraphicPosition;
 
@@ -2064,9 +2077,11 @@ var SaveAll = function () {
     }
 
 var ClearData = function() {
+  var dfdRemoveAllData = $.Deferred();
+  var arrAllDataDFD = [];
   if (myTables) {
       for (var i = 0, l = myTables.length; i < l; i++) {
-          myTables[i].remove();
+          arrAllDataDFD.push(myTables[i].remove());
       }
   }
   if (draggableGuests) {
@@ -2074,6 +2089,9 @@ var ClearData = function() {
          draggableGuests[i].remove();
       }
   }
+  $.when.apply($, arrAllDataDFD).done(function() {console.log("removed all data from the scene. it is now clean"); dfdRemoveAllData.resolve();});
+        
+  return dfdRemoveAllData.promise();
 }
 var RenderAllPlans = function(data) {
   var summaryText = "Summary"
@@ -2138,6 +2156,7 @@ var LoadData = function (data) {
 };
 var MyToolBar;
 var RequestPlan = function() {
+  console.log(["Request new plan", Controller.ac.WrapMessage()]);
    if(socket) {
     socket.emit('GetPlan', Controller.ac.WrapMessage());
    }
@@ -2176,8 +2195,7 @@ var Init = function () {
       function(o) {
         console.log("Change option");
         myPlanID = o.currentTarget.value;
-        ClearData();
-        RequestPlan(); 
+        $.when(ClearData()).then(RequestPlan);
       });
 }();
 

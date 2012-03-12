@@ -330,9 +330,10 @@ io.sockets.on('connection', function SocketConnection(socket) {
     socket.broadcast.emit('AddTableResponse', message.data); 
     GetPlan(message.plan,function AddTableAction(savedPlan) {  
         var TableSchema = mongoose.model('Table');   
-      // create a blog post
+      // create a new table
         var myTable = new TableSchema();
         myTable = ReplaceProperties(myTable,message.data);
+        console.log("adding new table" + myTable);
         for (var i=0,l=message.data.seatCount;i<l;i++) {
             var SeatSchema = mongoose.model('Seat');
             var mySeat = new SeatSchema();
