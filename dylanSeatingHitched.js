@@ -377,15 +377,7 @@ this.ac.Add(
   {name: "AddTable",
   doAction: function(args) {
     LoadData({
-        tableList: [args/*
-                  {
-            id: args.id,
-            type: args.type,
-            x: args.x,
-            y: args.y,
-            seatCount: args.seatCount,
-            rotation: args.rotation
-        }*/]
+        tableList: [args]
     });
   },
   undoAction: function(args) {
@@ -750,7 +742,6 @@ ToolBar = function () {
                     if (!y) {
                         y = 400;
                     }
-                    
                     Controller.ac.Call("AddTable", {
                         id: Controller.NextTableID(), //Collisions possible...?
                         type: "desk",
@@ -758,6 +749,7 @@ ToolBar = function () {
                         y: y,
                         rotation: 90
                     });
+                    
                     
                     /*LoadData({
                         tableList: [{
@@ -1799,7 +1791,7 @@ RoundTable = function (x, y, seatCount, id) {
     roundValue: function (val, rounding) {
         return Math.round(val / rounding) * rounding;
     }
-}
+},
 Desk = function (x, y, rotation) {
     this.id = Controller.NextTableID();
     this.widthWithChairs = 30;
@@ -2132,7 +2124,7 @@ var LoadData = function (data) {
   };
   if (data.tableList) {
       for (var i = 0, l = data.tableList.length; i < l; i++) {
-          var myTableData = data.tableList[i]
+          var myTableData = data.tableList[i],
               myTable = null;
           if (data.tableList[i].type === "desk") {
             myTable = loadDesk(myTableData);
@@ -2141,8 +2133,8 @@ var LoadData = function (data) {
           }
           myTables.push(myTable);
           if(myTableData.seatList) {
-            for(var i=0,l=myTableData.seatList.length;i<l;i++) {
-              var seat = myTableData.seatList[i];
+            for(var i2=0,l2=myTableData.seatList.length;i2<l2;i2++) {
+              var seat = myTableData.seatList[i2];
               if(seat && seat.guest[0]) {
                 var guest = seat.guest[0]; //Hack : needs to be property, not an array.
                 draggableGuests.push(loadGuest(guest));
