@@ -1505,19 +1505,18 @@ RoundTable = function (x, y, seatCount, id) {
             var seatMarker = this.tableSeatAdditions[i];
             arrRemoveDFD.push(seatMarker.remove());
         }
+        var contextualModel = this;   
         $.when.apply($, arrRemoveDFD).done(function() {
           console.log("removed all contents of table");
-          var contextualModel = this;
-          if(this.graphic) {
-            this.graphic.stop();
-            this.graphic.animate({
+          if(contextualModel.graphic) {
+            contextualModel.graphic.stop();
+            contextualModel.graphic.animate({
                 opacity: "0"
             }, 300, true, function () {
                 this.remove();
                 contextualModel.graphic = null;
                 console.log("removed table");
                 dfdRemoveTable.resolve();
-                
             });
           } else {
             console.log("no table to remove");
@@ -2086,10 +2085,15 @@ var ClearData = function() {
   }
   if (draggableGuests) {
       for (var i = 0, l = draggableGuests.length; i < l; i++) {
-         draggableGuests[i].remove();
+         arrAllDataDFD.push(draggableGuests[i].remove());
       }
   }
-  $.when.apply($, arrAllDataDFD).done(function() {console.log("removed all data from the scene. it is now clean"); dfdRemoveAllData.resolve();});
+  $.when.apply($, arrAllDataDFD).done(function() {
+    myTables = [];
+    draggableGuests = [];
+    console.log("removed all data from the scene. it is now clean");
+    dfdRemoveAllData.resolve();
+  });
         
   return dfdRemoveAllData.promise();
 }
