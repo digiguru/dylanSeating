@@ -111,11 +111,12 @@ var GetGuest = function(plan,id) {
       }
     }
     for(var i=0,l=plan.tableList.length; i<l; i++) {
-    if(plan.tableList[i].seatList) {
-        for(var i2=0,l2=plan.tableList[i].seatList.length; i2<l2; i2++) {
-          if(plan.guestList[i].seatList[i2].guest && plan.guestList[i].seatList[i2].guest[0] && plan.guestList[i].seatList[i2].guest[0].id == id) {
+      var myTable = plan.tableList[i]
+      if(myTable.seatList) {
+        for(var i2=0,l2=myTable.seatList.length; i2<l2; i2++) {
+          if(myTable.seatList[i2].guest && myTable.seatList[i2].guest[0] && myTable.seatList[i2].guest[0].id == id) {
             //console.log(plan.guestList[i].seatList[i2]);
-            return plan.guestList[i].seatList[i2].guest[0];
+            return myTable.seatList[i2].guest[0];
           }
         }
       }
@@ -161,7 +162,7 @@ var GetPlan = function (session,onFoundPlan) {
   //var plan = new MyPlan();
   console.log("finding plan");
   console.log(session);
-  MyPlan.find(session,function(err,savedPlanList) {
+  MyPlan.find(session,function FoundPlan(err,savedPlanList) {
     if (err) {
       console.log(err);
     }else if (savedPlanList.length === 0) {
@@ -213,7 +214,7 @@ io.sockets.on('connection', function SocketConnection(socket) {
     console.log(message.data);
   });
   
-  socket.on('DeletePlanData', function (message) {
+  socket.on('DeletePlanData', function DeletePlanDataSocket(message) {
     console.log("DeletePlanData");
     GetPlan(message.plan,function DeletePlanDataAction(savedPlan) {  
         console.log("deltePlanData" + savedPlan);
@@ -225,18 +226,46 @@ io.sockets.on('connection', function SocketConnection(socket) {
     console.log(message.data);
   });
   
-  
-  socket.on('PlaceGuestOnNewSeat', function (message) {
+  socket.on('EditGuest', function EditGuestSocket(message,fn) {
+    console.log("EditGuest");
+    socket.broadcast.emit('EditGuestResponse', message.data);
+    
+    GetPlan(message.plan,function EditGuestSocketAction(savedPlan) {  
+        var guest = GetGuest(savedPlan,message.data.guest);
+        console.log("guest", guest);
+        ReplaceProperties(guest, message.data.current);
+        savedPlan.save();
+    });
+    
+    
+    console.log(message.data);
+    
+    fn();
+    
+    
+  });
+  socket.on('UndoEditGuest', function UndoEditGuestSocket(message) {
+    console.log("UndoEditGuest");
+    socket.broadcast.emit('UndoEditGuestResponse', message.data);
+    GetPlan(message.plan,function EditGuestSocketAction(savedPlan) {  
+        var guest = GetGuest(savedPlan,message.data.guest);
+        console.log("guest", guest);
+        ReplaceProperties(guest, message.data.previous);
+        savedPlan.save();
+    });
+    console.log(message.data);
+  });
+  socket.on('PlaceGuestOnNewSeat', function PlaceGuestOnNewSeatSocket(message) {
     console.log("PlaceGuestOnNewSeat");
     socket.broadcast.emit('PlaceGuestOnNewSeatResponse', message.data);
     console.log(message.data);
   });
-  socket.on('UndoPlaceGuestOnNewSeat', function (message) {
+  socket.on('UndoPlaceGuestOnNewSeat', function UndoPlaceGuestOnNewSeatSocket(message) {
     console.log("UndoPlaceGuestOnNewSeat");
     socket.broadcast.emit('UndoPlaceGuestOnNewSeatResponse', message.data);
     console.log(message.data);
   });
-  socket.on('PlaceGuestOnSeat', function (message) {
+  socket.on('PlaceGuestOnSeat', function PlaceGuestOnSeatSocket(message) {
     console.log("PlaceGuestOnSeat");
     socket.broadcast.emit('PlaceGuestOnSeatResponse', message.data);
     
@@ -261,7 +290,7 @@ io.sockets.on('connection', function SocketConnection(socket) {
     
     console.log(message.data);
   });
-  socket.on('UndoPlaceGuestOnSeat', function (message) {
+  socket.on('UndoPlaceGuestOnSeat', function UndoPlaceGuestOnSeatSocket(message) {
     console.log("UndoPlaceGuestOnSeat");
     socket.broadcast.emit('UndoPlaceGuestOnSeatResponse', message.data);
     
@@ -280,12 +309,12 @@ io.sockets.on('connection', function SocketConnection(socket) {
   
     console.log(message.data);
   });
-  socket.on('SwapGuestWithGuest', function (message) {
+  socket.on('SwapGuestWithGuest', function SwapGuestWithGuestSocket(message) {
     socket.broadcast.emit('SwapGuestWithGuestResponse', message.data); 
   
     console.log(message.data);
   });
-  socket.on('UndoSwapGuestWithGuest', function (message) {
+  socket.on('UndoSwapGuestWithGuest', function UndoSwapGuestWithGuestSocket(message) {
     socket.broadcast.emit('UndoSwapGuestWithGuestResponse', message.data); 
   
     console.log(message.data);
@@ -326,7 +355,7 @@ io.sockets.on('connection', function SocketConnection(socket) {
       console.log(message.data);
     });
   });
-  socket.on('AddTable', function (message) {
+  socket.on('AddTable', function AddTableSocket(message) {
     socket.broadcast.emit('AddTableResponse', message.data); 
     GetPlan(message.plan,function AddTableAction(savedPlan) {  
         var TableSchema = mongoose.model('Table');   
@@ -344,7 +373,7 @@ io.sockets.on('connection', function SocketConnection(socket) {
     });
     console.log(message.data);
   });
-  socket.on('UndoAddTable', function (message) {
+  socket.on('UndoAddTable', function UndoAddTableSocket(message) {
     socket.broadcast.emit('UndoAddTableResponse', message.data);
     GetPlan(message.plan,function RemoveTableAction(savedPlan) {  
         savedPlan.tableList.remove(message.data);
@@ -352,14 +381,15 @@ io.sockets.on('connection', function SocketConnection(socket) {
     });
     console.log(message.data);
   });
-  socket.on('AddGuest', function (message) {
+  socket.on('AddGuest', function AddGuestSocket(message,fn) {
     socket.broadcast.emit('AddGuestResponse', message.data); 
     GetPlan(message.plan,function AddGuestAction(savedPlan) {  
         savedPlan.guestList.push(message.data);
         savedPlan.save();
     });
+    fn();
   });
-  socket.on('UndoAddGuest', function (message) {
+  socket.on('UndoAddGuest', function UndoAddGuestSocket(message) {
     socket.broadcast.emit('UndoAddGuestResponse', message.data);
     GetPlan(message.plan,function RemoveTableAction(savedPlan) {  
         savedPlan.guestList.remove(message.data);
@@ -368,18 +398,18 @@ io.sockets.on('connection', function SocketConnection(socket) {
     console.log(message.data);
   });
   
-  socket.on('MoveTable', function (message) {
+  socket.on('MoveTable', function MoveTableSocket(message) {
     socket.broadcast.emit('MoveTableResponse', message.data);
-    GetPlan(message.plan,function MoveTable(savedPlan) {  
+    GetPlan(message.plan,function MoveTableAction(savedPlan) {  
         var Table = GetTable(savedPlan, message.data.table);
         Table = ReplaceProperties(Table, message.data.current);
         savedPlan.save();
     });
     console.log(message.data);
   });
-  socket.on('UndoMoveTable', function (message) {
+  socket.on('UndoMoveTable', function UndoMoveTableSocket(message) {
     socket.broadcast.emit('UndoMoveTableResponse', message.data); 
-    GetPlan(message.plan,function MoveTable(savedPlan) {  
+    GetPlan(message.plan,function UndoMoveTableAction(savedPlan) {  
         var Table = GetTable(savedPlan, message.data.table);
         Table = ReplaceProperties(Table, message.data.previous);
         savedPlan.save();

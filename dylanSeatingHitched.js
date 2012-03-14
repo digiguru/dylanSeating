@@ -225,11 +225,11 @@ var controller = function() {
     
     /*Deferred example*/
     
-    this.Call = function(actionName, args) {
+    this.Call = function(actionName, args, callback) {
       var action = getAction(actionName);
-      var dfd = this.CallWithoutHistory(actionName, args);
+      var dfdPromise = this.CallWithoutHistory(actionName, args, callback);
       UndoActions.push({name:actionName, oppositeName:action.oppositeName,  args:args});
-      return dfd.promise();
+      return dfdPromise;
     }
       
     this.CallWithoutHistory = function(actionName, args) {
@@ -238,7 +238,10 @@ var controller = function() {
       var action = getAction(actionName);
       if(action) {
         if(socket) {
-          socket.emit(action.name, this.WrapMessage(args), dfd.resolve);
+          socket.emit(action.name, this.WrapMessage(args), function() {
+              console.log("called" + actionName, args);
+              dfd.resolve();
+          });
         } else {
           dfd.resolve();
         }
@@ -418,6 +421,20 @@ this.ac.Add(
     table.animateTable(args.previous);
   }
 });
+this.ac.Add(
+  {name: "EditGuest",
+  doAction: function(args) {
+    guest = GetGuest(args.guest);
+    console.log("EditGuest", args);
+    guest.SetName(args.current.name);
+  },
+  undoAction: function(args) {
+    guest = GetTable(args.guest);
+    console.log("UndoEditGuest", args);
+    guest.SetName(args.previous.name);
+  }
+});
+
 
     
     
@@ -650,28 +667,19 @@ ToolBar = function () {
                 graphic: undefined,
                 type: "guest",
                 createObject: function (x, y) {
-                    
                     if (!x) {
                         x = 30;
                     }
                     if (!y) {
                         y = 30;
                     }
-                    Controller.ac.Call("AddGuest", {
+                    return Controller.ac.Call("AddGuest", {
                         id: Controller.NextGuestID(), //Collisions possible...?
                         name: "Example New Guest",
                         x: x,
                         y: y
                     });
-                    /*
-                    return LoadData({
-                        guestList: [{
-                            name: "Example New Guest",
-                            x: x,
-                            y: y
-                        }]
-                    });
-                    */
+                    
                 }
             };
             var guestSelect = paper.path(shapes.guest);
@@ -830,14 +838,16 @@ ToolBar = function () {
                     });
                 },
                 up = function () {
+                  
+                    var dfpCreateGuest;
                     var model = this.attr("model");
                     var inToolBox = MyToolBar.background.getBBox().x < model.GetX();
                     if (inToolBox) {
-                        model.createObject();
+                        dfpCreateGuest = model.createObject();
                     } else {
                         //model.ghost.remove();
                         //model.removeFromSeat();
-                        model.createObject(model.GetX(), model.GetY());
+                        dfpCreateGuest = model.createObject(model.GetX(), model.GetY());
                     }
                     this.animate({
                         "stroke-width": 2,
@@ -846,7 +856,11 @@ ToolBar = function () {
                         //oy: this.oy
                     }, animationTime);
                     model.setGraphicPosition({x:this.ox, y:this.oy});
-
+                  
+                    $.when(dfpCreateGuest).done(function() {
+                      ShowEditGuest(model);
+                    });
+                    
                 };
             item.drag(move, start, up);
         }
@@ -921,6 +935,12 @@ Guest = function (name, x, y, id) {
         stroke: colGuestStroke,
         model: this
     });
+    this.SetName = function(newName) {
+      
+      this.name = newName;
+      this.showHelpText(this.name);
+      
+    }
     this.graphic.mouseover(function (event) {
         Generic.Highlight(this, "black");
     });
@@ -1080,6 +1100,10 @@ Guest = function (name, x, y, id) {
     };
         
     this.remove = function () {
+      if (this.text) {
+        this.text.remove();
+        this.text = null;
+      }
       var dfd = $.Deferred();
       var contextModel = this;
          
@@ -1104,11 +1128,18 @@ Guest = function (name, x, y, id) {
     this.showHelpText(this.name);
     var //possibleSeats = [],
     start = function (event) {
+            //bring this model to the front
             this.toFront()
-            var model = this.attr("model");
-            model.startDrag();
             this.ox = this.attr("ox");
             this.oy = this.attr("oy");
+            
+            //get the model object
+            var model = this.attr("model");
+            
+            model.startDrag();
+            
+            ShowEditGuest(model);
+            
             possibleSeats = scene.GetCachedListOfSeatAreas();
             this.animate({
                 "stroke-width": 3,
@@ -2097,9 +2128,7 @@ var RenderAllPlans = function(data) {
       console.log([data[i], summaryRow]);
       myPlanID = data[i]._id;
       summaryText += ". " + summaryRow
-      //$("#lstPlans").items.add()
       $("#lstPlans").append($("<option>").attr({value:myPlanID,text:summaryRow}).append(summaryRow));
-      
     }
     RequestPlan();//Hack - load last plan
   } else {
@@ -2107,6 +2136,8 @@ var RenderAllPlans = function(data) {
   }
   console.log(summaryText);
 }
+
+
 var SaveNewPlan = function() {
   alert("need to be able to save a new plan");
 }
@@ -2182,6 +2213,47 @@ var DeletePlanData = function() {
     }
   }
 }
+
+var HideAllEditPanels = function() {
+  $("#editGuest").hide();
+  $("#editGuest").find("input").val("");
+  $("#editPlan").hide();
+  $("#editPlan").find("input").val("");
+  $("#txtGuestName").change(function(e) {
+    
+    var previousGuest = { name: selectedGuestEdit.name};
+    var currentGuest = { name: $(e.currentTarget).val()};
+    if(previousGuest.name !== currentGuest.name) {
+          Controller.ac.Call("EditGuest",
+          {
+           guest:selectedGuestEdit.id,
+           previous:previousGuest,
+           current:currentGuest//{x:model.GetX(),y:model.GetY(),r:model.rotation}
+          });
+    }
+    
+    //selectedGuestEdit.SetName();
+    //console.log([e,a]);
+  });
+  $("#txtPlanName").change(function(e) {
+    //selectedGuestEdit.SetName($(e.currentTarget).val());
+    //console.log([e,a]);
+  });
+};
+var selectedGuestEdit;
+var ShowEditGuest = function(guest) {
+  selectedGuestEdit = guest;
+  HideAllEditPanels();
+  $("#editGuest").show();
+  $("#txtGuestName").val(guest.name);
+};
+var ShowEditPlan = function(plan) {
+  HideAllEditPanels();
+  $("#editPlan").show();
+  $("#txtPlanName").val(plan.name);
+};
+
+
 var Init = function () {
     MyToolBar = new ToolBar();
     //RequestPlan();
@@ -2193,9 +2265,9 @@ var Init = function () {
         myPlanID = o.currentTarget.value;
         $.when(ClearData()).then(RequestPlan);
       });
+    HideAllEditPanels();
+    
 }();
-
-
 
 var exampleSave = {
     guestList: [{
