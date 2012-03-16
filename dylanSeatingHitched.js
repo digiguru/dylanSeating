@@ -1223,11 +1223,10 @@ Guest = function (name, x, y, id) {
             y: this.GetY()
         };
     }
-}, Seat = function (x, y, rotation, table, seatNumber) {
+}, Seat = function (x, y, rotation, table, seatNumber, id) {
     logEvent("Create Seat");
 
-        this.id = Controller.NextSeatID();
-
+    this.id = id ? id : Controller.NextSeatID();
     this.table = table;
     this.rotation = rotation;
 
@@ -1262,9 +1261,7 @@ Guest = function (name, x, y, id) {
             y: y
         }
     }
-
-
-
+    
     this.SetBaseRotation = Generic.SetRotation;
     this.setGraphicPositionBase = Generic.SetRelativeGraphicPosition;
 
@@ -1497,10 +1494,10 @@ Guest = function (name, x, y, id) {
     return "M" + point1.x + " " + point1.y + " L " + point1.x + " " + point1.y + " A " + radius + " " + radius + " 0 0 1 " + point2.x + " " + point2.y;
 },
 
-RoundTable = function (x, y, seatCount, id) {
+RoundTable = function (x, y, seatCount, seatList, id) {
     this.id = id ? id : Controller.NextTableID();
     logEvent("Create RoundTable");
-    this.seatCount = seatCount;
+    this.seatCount = seatCount >= seatList.length ? seatCount : seatList.length;
     this.GetX = Generic.ShapeGetX;
     this.GetY = Generic.ShapeGetY;
     this.GetLocation = function () {
@@ -1669,6 +1666,17 @@ RoundTable = function (x, y, seatCount, id) {
         this.seatSet.push(mySeatMarker.graphic);
 
     };
+    this.addKnownSeat = function (seat) {
+        var mySeat = new Seat(0, 0, 0, this, seat.seatNumber, seat.id);
+        var mySeatMarker = new SeatMarker(0, 0, this, seat.seatNumber, 0);
+
+        this.tableSeatList.push(mySeat);
+        this.tableSeatAdditions.push(mySeatMarker);
+
+        this.seatSet.push(mySeat.graphic);
+        this.seatSet.push(mySeatMarker.graphic);
+
+    };
     this.addSeatFromMarker = function (markerNumber) {
         var mySeat = new Seat(0, 0, 0, this, markerNumber);
         var mySeatMarker = new SeatMarker(0, 0, this, markerNumber, 0);
@@ -1713,11 +1721,23 @@ RoundTable = function (x, y, seatCount, id) {
             this.placeSeatMarker();
         }
     };
-    for (var t = 0; t < this.seatCount; t++) {
-        this.addSeat(t);
-        this.placeSeat(t);
-        this.placeSeatMarker(t);    
+    //If we havn't got any seat data, let's add the seats automatically from the count.
+    //if(seatList.length !== this.seatCount) {
+    
+    for (var i = 0, l=this.seatCount; i<l; i++) {
+      if(seatList && seatList[i]) {
+        this.addKnownSeat(seatList[i]);
+      } else {
+        this.addSeat(i);
+      }
+      this.placeSeat(i);
+      this.placeSeatMarker(i);    
     }
+    
+    
+    
+    //}
+    
 
     var
     start = function (event) {
@@ -2147,7 +2167,7 @@ var LoadData = function (data) {
         
   },
   loadTable = function (data) {
-      var table =  new RoundTable(data.x, data.y, data.seatCount, data.id);
+      var table =  new RoundTable(data.x, data.y, data.seatCount, data.seatList, data.id);
       return table;
   },
       loadDesk = function (data) {

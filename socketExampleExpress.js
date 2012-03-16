@@ -25,7 +25,7 @@ var Guest = new Schema({
  Seat = new Schema({
   id        : { type: Number, index: true },
   seatNumber: Number,
-  guest     : [Guest] //HACK - not correct - needs to be single, not array.
+  guest     : [Guest] //HACK - not correct - needs to be single, not array. Stupid MongoDB
 //  guest     : { type: Guest} 
 }),
     Table = new Schema({
@@ -127,8 +127,11 @@ var GetSeat = function(plan,id) {
   console.log("GetSeat" + id);
   if(plan.tableList) {
     for(var i=0,l=plan.tableList.length; i<l; i++) {
+      console.log("... checking table " + i);
       if(plan.tableList[i].seatList) {
         for(var i2=0,l2=plan.tableList[i].seatList.length; i2<l2; i2++) {
+          console.log("...    checking seat " + i2 + " with ID " + plan.tableList[i].seatList[i2].id);
+
           if(plan.tableList[i].seatList[i2].id == id) {
             //console.log(plan.tableList[i].seatList[i2]);
             return plan.tableList[i].seatList[i2];
