@@ -392,15 +392,7 @@ this.ac.Add(
   {name: "AddGuest",
   doAction: function(args) {
     LoadData({
-        guestList: [args/*
-                  {
-            id: args.id,
-            type: args.type,
-            x: args.x,
-            y: args.y,
-            seatCount: args.seatCount,
-            rotation: args.rotation
-        }*/]
+        guestList: [args]
     });
   },
   undoAction: function(args) {
@@ -713,16 +705,6 @@ ToolBar = function () {
                         seatCount: 5
                     });
                     
-                    /*
-                    return LoadData({
-                        tableList: [{
-                            type: "table",
-                            x: x,
-                            y: y,
-                            seatCount: 5
-                        }]
-                    });
-                    */
                 }
             };
             var tableSelect = paper.circle(0, 0, 20);
@@ -757,16 +739,6 @@ ToolBar = function () {
                         y: y,
                         rotation: 90
                     });
-                    
-                    
-                    /*LoadData({
-                        tableList: [{
-                            type: "desk",
-                            x: x,
-                            y: y,
-                            rotation: 90
-                        }]
-                    });*/
                     
                 }
             };
