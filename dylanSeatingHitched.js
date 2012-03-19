@@ -1223,7 +1223,7 @@ Guest = function (name, x, y, id) {
             y: this.GetY()
         };
     }
-}, Seat = function (x, y, rotation, table, seatNumber, id) {
+}, Seat = function (x, y, rotation, table, seatNumber, id, guest) {
     logEvent("Create Seat");
 
     this.id = id ? id : Controller.NextSeatID();
@@ -1667,7 +1667,7 @@ RoundTable = function (x, y, seatCount, seatList, id) {
 
     };
     this.addKnownSeat = function (seat) {
-        var mySeat = new Seat(0, 0, 0, this, seat.seatNumber, seat.id);
+        var mySeat = new Seat(0, 0, 0, this, seat.seatNumber, seat.id, seat.guest);
         var mySeatMarker = new SeatMarker(0, 0, this, seat.seatNumber, 0);
 
         this.tableSeatList.push(mySeat);
@@ -2164,14 +2164,13 @@ var SaveNewPlan = function() {
 var LoadData = function (data) {
   var loadGuest = function (data) {
     return new Guest(data.name, data.x, data.y, data.id);
-        
   },
   loadTable = function (data) {
       var table =  new RoundTable(data.x, data.y, data.seatCount, data.seatList, data.id);
       return table;
   },
-      loadDesk = function (data) {
-        return new Desk(data.x, data.y, data.rotation, data.id);
+  loadDesk = function (data) {
+      return new Desk(data.x, data.y, data.rotation, data.id);
   };
   if (data.tableList) {
       for (var i = 0, l = data.tableList.length; i < l; i++) {
@@ -2186,7 +2185,7 @@ var LoadData = function (data) {
           if(myTableData.seatList) {
             for(var i2=0,l2=myTableData.seatList.length;i2<l2;i2++) {
               var seat = myTableData.seatList[i2];
-              if(seat && seat.guest[0]) {
+              if(seat && seat.guest && seat.guest[0]) {
                 var guest = seat.guest[0]; //Hack : needs to be property, not an array.
                 draggableGuests.push(loadGuest(guest));
                 Controller.PlaceGuestOnSeat(guest.id,seat.id);
