@@ -109,8 +109,12 @@ var controller = function() {
     guest = GetGuest(guest);
     table = GetTable(table);
     seatMarker = GetSeatMarker(table, seatMarker);
+    console.log("converting marker to seat");
     seatMarker = seatMarker.convertToSeat();
-    guest.moveToSeat(seatMarker);
+    $.when(seatMarker.table.dfdPromise).then(function() {
+      console.log("place guest on new seat");
+      guest.moveToSeat(seatMarker);      
+    });
   }; 
   this.PlaceGuestOnSeat= function(guest, seat) {
     guest = GetGuest(guest);
@@ -891,7 +895,7 @@ ToolBar = function () {
           alert(link)
         }
         
-    }
+    },
 Guest = function (name, x, y, id) {
     this.id = id ? id : Controller.NextGuestID();
     logEvent("Create Guest");
@@ -1195,7 +1199,9 @@ Guest = function (name, x, y, id) {
             y: this.GetY()
         };
     }
-}, Seat = function (x, y, rotation, table, seatNumber, id, guest) {
+},
+
+Seat = function (x, y, rotation, table, seatNumber, id, guest) {
     logEvent("Create Seat");
 
     this.id = id ? id : Controller.NextSeatID();
@@ -1521,6 +1527,7 @@ RoundTable = function (x, y, seatCount, seatList, id) {
     this.setGraphicPositionBase = Generic.SetShapeGraphicPosition;
 
     this.setGraphicPosition = function (pointTo, pointFrom) {
+        var dfd = $.Deferred();
         if (pointFrom) {
             //var fixedPointTo = {x:pointTo.x - (this.width/2), y:pointTo.y - (this.width/2)};
             var fixedPointTo = {x:pointTo.x, y:pointTo.y};
@@ -1537,12 +1544,14 @@ RoundTable = function (x, y, seatCount, seatList, id) {
                     model.placeSeat(t);
                     model.placeSeatMarker(t);    
                 }
-               
+                dfd.resolve();
             });
             
         } else {
             this.setGraphicPositionBase(pointTo);
+            dfd.resolve();
         }
+        return dfd.promise();
     };
     this.width = seatCount * 10;
     this.widthWithChairs = this.width + 20;
@@ -1569,6 +1578,7 @@ RoundTable = function (x, y, seatCount, seatList, id) {
         };
     }
     this.placeSeat = function (seatNumber) {
+        var dfdPromise;
         var obj = this.caclulateClockworkValues(this.seatCount, seatNumber),
             moveToSeatLoc = {
                 x: obj.x,
@@ -1578,7 +1588,7 @@ RoundTable = function (x, y, seatCount, seatList, id) {
             mySeat = this.tableSeatList[seatNumber],
             moveFromSeatLoc = mySeat.GetLoc() ? mySeat.GetLoc() : (this.lastSeatMarkerLoc ? this.lastSeatMarkerLoc : this.GetTwelve());
         //mySeat.setGraphicPosition(obj);
-        mySeat.setGraphicPosition(moveToSeatLoc, moveFromSeatLoc);
+        dfdPromise = mySeat.setGraphicPosition(moveToSeatLoc, moveFromSeatLoc);
         //mySeat.SetRotation(obj.alpha);
         mySeat.seatNumber = seatNumber;
         this.lastSeatLoc = mySeat.GetLoc();
@@ -1586,6 +1596,7 @@ RoundTable = function (x, y, seatCount, seatList, id) {
             fromTableX: moveToSeatLoc.x,
             fromTableY: moveToSeatLoc.y
         });
+        return dfdPromise;
     }
     this.lastSeatMarkerLoc = null;
     this.lastSeatLoc = null;
@@ -1660,22 +1671,17 @@ RoundTable = function (x, y, seatCount, seatList, id) {
 
         } else {
             this.tableSeatList.insertAt(mySeat, 0);
-
         }
         this.seatSet.push(mySeat.graphic);
         this.seatSet.push(mySeatMarker.graphic);
 
-        this.seatCount = this.tableSeatList.length;
-        for (var t = 0, l = this.tableSeatList.length; t < l; t++) {
-            this.placeSeat(t);
-            this.placeSeatMarker(t);
-        }
+        this.renderSeats();
+        
         return mySeat;
     };
     this.removeSeat = function (index) {
         logEvent("remove seat" + index);
-        var isLastSeat = (this.tableSeatList.length === 1);
-
+        
         this.tableSeatList[index].remove();
         this.tableSeatList.remove(index);
 
@@ -1684,33 +1690,41 @@ RoundTable = function (x, y, seatCount, seatList, id) {
             this.tableSeatAdditions.remove(index);
         }
 
-        this.seatCount = this.tableSeatList.length;
-        for (var t = 0, l = this.tableSeatList.length; t < l; t++) {
-            this.placeSeat(t);
-            this.placeSeatMarker(t);
-        }
-        if (isLastSeat) {
-            this.placeSeatMarker();
-        }
+        this.renderSeats();
+       
     };
-    //If we havn't got any seat data, let's add the seats automatically from the count.
-    //if(seatList.length !== this.seatCount) {
-    
+    this.renderSeats = function () {
+      var dfd = $.Deferred();
+      var arrAllSeatsDFD = [];
+  
+      this.seatCount = this.tableSeatList.length;
+      var isLastSeat = (this.seatCount === 1)
+      for (var  t = 0,
+                l = this.tableSeatList.length; t < l; t++) {
+          arrAllSeatsDFD.push(this.placeSeat(t));
+          this.placeSeatMarker(t);
+      }
+      if (isLastSeat) {
+          this.placeSeatMarker();
+      }
+      $.when.apply($, arrAllSeatsDFD).done(
+                                           function() {
+                                              console.log("all done with seat processing");
+                                              dfd.resolve();
+                                            }
+                                          );
+      return dfd.promise();
+    };
     for (var i = 0, l=this.seatCount; i<l; i++) {
       if(seatList && seatList[i]) {
         this.addKnownSeat(seatList[i]);
       } else {
         this.addSeat(i);
-      }
-      this.placeSeat(i);
-      this.placeSeatMarker(i);    
-    }
+      }  
+    };
     
+    this.dfdPromise = this.renderSeats();
     
-    
-    //}
-    
-
     var
     start = function (event) {
             var model = this.attr("model");
@@ -1802,7 +1816,9 @@ RoundTable = function (x, y, seatCount, seatList, id) {
             seatList: seatObject
         };
     };
-}, MathHelper = {
+},
+
+MathHelper = {
     calculateAngle: function (center, point) {
         var twelveOClock = {
             x: center.x,
@@ -1815,6 +1831,7 @@ RoundTable = function (x, y, seatCount, seatList, id) {
         return Math.round(val / rounding) * rounding;
     }
 },
+
 Desk = function (x, y, rotation) {
     this.id = Controller.NextTableID();
     this.widthWithChairs = 30;
@@ -1920,8 +1937,7 @@ Desk = function (x, y, rotation) {
         stroke: colTableStroke,
         model: this
     });
-    var
-    rotationstart = function (event) {
+    var rotationstart = function (event) {
             logEvent("StartRotation Desk");
             var model = this.attr("model");
             model.previousPosition = model.GetLocation();//{x:model.GetX(),y:model.GetY(),r:model.rotation}
@@ -1956,7 +1972,7 @@ Desk = function (x, y, rotation) {
                {
                 table:model.id,
                 previous:model.previousPosition,
-                current:model.GetLocation()//{x:model.GetX(),y:model.GetY(),r:model.rotation}
+                current:model.GetLocation()
                });
         };
     this.rotationHandle.drag(rotationmove, rotationstart, rotationup);
@@ -2154,16 +2170,20 @@ var LoadData = function (data) {
             myTable = loadTable(myTableData);
           }
           myTables.push(myTable);
-          if(myTableData.seatList) {
-            for(var i2=0,l2=myTableData.seatList.length;i2<l2;i2++) {
-              var seat = myTableData.seatList[i2];
-              if(seat && seat.guest && seat.guest[0]) {
-                var guest = seat.guest[0]; //Hack : needs to be property, not an array.
-                draggableGuests.push(loadGuest(guest));
-                Controller.PlaceGuestOnSeat(guest.id,seat.id);
-              } 
-            }
+          if(myTable.dfdPromise && myTableData.seatList) {
+            $.when(myTable.dfdPromise).then(function() {
+                for(var i2=0,l2=myTableData.seatList.length;i2<l2;i2++) {
+                  var seat = myTableData.seatList[i2];
+                  if(seat && seat.guest && seat.guest[0]) {
+                    var guest = seat.guest[0]; //Hack : needs to be property, not an array.
+                    draggableGuests.push(loadGuest(guest));
+                    Controller.PlaceGuestOnSeat(guest.id,seat.id);
+                  } 
+                }
+              }
+            )
           }
+          
       }
   }
   if (data.guestList) {
@@ -2192,7 +2212,6 @@ if(socket) {
   socket.on('GetPlanListResponse', function (data) {
     console.log(data);
     RenderAllPlans(data);
-    //LoadData(data)
   });
 }
 var DeletePlanData = function() {
