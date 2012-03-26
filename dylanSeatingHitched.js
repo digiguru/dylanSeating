@@ -995,6 +995,8 @@ Guest = function (name, x, y, id) {
                 });
                 this.model.moveGhostToNewLocation();
                 this.model.showHelpText(this.model.name);
+                this.model.SetRotation(rotation);
+            
             });
         }
 
