@@ -17,6 +17,7 @@ http://digiguru.herokuapp.com/
 Next Up Tasks
 =============
 
+ * Fix some of the glitches like moving a guest to a seat marker going out of sync
  * Make the actions that go to and from the server a collection
 
 Future Ideas
@@ -53,7 +54,7 @@ Jan 2012
  * General refactoring
  * Learnt socket.io
 
- Feb 2011
+Feb 2012
 
  * Learnt Node
  * Learnt Mongo
@@ -65,6 +66,17 @@ Jan 2012
  * Added some awesome icons
  * Stuck chairs to the desks (when they move)
  * Added persistence to a single floor plan
+
+Mar 2012
+
+ * Chose a creative commons license
+ * Made a dropdown to select multiple plans
+ * Sorted out alot of the inconsistencies in fully loading & clearing data
+ * Learnt jQuery Deferred pattern
+ * Deferred resolve on object load
+ * Deferred resolve on object remove
+ * Made guests nameable
+ * Refactoring
 
 Help Wanted
 ===========

@@ -110,10 +110,10 @@ var controller = function() {
     table = GetTable(table);
     seatMarker = GetSeatMarker(table, seatMarker);
     console.log("converting marker to seat");
-    seatMarker = seatMarker.convertToSeat();
-    $.when(seatMarker.table.dfdPromise).then(function() {
-      console.log("place guest on new seat");
-      guest.moveToSeat(seatMarker);      
+    var seat = seatMarker.convertToSeat();
+    $.when(seat.table.dfdPromise).then(function() {
+      console.log("Finished creating seat - now place guest on new seat");
+      guest.moveToSeat(seat);      
     });
   }; 
   this.PlaceGuestOnSeat= function(guest, seat) {
@@ -317,8 +317,13 @@ this.ac.Add(
         table = GetTable(args.table),
         seatMarker = GetSeatMarker(table, args.seatMarker);
     
-    seatMarker = seatMarker.convertToSeat();
-    guest.moveToSeat(seatMarker);
+    var seat = seatMarker.convertToSeat();
+    console.log("Convert to new seat from place guest on new seat");
+    $.when(seat.table.dfdPromise).then(function() {
+      console.log("DONE! - Convert to new seat from place guest on new seat");
+       guest.moveToSeat(seat);
+    });
+   
     
   },
   undoAction: function(args) {
@@ -1259,27 +1264,36 @@ Seat = function (x, y, rotation, table, seatNumber, id, guest) {
         this.l = this.GetX() - dragThreshold;
     };
     this.setGraphicPosition = function (pointTo, pointFrom) {
+      var dfd = $.Deferred();
         if (pointFrom) {
             var mypath = PathGenerateCircularArc(pointFrom, pointTo, this.table.widthWithChairs);
             this.setGraphicPositionCore(pointFrom);
             this.graphic.animate({
                 transform: "t" + pointTo.x + "," + pointTo.y + "R" + pointTo.r
             }, 300, true, function () {
+                
                 this.attr("model").setGraphicPositionCore(pointTo);
                 this.attr("model").SetRotation(pointTo.r);
+                console.log("placed seat");
+                dfd.resolve();
             });
-            if (this.guest) {
+            /*DONT THINK THIS IS USED ANYMORE
+             if (this.guest) {
                 this.guest.graphic.animate({
                     transform: "t" + pointTo.x + "," + pointTo.y + "R" + pointTo.r
                 }, 300, true, function () {
+                    console.log("seat has a guest - done the guest too");
                     this.attr("model").setGraphicPositionCore(pointTo);
                     this.attr("model").SetRotation(pointTo.r);
                 });
-            }
+            }*/
+            
 
         } else {
             this.setGraphicPositionCore(pointTo);
+            dfd.resolve();
         }
+        return dfd.promise();
     };
 
     this.RemoveGuest = function () {
@@ -1713,7 +1727,8 @@ RoundTable = function (x, y, seatCount, seatList, id) {
                                               dfd.resolve();
                                             }
                                           );
-      return dfd.promise();
+      this.dfdPromise = dfd.promise();
+      return this.dfdPromise;
     };
     for (var i = 0, l=this.seatCount; i<l; i++) {
       if(seatList && seatList[i]) {
