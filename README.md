@@ -17,8 +17,11 @@ http://digiguru.herokuapp.com/
 Next Up Tasks
 =============
 
- * Fix some of the glitches like moving a guest to a seat marker going out of sync
  * Make the actions that go to and from the server a collection
+   Basically all functions that go to and from the server are
+   single objects - "PlaceGuestOnNewSeat" will create a new
+   seat and then place a guest on it - really it should be a
+   collection of ["CreateNewSeat", "MoveGuestToSeat"]
 
 Future Ideas
 ============
