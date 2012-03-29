@@ -172,9 +172,20 @@ var controller = function() {
         return Controller.ac.Call("SwapGuestWithGuest",data);
         
     } else if (mySeat.ismarker) {
+      var callCreateGuest = {
+        actionName: "AddSeatAtPosition",
+        args: {table: mySeat.table.id, seatNumber: mySeat.seatNumber}
+      }
+
+      var callGuestOnSeat = {
+        actionName: "PlaceGuestOnSeat",
+        args: { guest: model.id, seat: mySeat.id, guestOriginalSeat: model.seat ? model.seat.id : null }
+      }
+      return Controller.ac.CallMultiple([callCreateGuest,callGuestOnSeat]);
         
-      var data = { table: mySeat.table.id, guest: model.id, seatMarker: mySeat.seatNumber };
-      return Controller.ac.Call("PlaceGuestOnNewSeat",data);
+        
+      //var data = { table: mySeat.table.id, guest: model.id, seatMarker: mySeat.seatNumber };
+      //return Controller.ac.Call("PlaceGuestOnNewSeat",data);
       /*
       var defMaster = $.Deferred();
       var def1 = Controller.ac.Call("AddSeatAtPosition", {table: mySeat.table.id, seatNumber: mySeat.seatNumber});
@@ -227,8 +238,16 @@ var controller = function() {
       return cachedActions[actionName];
     };
     
-    /*Deferred example*/
+    this.CallMultiple = function(arrActionList) {
+      var dfdPromiseList = [];
+      for(var i=0, l=arrActionList.length; i<l; i++) {
+        
+        dfdPromiseList.push(this.Call(arrActionList[i].actionName,arrActionList[i].args,arrActionList[i].callback));
+      }
+      return dfdPromiseList;
+    }
     
+    /*Deferred example*/
     this.Call = function(actionName, args, callback) {
       var action = getAction(actionName);
       var dfdPromise = this.CallWithoutHistory(actionName, args, callback);

@@ -158,6 +158,20 @@ var GetSeatByNumber = function(plan,seatNumber) {
   }
   return null;
 };
+var AddPlan = function(newPlan, onAddedPlan) {
+  console.log("AddPlan");
+  console.log(newPlan);
+  //GetPlanList(function AddPlanToList() {
+  var PlanSchema = mongoose.model('Plan');
+  var myPlan = new PlanSchema();
+  ReplaceProperties(myPlan,newPlan);
+  myPlan.save();
+  console.log("Saved");
+  var savedPlanList = [myPlan];
+  console.log(savedPlanList);
+  onAddedPlan(savedPlanList);
+  //});
+}
 var GetPlan = function (session,onFoundPlan) {
   // retrieve my model
   var MyPlan = mongoose.model('Plan');   
@@ -186,11 +200,18 @@ var GetPlanList = function(onFoundPlanList) {
   // create a blog post
   //var plan = new MyPlan();
   console.log("finding all plans");
-  MyPlan.find({},function(err,savedPlanList) {
+  MyPlan.find({},function getPlanListFoundPlan(err,savedPlanList) {
     if (err) {
       console.log(err);
+      onFoundPlanList(null);
     }else if (savedPlanList.length === 0) {
       console.log("List is empty.");
+      AddPlan({},function OnCompleteAddPlan(newlyGeneratedList) {
+        console.log("OnCompleteAddPlan");
+        console.log(newlyGeneratedList);
+        onFoundPlanList(newlyGeneratedList);
+      });
+      //onFoundPlanList(savedPlanList);
     } else {
       console.log("Found Plan");
       console.log(savedPlanList);
@@ -198,12 +219,20 @@ var GetPlanList = function(onFoundPlanList) {
     }
   });
 };
-
+var MakeMissingSeats = function(myTable, seatCount) {
+  if(!myTable.seatList || !myTable.seatList.length === 0) {
+    for (var i=0,l=seatCount;i<l;i++) {
+        var SeatSchema = mongoose.model('Seat');
+        var mySeat = new SeatSchema();
+        myTable.seatList.push(ReplaceProperties(mySeat,{id:i,seatNumber:i}));
+    }
+  }
+}
 io.sockets.on('connection', function SocketConnection(socket) {
   
   socket.on('GetPlanList', function GetPlanListSocket (message) {
     GetPlanList(function GetPlanListAction(savedPlanList) {  
-        // push table to our plan
+        // return all the plans in the system. If it's empty then create a new plan!
         socket.emit('GetPlanListResponse', savedPlanList);
     });
     console.log(message);
@@ -211,7 +240,7 @@ io.sockets.on('connection', function SocketConnection(socket) {
   
   socket.on('GetPlan', function GetPlanSocket (message) {
     GetPlan(message.plan,function GetPlanAction(savedPlan) {  
-        // push table to our plan
+        // return the plan as is
         socket.emit('GetPlanResponse', savedPlan);
     });
     console.log(message.data);
@@ -330,6 +359,7 @@ io.sockets.on('connection', function SocketConnection(socket) {
         var table = GetTable(savedPlan,message.data.table);
         //var seat = GetSeat(savedPlan,message.data.seatNumber);
         var SeatSchema = mongoose.model('Seat');
+        
         var mySeat = new SeatSchema();
         mySeat.seatNumber = table.seatList.length;
         
@@ -366,11 +396,9 @@ io.sockets.on('connection', function SocketConnection(socket) {
         var myTable = new TableSchema();
         myTable = ReplaceProperties(myTable,message.data);
         console.log("adding new table" + myTable);
-        for (var i=0,l=message.data.seatCount;i<l;i++) {
-            var SeatSchema = mongoose.model('Seat');
-            var mySeat = new SeatSchema();
-            myTable.seatList.push(ReplaceProperties(mySeat,{id:i,seatNumber:i}));
-        }
+        
+        MakeMissingSeats(myTable, message.data.seatCount);
+        
         savedPlan.tableList.push(myTable);
         savedPlan.save();
     });
