@@ -1510,7 +1510,13 @@ Seat = function (x, y, rotation, table, seatNumber, id, guest) {
 RoundTable = function (x, y, seatCount, seatList, id) {
     this.id = id ? id : Controller.NextTableID();
     logEvent("Create RoundTable");
-    this.seatCount = seatCount >= seatList.length ? seatCount : seatList.length;
+    
+    this.seatCount = seatCount;
+    if(seatList) {
+        this.seatCount = seatCount >= seatList.length ? seatCount : seatList.length
+    }
+    
+    
     this.GetX = Generic.ShapeGetX;
     this.GetY = Generic.ShapeGetY;
     this.GetLocation = function () {
