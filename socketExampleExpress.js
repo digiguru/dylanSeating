@@ -158,19 +158,37 @@ var GetSeatByNumber = function(plan,seatNumber) {
   }
   return null;
 };
-var AddPlan = function(newPlan, onAddedPlan) {
-  console.log("AddPlan");
+var AddPlanList = function(newPlan, onAddedPlanList) {
+  console.log("AddPlanList");
   console.log(newPlan);
   //GetPlanList(function AddPlanToList() {
+  
+  /*
+  var PlanSchema = mongoose.model('Plan');
+  var myPlan = new PlanSchema();
+  ReplaceProperties(myPlan,newPlan);
+  myPlan.save();
+  */
+  
+  AddPlan(newPlan, function(newPlan) {
+    var savedPlanList = [newPlan];
+    console.log(savedPlanList);
+    onAddedPlanList(savedPlanList);
+  });
+  
+  
+  //});
+};
+var AddPlan = function(newPlan, onAddedPlan) {
+  
+  console.log("AddPlan");
   var PlanSchema = mongoose.model('Plan');
   var myPlan = new PlanSchema();
   ReplaceProperties(myPlan,newPlan);
   myPlan.save();
   console.log("Saved");
-  var savedPlanList = [myPlan];
-  console.log(savedPlanList);
-  onAddedPlan(savedPlanList);
-  //});
+  onAddedPlan(myPlan);
+  
 }
 var GetPlan = function (session,onFoundPlan) {
   // retrieve my model
@@ -206,8 +224,8 @@ var GetPlanList = function(onFoundPlanList) {
       onFoundPlanList(null);
     }else if (savedPlanList.length === 0) {
       console.log("List is empty.");
-      AddPlan({},function OnCompleteAddPlan(newlyGeneratedList) {
-        console.log("OnCompleteAddPlan");
+      AddPlanList({},function OnCompleteAddPlanList(newlyGeneratedList) {
+        console.log("OnCompleteAddPlanList");
         console.log(newlyGeneratedList);
         onFoundPlanList(newlyGeneratedList);
       });
@@ -229,7 +247,12 @@ var MakeMissingSeats = function(myTable, seatCount) {
   }
 }
 io.sockets.on('connection', function SocketConnection(socket) {
-  
+  socket.on('AddPlan', function AddPlanSocket(message) {
+    AddPlan(message ? message.plan : null, function(savedPlan) {
+      socket.emit('AddPlanResponse', savedPlan);
+    });
+    console.log(message);
+  });
   socket.on('GetPlanList', function GetPlanListSocket (message) {
     GetPlanList(function GetPlanListAction(savedPlanList) {  
         // return all the plans in the system. If it's empty then create a new plan!

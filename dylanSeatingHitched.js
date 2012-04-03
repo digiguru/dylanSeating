@@ -559,6 +559,42 @@ var Generic = {
             rotation = r;
         myGraphic.transform("t" + currentX + "," + currentY + "R" + rotation);
     },
+    
+    Disable: function (graphic, colour) {
+        var myGraphic = graphic ? graphic : this.graphic,
+            myColour = colour ? colour : colDisabled;
+        myGraphic.PreviousColourFill = myGraphic.attr("fill");
+        if (myGraphic) {
+            myGraphic.animate({
+                "stroke-width": 1,
+                "fill": myColour
+            }, animationTime);
+        }
+        graphic.mouseover(function (event) {
+          
+        });
+        graphic.mouseout(function (event) {
+            
+        });
+    },
+    Enable: function (graphic, colour) {
+        var myGraphic = graphic ? graphic : this.graphic,
+            myColour = colour ? colour : colTableSelectedStroke;
+        myGraphic.PreviousColourFill = myGraphic.attr("fill");
+        if (myGraphic) {
+            myGraphic.animate({
+                "fill": myColour
+            }, animationTime);
+        }
+        graphic.mouseover(function (event) {
+            logEvent("Over ToolboxIcon");
+            Generic.Highlight(this);
+        });
+        graphic.mouseout(function (event) {
+            logEvent("Out ToolboxIcon");
+            Generic.Unhighlight(this);
+        });
+    },
     Highlight: function (graphic, colour) {
         var myGraphic = graphic ? graphic : this.graphic,
             myColour = colour ? colour : colTableSelectedStroke;
@@ -592,6 +628,7 @@ var paper = Raphael("board", 900, 900),
     colTableSelectedStroke = "yellow",
     colToolbarBack = "cyan",
     colSeatSelectedStroke = "blue",
+    colDisabled = "grey",
     shapes = {
         guestOLD: "M -10 -10 L 10 -10 L 0 10 z",
         desk: "m-61,-30l0,60l120,0l0,-60c-45,20 -75,20 -120,0z",
@@ -869,6 +906,13 @@ ToolBar = function () {
         this.AddToolBoxItem(this.generateDeskSelect(), "Add new desk", "desk");
         this.iconLeft = 0;
         this.iconTop = 450;
+        this.enableButton = function(icon) {
+          Generic.Enable(icon);
+        };
+        this.disableButton = function(icon) {
+          Generic.Disable(icon);
+        };
+        
         this.applyStylingToIcon = function(icon, text, clickevent) {
           this.iconLeft = this.iconLeft + 40;
           var iconX = 600 + this.iconLeft;
@@ -881,15 +925,10 @@ ToolBar = function () {
           icon.mouseover(function (event) {
               logEvent("Over ToolboxIcon");
               Generic.Highlight(this);
-              //this.attr("model").text = paper.text(this.attr("ox") + 75, this.attr("oy"), helperText);
-              //this.attr("model").text.show();
           });
           icon.mouseout(function (event) {
               logEvent("Out ToolboxIcon");
               Generic.Unhighlight(this);
-              //if (this.attr("model").text) {
-              //    this.attr("model").text.hide();
-              //}
           });
           icon.click(clickevent);
         }
@@ -908,10 +947,12 @@ ToolBar = function () {
         this.applyStylingToIcon(lnkRedo, "redo", function(e){Controller.ac.Redo()});
         this.applyStylingToIcon(lnkDelete, "delete", function(e){DeletePlanData()});
 
+        this.disableButton(lnkUndo);
+
         this.iconLeft = 0;
         this.iconTop =  500;
 
-        this.applyStylingToIcon(lnkGitH, "Fork me on github", function(e){LinkTo("hello")});
+        this.applyStylingToIcon(lnkGitH, "Fork me on github", function(e){CreateNewPlan()});
         this.applyStylingToIcon(lnkNode, "Using Node.js on the server", function(e){LinkTo("hello")});
         this.applyStylingToIcon(lnkRaph, "Interface using RaphaelJS", function(e){LinkTo("hello")});
         this.applyStylingToIcon(lnkTwit, "Contact me via Twitter", function(e){LinkTo("hello")});
@@ -2147,7 +2188,15 @@ var SaveAll = function () {
         }
         return SaveObject;
     }
-
+var CreateNewPlan = function() {
+  $.when(ClearData()).then(function() {
+  
+     if(socket) {
+      socket.emit('AddPlan');
+     }
+                          
+  });
+};
 var ClearData = function() {
   var dfdRemoveAllData = $.Deferred();
   var arrAllDataDFD = [];
@@ -2247,9 +2296,13 @@ var RequestPlanList = function() {
    }
 };
 if(socket) {
+  socket.on('AddPlanResponse', function (data) {
+    console.log(data);
+    LoadData([data]);
+  });
   socket.on('GetPlanResponse', function (data) {
     console.log(data);
-    LoadData(data)
+    LoadData(data);
   });
   socket.on('GetPlanListResponse', function (data) {
     console.log(data);
