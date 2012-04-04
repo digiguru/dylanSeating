@@ -80,6 +80,14 @@ Mar 2012
  * Deferred resolve on object remove
  * Made guests nameable
  * Refactoring
+ * Seat objects being loaded correctly
+ * Add plan if the db doesn't contain any
+ 
+Apr 2012
+ 
+ * Buttons now disableable
+ * Ability to add plans (by clicking the github button)
+ 
 
 Help Wanted
 ===========
