@@ -7,8 +7,7 @@
  * License: Creative Commons 3.0 (http://creativecommons.org/licenses/by-nc/3.0/)
  **/
 
-var myPlanID = "4f3cc3345007734932000005";
-
+var myPlanID;
 // Array Remove - By John Resig (MIT Licensed)
 Array.prototype.remove = function (from, to) {
     var rest = this.slice((to || from) + 1 || this.length);
