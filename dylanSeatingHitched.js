@@ -34,9 +34,9 @@ var dylanSeating = function() {
       return null;
     },
     GetGuestByID= function(id) {
-       for (var i = 0, l = draggableGuests.length; i < l; i++) {
-          if(draggableGuests[i].id === id) {
-            return draggableGuests[i];
+       for (var i = 0, l = myGuests.length; i < l; i++) {
+          if(myGuests[i].id === id) {
+            return myGuests[i];
           }
       }
       return null;
@@ -120,7 +120,7 @@ var dylanSeating = function() {
       guest = GetGuest(guest);
       seat = GetSeat(seat);
       guest.moveToSeat(seat);
-    };//Example = Controller.PlaceGuestOnSeat(draggableGuests[0], myTables[4].tableSeatList[0]);
+    };//Example = Controller.PlaceGuestOnSeat(myGuests[0], myTables[4].tableSeatList[0]);
     this.RemoveGuestFromTheirSeat= function(guest) {
       guest = GetGuest(guest);
       guest.removeFromSeat();
@@ -155,8 +155,8 @@ var dylanSeating = function() {
       return topSeatID++;
     };
     this.NextGuestID = function() {
-      for(var i=0,l=draggableGuests.length;i<l;i++) {
-        if(draggableGuests[i].id == topTableID) {
+      for(var i=0,l=myGuests.length;i<l;i++) {
+        if(myGuests[i].id == topTableID) {
           topGuestID++
         }
       }
@@ -647,7 +647,7 @@ var dylanSeating = function() {
           //seat:   "M -20 -50 L 20 -50 L 0 -20 z"
           
       };
-  inrange = false, seatList = [], draggableGuests = [], AllEvents = [], AllEventsAuditBox = paper.text(200, 20, "loaded"), myTables = [], myGuests = [];
+  inrange = false, seatList = [], AllEvents = [], AllEventsAuditBox = paper.text(200, 20, "loaded"), myTables = [], myGuests = [];
   this.getTables = function() {
     return myTables;
   }
@@ -2189,9 +2189,9 @@ var dylanSeating = function() {
           for (var i = 0, l = myTables.length; i < l; i++) {
               SaveObject.tableList.push(myTables[i].ToJson());
           }
-          for (var i = 0, l = draggableGuests.length; i < l; i++) {
-              if (!draggableGuests[i].seat) {
-                  SaveObject.guestList.push(draggableGuests[i].ToJson());
+          for (var i = 0, l = myGuests.length; i < l; i++) {
+              if (!myGuests[i].seat) {
+                  SaveObject.guestList.push(myGuests[i].ToJson());
               }
           }
           return SaveObject;
@@ -2213,14 +2213,14 @@ var dylanSeating = function() {
             arrAllDataDFD.push(myTables[i].remove());
         }
     }
-    if (draggableGuests) {
-        for (var i = 0, l = draggableGuests.length; i < l; i++) {
-           arrAllDataDFD.push(draggableGuests[i].remove());
+    if (myGuests) {
+        for (var i = 0, l = myGuests.length; i < l; i++) {
+           arrAllDataDFD.push(myGuests[i].remove());
         }
     }
     $.when.apply($, arrAllDataDFD).done(function() {
       myTables = [];
-      draggableGuests = [];
+      myGuests = [];
       console.log("removed all data from the scene. it is now clean");
       dfdRemoveAllData.resolve();
     });
@@ -2276,7 +2276,7 @@ var dylanSeating = function() {
                     var seat = myTableData.seatList[i2];
                     if(seat && seat.guest && seat.guest[0]) {
                       var guest = seat.guest[0]; //Hack : needs to be property, not an array.
-                      draggableGuests.push(loadGuest(guest));
+                      myGuests.push(loadGuest(guest));
                       Controller.PlaceGuestOnSeat(guest.id,seat.id);
                     } 
                   }
@@ -2288,7 +2288,7 @@ var dylanSeating = function() {
     }
     if (data.guestList) {
         for (var i = 0, l = data.guestList.length; i < l; i++) {
-            draggableGuests.push(loadGuest(data.guestList[i]));
+            myGuests.push(loadGuest(data.guestList[i]));
         }
     }
   };

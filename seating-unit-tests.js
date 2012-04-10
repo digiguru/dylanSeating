@@ -5,7 +5,9 @@ socket = {
 	},
 	emit: function(socketName, object, functionObj) {
 		console.log(["Mock Emit " + socketName,object]);
-		functionObj();
+		if(functionObj) {
+			functionObj();
+		}
 	}
 }
 /*
