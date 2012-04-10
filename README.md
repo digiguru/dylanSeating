@@ -27,9 +27,9 @@ Future Ideas
 ============
 
  * Redis storage rather than mongo (don't really use the full power of mongo, redis would be faster)
- * Add abililty to save & load different plans
  * OAuth integration
  * mobile / tablet investigation
+ * test harness
  
 Development Milestones
 ======================
