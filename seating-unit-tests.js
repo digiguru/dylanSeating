@@ -23,22 +23,19 @@ paper = {
 */
 $(function() {
 	
+var myDylanSeating;
 
 
-var myDylanSeating = new dylanSeating();
-
-
+module("Basic Functions", {
+	setup:function() {
+		myDylanSeating = new dylanSeating();
+	}
+});
 test('myTables starts off blank', function() {
-	
-	ok(myDylanSeating.getTables().length === 0, 'myTables starts off blank');
+
+	equals(myDylanSeating.getTables().length, 0, 'myTables starts off blank');
 });
 
-test('Test standard controller functions', function() {
-	ok(myDylanSeating.getGuests().length === 0, 'guests starts off empty');
-	var ctrl = myDylanSeating.getController();
-	ctrl.ac.Call("AddGuest", {id: 1,name: "Test Guest",x: 10,y: 10});
-	ok(myDylanSeating.getGuests().length === 1, 'guests go up by one');
-});
 
 test('Load standard data and check it', function() {
 	
@@ -67,12 +64,70 @@ test('Load standard data and check it', function() {
 	    };
 
 	myDylanSeating.LoadDataExternal({});
-	ok(myDylanSeating.getTables().length === 0, 'There are no tables after loading an empty object');
-	myDylanSeating.LoadDataExternal(exampleSave);
-
-	ok(myDylanSeating.getTables().length === 3, 'There are 3 tables');
+	equals(myDylanSeating.getTables().length, 0, 'There are no tables after loading an empty object');
+	
+	$.when(myDylanSeating.LoadDataExternal(exampleSave)).then(
+		function() {
+			equals(myDylanSeating.getTables().length, 3, 'There are 3 tables');
+	
+			$.when(myDylanSeating.ClearDataExternal()).then(
+				function() {
+					equals(myDylanSeating.getTables().length, 0, 'The stage has been cleared');
+				}
+			);
+		}
+	);
+	
+	
 	
 });
+	
+
+module("Controller Functions", {
+	setup:function() {
+		myDylanSeating = new dylanSeating();
+	}
+});
+
+test('AddGuest and undo', function() {
+	$.when(myDylanSeating.ClearDataExternal()).then(
+		function() {
+			equals(myDylanSeating.getGuests().length,0, 'guests start off empty');
+			var ctrl = myDylanSeating.getController();
+			$.when(ctrl.ac.Call("AddGuest", {id: 1,name: "Test Guest",x: 10,y: 10}))
+			 .then(
+			       function(){ 
+					equals(myDylanSeating.getGuests().length,1, 'Adding guest makes it go up by one');
+					$.when(ctrl.ac.Undo())
+					 .then(
+						function(){ 
+							equals(myDylanSeating.getGuests().length,0, 'Undoing task makes the guest count go back to 0');	
+						}
+					);
+				}
+			);
+			 
+			equals(myDylanSeating.getTables().length,0, 'tables start off empty');
+			var ctrl = myDylanSeating.getController();
+			$.when(ctrl.ac.Call("AddTable", {id: 1,type:"table",x: 200, y: 200, seatCount:5}))
+			 .then(
+			       function(){ 
+					equals(myDylanSeating.getTables().length,1, 'Adding table makes it go up by one');
+					$.when(ctrl.ac.Undo())
+					 .then(
+						function(){ 
+							equals(myDylanSeating.getTables().length,0, 'Undoing task makes the table count go back to 0');	
+						}
+					);
+				}
+			);
+			 
+			 
+			 
+		}
+	);
+});
+
 
 
 

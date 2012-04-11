@@ -5,6 +5,7 @@
  * (c) 2011-2012 by digiguru (Adam Hall)
  *
  * License: Creative Commons 3.0 (http://creativecommons.org/licenses/by-nc/3.0/)
+ * Prequisites : jQuery, underscore, rapheal
  **/
 
 var myPlanID;
@@ -413,7 +414,13 @@ var dylanSeating = function() {
     },
     undoAction: function(args) {
       table = GetTable(args.id);
+      for (var i=0,l=myTables.length;i<l;i++) {
+        if(myTables[i].id !== args.id) {
+          myNewTables.push(myGuests[i]);
+        }
+      }
       table.remove();
+      
     }
   });
   this.ac.Add(
@@ -424,8 +431,19 @@ var dylanSeating = function() {
       });
     },
     undoAction: function(args) {
-      table = GetTable(args.id);
-      table.remove();
+      /*
+       var myNewGuests = [];
+      for (var i=0,l=myGuests.length;i<l;i++) {
+        if(myGuests[i].id !== args.id) {
+          myNewGuests.push(myGuests[i]);
+        }
+      }
+      
+      myGuests = myNewGuests;
+      */
+      guest = GetGuest(args.id);
+      guest.remove();
+      myGuests = _.reject(myGuests, function(removeGuest) { return removeGuest.id === args.id});
     }
   });
   this.ac.Add(
@@ -2205,6 +2223,7 @@ var dylanSeating = function() {
                             
     });
   };
+  
   var ClearData = function() {
     var dfdRemoveAllData = $.Deferred();
     var arrAllDataDFD = [];
@@ -2226,6 +2245,9 @@ var dylanSeating = function() {
     });
           
     return dfdRemoveAllData.promise();
+  };
+  this.ClearDataExternal = function() {
+    return ClearData();
   }
   var RenderAllPlans = function(data) {
     var summaryText = "Summary"
@@ -2247,10 +2269,11 @@ var dylanSeating = function() {
   
   var SaveNewPlan = function() {
     alert("need to be able to save a new plan");
-  }
-  
+  },
   LoadData = function (data) {
-    var loadGuest = function (data) {
+    var dfdRemoveAllData = $.Deferred(),
+      arrAllDataDFD = [],
+      loadGuest = function (data) {
       return new Guest(data.name, data.x, data.y, data.id);
     },
     loadTable = function (data) {
@@ -2270,7 +2293,11 @@ var dylanSeating = function() {
               myTable = loadTable(myTableData);
             }
             myTables.push(myTable);
+            if(myTable.dfdPromise) {
+              arrAllDataDFD.push(myTable.dfdPromise);
+            }
             if(myTable.dfdPromise && myTableData.seatList) {
+              
               $.when(myTable.dfdPromise).then(function() {
                   for(var i2=0,l2=myTableData.seatList.length;i2<l2;i2++) {
                     var seat = myTableData.seatList[i2];
@@ -2285,15 +2312,21 @@ var dylanSeating = function() {
             }
             
         }
+        
     }
     if (data.guestList) {
         for (var i = 0, l = data.guestList.length; i < l; i++) {
             myGuests.push(loadGuest(data.guestList[i]));
         }
     }
+    $.when.apply($, arrAllDataDFD).done(function() {
+      dfdRemoveAllData.resolve();
+    });
+    return dfdRemoveAllData;
   };
+  
   this.LoadDataExternal = function(data) {
-    LoadData(data);
+    return LoadData(data);
   };
   var MyToolBar;
   var RequestPlan = function() {
