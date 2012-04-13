@@ -256,35 +256,39 @@ var dylanSeating = function() {
         return dfdPromise;
       }
         
-      this.CallWithoutHistory = function(actionName, args) {
-        var dfd = $.Deferred();
+      this.CallWithoutHistory = function(actionName, args, callback) {
+        var dfdOverall = $.Deferred();
+        var dfdAction = $.Deferred();
+        var dfdSocket = $.Deferred();
         console.log("Doing" + actionName, args);
         var action = getAction(actionName);
         if(action) {
           if(socket) {
             socket.emit(action.name, this.WrapMessage(args), function() {
                 console.log("called" + actionName, args);
-                dfd.resolve();
+                dfdSocket.resolve();
             });
           } else {
-            dfd.resolve();
+            dfdSocket.resolve();
           }
-          action.doAction(args);
+          action.doAction(args, dfdAction.resolve);
           //UndoActions.push({action:actionName, args:args});
         } else {
-          console.log("No such action.");
-          dfd.resolve({success:false,message:"No such action."});
+          console.log("No such action:" + actionName);
+          dfdSocket.resolve({success:false,message:"No such socket."});
+          dfdAction.resolve({success:false,message:"No such action."});
         }
-        return dfd.promise(); 
+        $.when(dfdAction,dfdSocket).then(dfdOverall.resolve);
+        return dfdOverall.promise(); 
       }
-      this.Undo = function() {
+      this.Undo = function(callback) {
         var action = UndoActions.pop();
         //If it starts with undo, let's remove it?
         var dfd = this.CallWithoutHistory(action.oppositeName, action.args);
         RedoActions.push(action);
         return dfd.promise();
       }
-      this.Redo = function() {
+      this.Redo = function(callback) {
         var action = RedoActions.pop();
         //If it doesn't start with Undo then we should add it?
         var dfd = this.CallWithoutHistory(action.name, action.args);
@@ -332,7 +336,7 @@ var dylanSeating = function() {
   this.ac = new ActionController();
   this.ac.Add(
     {name: "PlaceGuestOnNewSeat",
-    doAction: function(args) { 
+    doAction: function(args, callback) { 
       var guest = GetGuest(args.guest),
           table = GetTable(args.table),
           seatMarker = GetSeatMarker(table, args.seatMarker);
@@ -341,12 +345,12 @@ var dylanSeating = function() {
       console.log("Convert to new seat from place guest on new seat");
       $.when(seat.table.dfdPromise).then(function() {
         console.log("DONE! - Convert to new seat from place guest on new seat");
-         guest.moveToSeat(seat);
+        guest.moveToSeat(seat);
       });
      
       
     },
-    undoAction: function(args) {
+    undoAction: function(args, callback) {
       var guest = GetGuest(args.guest),
           table = GetTable(args.table),
           seatFrom = GetSeat(args.guestOriginalSeat);
@@ -362,12 +366,12 @@ var dylanSeating = function() {
   });
   this.ac.Add(
     {name: "PlaceGuestOnSeat",
-    doAction: function(args) { 
+    doAction: function(args, callback) { 
       var guest = GetGuest(args.guest),
           seat = GetSeat(args.seat);
       guest.moveToSeat(seat);
     },
-    undoAction: function(args) {
+    undoAction: function(args, callback) {
       var guest = GetGuest(args.guest),
           seat = GetSeat(args.seat),
           seatFrom = GetSeat(args.guestOriginalSeat);
@@ -382,12 +386,12 @@ var dylanSeating = function() {
   });
   this.ac.Add(
     {name: "SwapGuestWithGuest",
-    doAction: function(args) { 
+    doAction: function(args, callback) { 
       var guest1 = GetGuest(args.guest1),
           guest2 = GetGuest(args.guest2);
       guest1.swapWithGuestAt(guest2.seat);
     },
-    undoAction: function(args) {
+    undoAction: function(args, callback) {
       var guest1 = GetGuest(guest1),
           guest2 = GetGuest(guest2);
       guest2.swapWithGuestAt(guest1.seat);
@@ -396,77 +400,67 @@ var dylanSeating = function() {
   });
   this.ac.Add(
     {name: "AddSeatAtPosition",
-    doAction: function(args) { 
+    doAction: function(args, callback) { 
       var  table = GetTable(args.table);
       table.addSeatFromMarker(args.seatNumber);
     },
-    undoAction: function(args) {
+    undoAction: function(args, callback) {
       var  table = GetTable(args.table);
       table.removeSeat(args.seatNumber);
     }
   });
   this.ac.Add(
     {name: "AddTable",
-    doAction: function(args) {
-      LoadData({
+    doAction: function(args, callback) {
+      $.when(LoadData({
           tableList: [args]
-      });
+      })).then(callback);
     },
-    undoAction: function(args) {
+    undoAction: function(args, callback) {
       table = GetTable(args.id);
-      for (var i=0,l=myTables.length;i<l;i++) {
-        if(myTables[i].id !== args.id) {
-          myNewTables.push(myGuests[i]);
-        }
-      }
-      table.remove();
-      
+      $.when(table.remove())
+      .then(function(){
+        myTables = _.reject(myTables, function(removeTable) { return removeTable.id === args.id});
+        if(callback) callback();
+      });
     }
   });
   this.ac.Add(
     {name: "AddGuest",
-    doAction: function(args) {
-      LoadData({
+    doAction: function(args, callback) {
+      $.when(LoadData({
           guestList: [args]
-      });
+      })).then(callback);
     },
-    undoAction: function(args) {
-      /*
-       var myNewGuests = [];
-      for (var i=0,l=myGuests.length;i<l;i++) {
-        if(myGuests[i].id !== args.id) {
-          myNewGuests.push(myGuests[i]);
-        }
-      }
-      
-      myGuests = myNewGuests;
-      */
+    undoAction: function(args, callback) {
       guest = GetGuest(args.id);
-      guest.remove();
-      myGuests = _.reject(myGuests, function(removeGuest) { return removeGuest.id === args.id});
+      $.when(guest.remove()).then(function(){
+        myGuests = _.reject(myGuests, function(removeGuest) { return removeGuest.id === args.id});
+        if(callback)callback();
+      }); 
     }
   });
   this.ac.Add(
     {name: "MoveTable",
-    doAction: function(args) {
+    doAction: function(args, callback) {
       table = GetTable(args.table);
-      //console.log("moveTable", args);
-      table.animateTable(args.current);
+      console.log("MoveTable", args);
+      table.animateTable(args.current, callback);
     },
-    undoAction: function(args) {
+    undoAction: function(args, callback) {
       table = GetTable(args.table);
       console.log("UndoMoveTable", args);
-      table.animateTable(args.previous);
+      table.animateTable(args.previous, callback);
     }
   });
   this.ac.Add(
     {name: "EditGuest",
-    doAction: function(args) {
+    doAction: function(args, callback) {
       guest = GetGuest(args.guest);
       console.log("EditGuest", args);
       guest.SetName(args.current.name);
     },
-    undoAction: function(args) {
+    undoAction: function(args, callback) {
       guest = GetTable(args.guest);
       console.log("UndoEditGuest", args);
       guest.SetName(args.previous.name);
@@ -637,6 +631,7 @@ var dylanSeating = function() {
           }
       }
   };
+  
   var paper = Raphael("board", 900, 900),
       animationTime = 300,
       colGuest = "yellow",
@@ -672,7 +667,9 @@ var dylanSeating = function() {
   this.getGuests = function() {
     return myGuests;
   }
-  
+  this.setAnimationTime = function(newTime) {
+    animationTime = newTime;
+  };
   paper.customAttributes = {
   
       model: function (model) {
@@ -1180,7 +1177,7 @@ var dylanSeating = function() {
           this.graphic.stop();
           this.graphic.animate({
              opacity: "0"
-          }, 300, true, function () {
+          }, animationTime, true, function () {
             this.remove();
             contextModel.graphic = null;
             dfd.resolve();
@@ -1358,7 +1355,7 @@ var dylanSeating = function() {
               this.setGraphicPositionCore(pointFrom);
               this.graphic.animate({
                   transform: "t" + pointTo.x + "," + pointTo.y + "R" + pointTo.r
-              }, 300, true, function () {
+              }, animationTime, true, function () {
                   
                   this.attr("model").setGraphicPositionCore(pointTo);
                   this.attr("model").SetRotation(pointTo.r);
@@ -1369,7 +1366,7 @@ var dylanSeating = function() {
                if (this.guest) {
                   this.guest.graphic.animate({
                       transform: "t" + pointTo.x + "," + pointTo.y + "R" + pointTo.r
-                  }, 300, true, function () {
+                  }, animationTime, true, function () {
                       console.log("seat has a guest - done the guest too");
                       this.attr("model").setGraphicPositionCore(pointTo);
                       this.attr("model").SetRotation(pointTo.r);
@@ -1402,7 +1399,7 @@ var dylanSeating = function() {
             this.graphic.stop();
             this.graphic.animate({
                 transform: "T0,0"
-            }, 300, true, function () {
+            }, animationTime, true, function () {
                 console.log("destroy seat graphic");
                 this.remove();
                 contextModel.graphic = null;
@@ -1503,7 +1500,7 @@ var dylanSeating = function() {
               this.setGraphicPositionCore(pointFrom);
               this.graphic.animate({
                   transform: "t" + pointTo.x + "," + pointTo.y
-              }, 300, true, function () {
+              }, animationTime, true, function () {
                   this.attr("model").setGraphicPositionCore(pointTo);
               });
               var animateAlongPath = false;
@@ -1535,7 +1532,7 @@ var dylanSeating = function() {
           this.graphic.stop();
           this.graphic.animate({
               transform: "T0,0"
-          }, 300, true, function () {
+          }, animationTime, true, function () {
               this.remove();
               console.log("destroy seat marker graphic");
               contextModel.graphic = null;
@@ -1618,7 +1615,7 @@ var dylanSeating = function() {
               contextualModel.graphic.stop();
               contextualModel.graphic.animate({
                   opacity: "0"
-              }, 300, true, function () {
+              }, animationTime, true, function () {
                   this.remove();
                   contextualModel.graphic = null;
                   console.log("removed table");
@@ -1634,7 +1631,7 @@ var dylanSeating = function() {
       }
       this.setGraphicPositionBase = Generic.SetShapeGraphicPosition;
   
-      this.setGraphicPosition = function (pointTo, pointFrom) {
+      this.setGraphicPosition = function (pointTo, pointFrom, callback) {
           var dfd = $.Deferred();
           if (pointFrom) {
               //var fixedPointTo = {x:pointTo.x - (this.width/2), y:pointTo.y - (this.width/2)};
@@ -1645,18 +1642,21 @@ var dylanSeating = function() {
               this.graphic.animate({
                   //transform: "t" + fixedPointTo.x + "," + fixedPointTo.y
                   cx:pointTo.x,cy:pointTo.y
-              }, 300, true, function () {
+              }, animationTime, true, function () {
                  var model = this.attr("model")
                   model.setGraphicPositionBase(fixedPointTo);
                   for (var t = 0; t < model.seatCount; t++) {
                       model.placeSeat(t);
                       model.placeSeatMarker(t);    
                   }
+                  if(callback)callback();
                   dfd.resolve();
               });
               
           } else {
+            
               this.setGraphicPositionBase(pointTo);
+              if(callback)callback();
               dfd.resolve();
           }
           return dfd.promise();
@@ -1894,11 +1894,11 @@ var dylanSeating = function() {
                                   current:{x:model.GetX(),y:model.GetY()}
                                  });
           };
-        this.animateTable = function(position) {
+        this.animateTable = function(position, callback) {
           var currentLocation = this.GetLocation();
           if((currentLocation.x !== position.x) || (currentLocation.y !== position.y) || (currentLocation.r !== position.r)) {
            
-            this.setGraphicPosition(position,currentLocation);
+            return this.setGraphicPosition(position,currentLocation, callback);
             
             
           }
@@ -1957,7 +1957,7 @@ var dylanSeating = function() {
       }
       
       this.setGraphicPositionBase = Generic.SetRelativeGraphicPosition;
-      this.setGraphicPosition = function (pointTo,pointFrom) {
+      this.setGraphicPosition = function (pointTo,pointFrom,callback) {
           
           if (pointFrom) {
               //var fixedPointTo = {x:pointTo.x - (this.width/2), y:pointTo.y - (this.width/2)};
@@ -1970,17 +1970,20 @@ var dylanSeating = function() {
                   
                   //rotation: pointTo.r
                   ox:pointTo.x,oy:pointTo.y
-              }, 300, true, function () {
+              }, animationTime, true, function () {
                  var model = this.attr("model")
                 
                   //model.setGraphicPositionBase(pointTo);
                   model.placeSeat(model.tableSeatList[0],true);
+                  if(callback)callback();
                   
               });
               
           } else {
               this.setGraphicPositionBase(pointTo);
               this.placeSeat(this.tableSeatList[0],false);
+              if(callback)callback();
+                  
           }
           this.placeRotationHandle(pointTo);
          
@@ -2177,11 +2180,11 @@ var dylanSeating = function() {
       this.graphic.mouseout(function (event) {
           Generic.Unhighlight(this);
       });
-      this.animateTable = function(position) {
+      this.animateTable = function(position, callback) {
           
          var currentLocation = this.GetLocation();
           if((currentLocation.x !== position.x) || (currentLocation.y !== position.y) || (currentLocation.r !== position.r)) {
-            this.setGraphicPosition(position,currentLocation);
+            return this.setGraphicPosition(position,currentLocation, callback);
           }
         };
       this.ToJson = function () {
