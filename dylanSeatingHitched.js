@@ -73,21 +73,20 @@ var dylanSeating = function() {
         seat = GetSeatByID(seat);
       }
       return seat;
-    };
+    },
     GetSeatCreatedByMarker = function(table, seatMarker) {
       table = GetTable(table);
       if(typeof seatMarker === "number" || typeof seatMarker === "string" ) {
         seat = table.tableSeatList[seatMarker];
       }
       return table;
-    };
-    
+    },
     GetTable= function(table) {
       if(typeof table === "number" || typeof table === "string" ) {
         table = GetTableByID(table);
       }
       return table;
-    };
+    },
     GetSeatMarker= function(table, seatMarker) {
       table = GetTable(table);
       if(typeof seatMarker === "number" || typeof seatMarker === "string" ) {
@@ -417,7 +416,7 @@ var dylanSeating = function() {
       })).then(callback);
     },
     undoAction: function(args, callback) {
-      table = GetTable(args.id);
+     var table = GetTable(args.id);
       $.when(table.remove())
       .then(function(){
         myTables = _.reject(myTables, function(removeTable) { return removeTable.id === args.id});
@@ -433,7 +432,7 @@ var dylanSeating = function() {
       })).then(callback);
     },
     undoAction: function(args, callback) {
-      guest = GetGuest(args.id);
+      var guest = GetGuest(args.id);
       $.when(guest.remove()).then(function(){
         myGuests = _.reject(myGuests, function(removeGuest) { return removeGuest.id === args.id});
         if(callback)callback();
@@ -443,12 +442,12 @@ var dylanSeating = function() {
   this.ac.Add(
     {name: "MoveTable",
     doAction: function(args, callback) {
-      table = GetTable(args.table);
+      var table = GetTable(args.table);
       console.log("MoveTable", args);
       table.animateTable(args.current, callback);
     },
     undoAction: function(args, callback) {
-      table = GetTable(args.table);
+      var table = GetTable(args.table);
       console.log("UndoMoveTable", args);
       table.animateTable(args.previous, callback);
     }
@@ -456,12 +455,12 @@ var dylanSeating = function() {
   this.ac.Add(
     {name: "EditGuest",
     doAction: function(args, callback) {
-      guest = GetGuest(args.guest);
+      var guest = GetGuest(args.guest);
       console.log("EditGuest", args);
       guest.SetName(args.current.name);
     },
     undoAction: function(args, callback) {
-      guest = GetTable(args.guest);
+      var guest = GetGuest(args.guest);
       console.log("UndoEditGuest", args);
       guest.SetName(args.previous.name);
     }
@@ -659,7 +658,7 @@ var dylanSeating = function() {
           
           //seat:   "M -20 -50 L 20 -50 L 0 -20 z"
           
-      };
+      },
   inrange = false, seatList = [], AllEvents = [], AllEventsAuditBox = paper.text(200, 20, "loaded"), myTables = [], myGuests = [];
   this.getTables = function() {
     return myTables;
@@ -1430,19 +1429,19 @@ var dylanSeating = function() {
               this.animate({
                   fill: "red"
               }, animationTime);
-          }
-      var myMouseOut = function (event) {
+          },
+         myMouseOut = function (event) {
               Generic.Unhighlight(this);
               this.animate({
                   fill: "blue"
               }, animationTime);
-          }
-      myMouseClick = function (event) {
-          logEvent("click empty seat");
-          this.unmouseout(myMouseOut); // Suggest to Rapheal that calling this with no functions clears the list?
-         
-          Controller.ClickSeatRemove(this.attr("model"));
-      }
+          },
+        myMouseClick = function (event) {
+            logEvent("click empty seat");
+            this.unmouseout(myMouseOut); // Suggest to Rapheal that calling this with no functions clears the list?
+           
+            Controller.ClickSeatRemove(this.attr("model"));
+        }
       this.graphic.mouseover(myMouseOver);
       this.graphic.mouseout(myMouseOut);
       this.graphic.click(myMouseClick);

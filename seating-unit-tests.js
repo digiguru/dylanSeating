@@ -1,4 +1,4 @@
-var testSpeed = 500;
+var testSpeed = 100;
 //Mocks
 socket = {
 	on: function(socketName) {
