@@ -202,4 +202,51 @@ test('AddTable then move and undo', function() {
 	);
 });	
 
+
+test('CallMultiple : [AddTable,MoveTable] and Undo', function() {
+	expect(5);
+	stop();
+	$.when(myDylanSeating.ClearDataExternal()).then(
+		function() {
+			start();
+			equals(myDylanSeating.getTables().length,0, 'tables start off empty');
+			
+			
+			var callAddTable = {
+				actionName: "AddTable",
+				args: {id: 1,type:"table",x: 250, y: 100, seatCount:12}
+			},
+			   callMoveTable = {
+				actionName: "MoveTable",
+				args: {
+					table:1,
+					previous:{x:250,y:100},
+					current:{x:300,y:150}
+				}
+			};
+			var ctrl = myDylanSeating.getController();
+			stop();
+			$.when(ctrl.ac.CallMultiple([callAddTable,callMoveTable]))
+			 .then(
+			       function(){ 
+					start();
+					equals(myDylanSeating.getTables().length,1, 'Adding table makes it go up by one');
+					equals(myDylanSeating.getTables()[0].GetX(),300, 'Moving table repositions x axis');
+					equals(myDylanSeating.getTables()[0].GetY(),150, 'Moving table repositions y axis');
+					stop();
+					$.when(ctrl.ac.Undo())
+					.then(
+						function(){ 
+							start();
+							equals(myDylanSeating.getTables().length,0, 'Undoing moves the table, but then gets rid of it!');
+							
+						}
+					);
+				}
+			);
+		}
+	);
+});	
+
+
 });
