@@ -10,23 +10,23 @@
 
 var myPlanID;
 // Array Remove - By John Resig (MIT Licensed)
-Array.prototype.remove = function (from, to) {
+Array.prototype.remove = function ArrayRemove(from, to) {
     var rest = this.slice((to || from) + 1 || this.length);
     this.length = from < 0 ? this.length + from : from;
     return this.push.apply(this, rest);
 };
-Array.prototype.insertAt = function (o, index) {
+Array.prototype.insertAt = function ArrayInsertAt (o, index) {
     if (index > -1 && index <= this.length) {
         this.splice(index, 0, o);
         return true;
     }
     return false;
 };
-var dylanSeating = function() {
+var dylanSeating = function dylanSeating() {
   
  
-  var controller = function() {
-    var GetTableByID= function(id) {
+  var controller = function controller() {
+    var GetTableByID= function GetTableByID(id) {
       for (var i = 0, l = myTables.length; i < l; i++) {
           if(myTables[i].id === id) {
             return myTables[i];
@@ -34,7 +34,7 @@ var dylanSeating = function() {
       }
       return null;
     },
-    GetGuestByID= function(id) {
+    GetGuestByID= function GetGuestByID(id) {
        for (var i = 0, l = myGuests.length; i < l; i++) {
           if(myGuests[i].id === id) {
             return myGuests[i];
@@ -42,7 +42,7 @@ var dylanSeating = function() {
       }
       return null;
     },
-    GetSeatByID= function(id) {
+    GetSeatByID= function GetSeatByID(id) {
       for (var i = 0, l = myTables.length; i < l; i++) {
         if(myTables[i].tableSeatList) {
           for (var j = 0, m = myTables[i].tableSeatList.length; j < m; j++) {
@@ -54,7 +54,7 @@ var dylanSeating = function() {
       }
       return null;
     },
-    GetSeatMarkerByNumber= function(table, seatMarkerNumber) {
+    GetSeatMarkerByNumber= function GetSeatMarkerByNumber(table, seatMarkerNumber) {
       for (var j = 0, m = table.tableSeatAdditions.length; j < m; j++) {
         if(table.tableSeatAdditions[j].seatNumber === seatMarkerNumber) {
           return table.tableSeatAdditions[j];
@@ -62,32 +62,32 @@ var dylanSeating = function() {
       }
       return null;
     },
-    GetGuest= function(guest) {
+    GetGuest= function GetGuest(guest) {
       if(typeof guest === "number" || typeof guest === "string" ) {
         guest = GetGuestByID(guest);
       }
       return guest;
     },
-    GetSeat= function(seat) {
+    GetSeat= function GetSeat(seat) {
       if(typeof seat === "number" || typeof seat === "string" ) {
         seat = GetSeatByID(seat);
       }
       return seat;
     },
-    GetSeatCreatedByMarker = function(table, seatMarker) {
+    GetSeatCreatedByMarker = function GetSeatCreatedByMarker(table, seatMarker) {
       table = GetTable(table);
       if(typeof seatMarker === "number" || typeof seatMarker === "string" ) {
         seat = table.tableSeatList[seatMarker];
       }
       return table;
     },
-    GetTable= function(table) {
+    GetTable= function GetTable(table) {
       if(typeof table === "number" || typeof table === "string" ) {
         table = GetTableByID(table);
       }
       return table;
     },
-    GetSeatMarker= function(table, seatMarker) {
+    GetSeatMarker= function GetSeatMarker(table, seatMarker) {
       table = GetTable(table);
       if(typeof seatMarker === "number" || typeof seatMarker === "string" ) {
         seat = GetSeatMarkerByNumber(table, seatMarker);
@@ -95,17 +95,17 @@ var dylanSeating = function() {
       return seat;
     };
     //seatMarker
-    this.ClickAddSeatAtPosition = function(table, seatNumber) {
+    this.ClickAddSeatAtPosition = function ClickAddSeatAtPosition(table, seatNumber) {
       var data = {table: table.id, seatNumber: seatNumber};
       return Controller.ac.Call("AddSeatAtPosition",data);
     };
     
-    this.ClickSeatRemove = function(seat) {
+    this.ClickSeatRemove = function ClickSeatRemove(seat) {
       //var data = {seat: seat.id};
       var data = {table: seat.table.id, seatNumber: seat.seatNumber};
       return Controller.ac.Call("UndoAddSeatAtPosition",data);
     };
-    this.CreateSeatAndPlaceGuest= function(guest, table, seatMarker) {
+    this.CreateSeatAndPlaceGuest= function CreateSeatAndPlaceGuest(guest, table, seatMarker) {
       guest = GetGuest(guest);
       table = GetTable(table);
       seatMarker = GetSeatMarker(table, seatMarker);
@@ -116,25 +116,25 @@ var dylanSeating = function() {
         guest.moveToSeat(seat);      
       });
     }; 
-    this.PlaceGuestOnSeat= function(guest, seat) {
+    this.PlaceGuestOnSeat= function PlaceGuestOnSeat(guest, seat) {
       guest = GetGuest(guest);
       seat = GetSeat(seat);
       guest.moveToSeat(seat);
     };//Example = Controller.PlaceGuestOnSeat(myGuests[0], myTables[4].tableSeatList[0]);
-    this.RemoveGuestFromTheirSeat= function(guest) {
+    this.RemoveGuestFromTheirSeat= function RemoveGuestFromTheirSeat(guest) {
       guest = GetGuest(guest);
       guest.removeFromSeat();
     };
-    this.RemoveGuestFromSeat= function(seat) {
+    this.RemoveGuestFromSeat= function RemoveGuestFromSeat(seat) {
       seat = GetSeat(seat);
       seat.guest.removeFromSeat();
     };
-    this.SwapGuests= function(guest1,guest2) {
+    this.SwapGuests= function SwapGuests(guest1,guest2) {
       guest1 = GetGuest(guest1);
       guest2 = GetGuest(guest2);
       guest1.swapWithGuestAt(guest2.seat);
     };
-    this.SwapGuestWithSeat= function(guest,seat) {
+    this.SwapGuestWithSeat= function SwapGuestWithSeat(guest,seat) {
       guest = GetGuest(guest);
       seat = GetSeat(seat);
       
@@ -143,7 +143,7 @@ var dylanSeating = function() {
     var topTableID = 0,
       topSeatID = 0,
       topGuestID = 0;
-    this.NextTableID = function() {
+    this.NextTableID = function NextTableID() {
       for(var i=0,l=myTables.length;i<l;i++) {
         if(myTables[i].id == topTableID) {
           topTableID++
@@ -151,10 +151,10 @@ var dylanSeating = function() {
       }
       return topTableID;
     };
-    this.NextSeatID = function() {
+    this.NextSeatID = function NextSeatID() {
       return topSeatID++;
     };
-    this.NextGuestID = function() {
+    this.NextGuestID = function NextGuestID() {
       for(var i=0,l=myGuests.length;i<l;i++) {
         if(myGuests[i].id == topTableID) {
           topGuestID++
@@ -162,7 +162,7 @@ var dylanSeating = function() {
       }
       return topGuestID;
     };
-    this.MoveGuestToSeatArea = function(model,mySeat) {
+    this.MoveGuestToSeatArea = function MoveGuestToSeatArea(model,mySeat) {
       //var model = guest.attr("model");
       lockX = mySeat.GetX();
       lockY = mySeat.GetY();
@@ -199,15 +199,15 @@ var dylanSeating = function() {
         return Controller.ac.Call("PlaceGuestOnSeat",data);
       }
     }
-    var ActionController = function() {
+    var ActionController = function ActionController() {
       var cachedActions = [],
         UndoActions = [],
         RedoActions = [];
-      this.WrapMessage = function(data) {
+      this.WrapMessage = function WrapMessage(data) {
         var plan = {_id: myPlanID}; // Hack: Let's only deal with one floorplan for the time being!
         return {data: data, plan:plan};
       }
-      this.Add = function(action) {
+      this.Add = function Add(action) {
         //var dfd = new $.Deferred();
         if(!cachedActions[action.name]) {
           action.oppositeName = "Undo" + action.name;
@@ -234,28 +234,63 @@ var dylanSeating = function() {
           });
         }
       }
-      var getAction = function(actionName) {
-        return cachedActions[actionName];
+      var getAction = function getAction(action) {
+        
+        return cachedActions[action];
       };
-      
-      this.CallMultiple = function(arrActionList) {
+      this.CallNext = function CallNext(nextAction) {
+        
+      };
+      this.CallMultiple = function CallMultiple(arrActionList, callback) {
+        var dfd = $.Deferred();
         var dfdPromiseList = [];
+        var arrMomento = [];
         for(var i=0, l=arrActionList.length; i<l; i++) {
-          
-          dfdPromiseList.push(this.Call(arrActionList[i].actionName,arrActionList[i].args,arrActionList[i].callback));
+          //var action = 
+          //UPDATE FOR MOMENTO EXPETING CUMULATION
+          //var mementoItem = {name:actionName, oppositeName:action.oppositeName,  args:args};
+          //var mementoItem = {name:actionName, args:args};
+          var mementoItem = arrActionList[i];//{name:actionName, oppositeName:action.oppositeName,  args:args};      
+          dfdPromiseList.push(
+            this.CallInner(mementoItem,null,arrActionList[i].callback).promise()
+          );
+          arrMomento.push(mementoItem);
         }
-        return dfdPromiseList;
+        UndoActions.push(arrMomento);
+        $.when.apply($, dfdPromiseList).done(dfd.resolve);
+        return dfd.promise();
       }
       
-      /*Deferred example*/
-      this.Call = function(actionName, args, callback) {
+     this.Call = function Call(myAction, args, callback) {
+        var actionName = myAction;
+        if(myAction && myAction.name) {
+          actionName = myAction.name;
+          args = myAction.args;
+        }
         var action = getAction(actionName);
-        var dfdPromise = this.CallWithoutHistory(actionName, args, callback);
-        UndoActions.push({name:actionName, oppositeName:action.oppositeName,  args:args});
+        
+        return this.CallMultiple([{name:action.name, oppositeName:action.oppositeName,  args:args}]);
+      } 
+      
+      /*Deferred example*/
+      this.CallInner = function CallInner(myAction, args, callback) {
+        var actionName = myAction;
+        if(myAction && myAction.name) {
+          actionName = myAction.name;
+          args = myAction.args;
+        }
+        var action = getAction(actionName);
+        var dfdPromise = this.CallInnerWithoutHistory(actionName, args, callback);
+        //UndoActions.push({name:actionName, oppositeName:action.oppositeName,  args:args});
         return dfdPromise;
       }
         
-      this.CallWithoutHistory = function(actionName, args, callback) {
+      this.CallInnerWithoutHistory = function CallWithoutHistory(myAction, args, callback) {
+        var actionName = myAction;
+        if(myAction && myAction.name) {
+          actionName = myAction.name;
+          args = myAction.args;
+        }
         var dfdOverall = $.Deferred();
         var dfdAction = $.Deferred();
         var dfdSocket = $.Deferred();
@@ -271,7 +306,7 @@ var dylanSeating = function() {
             dfdSocket.resolve();
           }
           action.doAction(args, dfdAction.resolve);
-          //UndoActions.push({action:actionName, args:args});
+          UndoActions.push({action:actionName, args:args});
         } else {
           console.log("No such action:" + actionName);
           dfdSocket.resolve({success:false,message:"No such socket."});
@@ -280,19 +315,33 @@ var dylanSeating = function() {
         $.when(dfdAction,dfdSocket).then(dfdOverall.resolve);
         return dfdOverall.promise(); 
       }
-      this.Undo = function(callback) {
-        var action = UndoActions.pop();
+      this.Undo = function Undo(callback) {
+        var dfdPromiseList = [];
+        var dfd = $.Deferred();
+         
+        var actionList = UndoActions.pop();
         //If it starts with undo, let's remove it?
-        var dfd = this.CallWithoutHistory(action.oppositeName, action.args);
-        RedoActions.push(action);
-        return dfd.promise();
+        RedoActions.push(actionList);
+        for(var i=0, l=actionList.length;i<l;i++) {
+          var action = actionList[i];
+          dfdPromiseList.push(this.CallInnerWithoutHistory(action.oppositeName, action.args).promise());
+          //alert("Need to use deferred promise here");
+        }
+        $.when.apply($, dfdPromiseList).done(dfd.resolve);
+        return dfd;
       }
-      this.Redo = function(callback) {
-        var action = RedoActions.pop();
-        //If it doesn't start with Undo then we should add it?
-        var dfd = this.CallWithoutHistory(action.name, action.args);
-        UndoActions.push(action);
-        return dfd.promise();
+      this.Redo = function Redo(callback) {
+        var dfdPromiseList = [];
+        var dfd = $.Deferred();
+        var actionList = RedoActions.pop();
+        UndoActions.push(actionList);
+        for(var i=0, l=actionList.length;i<l;i++) {
+          var action = actionList[i];
+          //If it doesn't start with Undo then we should add it?
+          dfdPromiseList.push(this.CallInnerWithoutHistory(action.name, action.args).promise());
+        }
+        $.when.apply($, dfdPromiseList).done(dfd.resolve);
+         return dfd;
       }
     }
     //When creating an action you should be using the raw objects.
@@ -335,21 +384,21 @@ var dylanSeating = function() {
   this.ac = new ActionController();
   this.ac.Add(
     {name: "PlaceGuestOnNewSeat",
-    doAction: function(args, callback) { 
+    doAction: function doActionPlaceGuestOnNewSeat(args, callback) { 
       var guest = GetGuest(args.guest),
           table = GetTable(args.table),
           seatMarker = GetSeatMarker(table, args.seatMarker);
       
       var seat = seatMarker.convertToSeat();
       console.log("Convert to new seat from place guest on new seat");
-      $.when(seat.table.dfdPromise).then(function() {
+      $.when(seat.table.dfdPromise).then(function whenPromiseDoActionPlaceGuestOnNewSeat() {
         console.log("DONE! - Convert to new seat from place guest on new seat");
         guest.moveToSeat(seat);
       });
      
       
     },
-    undoAction: function(args, callback) {
+    undoAction: function undoActionPlaceGuestOnNewSeat(args, callback) {
       var guest = GetGuest(args.guest),
           table = GetTable(args.table),
           seatFrom = GetSeat(args.guestOriginalSeat);
@@ -365,12 +414,12 @@ var dylanSeating = function() {
   });
   this.ac.Add(
     {name: "PlaceGuestOnSeat",
-    doAction: function(args, callback) { 
+    doAction: function doActionPlaceGuestOnSeat(args, callback) { 
       var guest = GetGuest(args.guest),
           seat = GetSeat(args.seat);
       guest.moveToSeat(seat);
     },
-    undoAction: function(args, callback) {
+    undoAction: function undoActionPlaceGuestOnSeat(args, callback) {
       var guest = GetGuest(args.guest),
           seat = GetSeat(args.seat),
           seatFrom = GetSeat(args.guestOriginalSeat);
@@ -385,12 +434,12 @@ var dylanSeating = function() {
   });
   this.ac.Add(
     {name: "SwapGuestWithGuest",
-    doAction: function(args, callback) { 
+    doAction: function doActionSwapGuestWithGuest(args, callback) { 
       var guest1 = GetGuest(args.guest1),
           guest2 = GetGuest(args.guest2);
       guest1.swapWithGuestAt(guest2.seat);
     },
-    undoAction: function(args, callback) {
+    undoAction: function undoActionSwapGuestWithGuest(args, callback) {
       var guest1 = GetGuest(guest1),
           guest2 = GetGuest(guest2);
       guest2.swapWithGuestAt(guest1.seat);
@@ -399,41 +448,41 @@ var dylanSeating = function() {
   });
   this.ac.Add(
     {name: "AddSeatAtPosition",
-    doAction: function(args, callback) { 
+    doAction: function doActionAddSeatAtPosition(args, callback) { 
       var  table = GetTable(args.table);
       table.addSeatFromMarker(args.seatNumber);
     },
-    undoAction: function(args, callback) {
+    undoAction: function undoActionAddSeatAtPosition(args, callback) {
       var  table = GetTable(args.table);
       table.removeSeat(args.seatNumber);
     }
   });
   this.ac.Add(
     {name: "AddTable",
-    doAction: function(args, callback) {
+    doAction: function doActionAddTable(args, callback) {
       $.when(LoadData({
           tableList: [args]
       })).then(callback);
     },
-    undoAction: function(args, callback) {
+    undoAction: function undoActionAddTable(args, callback) {
      var table = GetTable(args.id);
       $.when(table.remove())
       .then(function(){
-        myTables = _.reject(myTables, function(removeTable) { return removeTable.id === args.id});
+        myTables = _.reject(myTables, function undoActionAddTableRemoveItem(removeTable) { return removeTable.id === args.id});
         if(callback) callback();
       });
     }
   });
   this.ac.Add(
     {name: "AddGuest",
-    doAction: function(args, callback) {
+    doAction: function doActionAddGuest(args, callback) {
       $.when(LoadData({
           guestList: [args]
       })).then(callback);
     },
-    undoAction: function(args, callback) {
+    undoAction: function undoActionAddGuest(args, callback) {
       var guest = GetGuest(args.id);
-      $.when(guest.remove()).then(function(){
+      $.when(guest.remove()).then(function whenPromiseAddGuest(){
         myGuests = _.reject(myGuests, function(removeGuest) { return removeGuest.id === args.id});
         if(callback)callback();
       }); 
@@ -441,12 +490,12 @@ var dylanSeating = function() {
   });
   this.ac.Add(
     {name: "MoveTable",
-    doAction: function(args, callback) {
+    doAction: function doMoveTable(args, callback) {
       var table = GetTable(args.table);
       console.log("MoveTable", args);
       table.animateTable(args.current, callback);
     },
-    undoAction: function(args, callback) {
+    undoAction: function undoMoveTable(args, callback) {
       var table = GetTable(args.table);
       console.log("UndoMoveTable", args);
       table.animateTable(args.previous, callback);
@@ -454,12 +503,12 @@ var dylanSeating = function() {
   });
   this.ac.Add(
     {name: "EditGuest",
-    doAction: function(args, callback) {
+    doAction: function doEditGuest(args, callback) {
       var guest = GetGuest(args.guest);
       console.log("EditGuest", args);
       guest.SetName(args.current.name);
     },
-    undoAction: function(args, callback) {
+    undoAction: function undoEditGuest(args, callback) {
       var guest = GetGuest(args.guest);
       console.log("UndoEditGuest", args);
       guest.SetName(args.previous.name);

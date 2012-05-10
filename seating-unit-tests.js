@@ -1,4 +1,4 @@
-var testSpeed = 100;
+var testSpeed = 1000;
 //Mocks
 socket = {
 	on: function(socketName) {
@@ -96,25 +96,27 @@ module("Controller Functions", {
 	}
 });
 
-test('AddGuest and undo', function() {
+test('AddGuest and undo', function testAddGuestUndo() {
 	expect(3);
 //	start();
 	stop();
 	$.when(myDylanSeating.ClearDataExternal()).then(
-		function() {
+		function testAddGuestUndoAfterClear() {
 			start();
 			equals(myDylanSeating.getGuests().length,0, 'guests start off empty');
 			var ctrl = myDylanSeating.getController();
 			stop();
-			$.when(ctrl.ac.Call("AddGuest", {id: 1,name: "Test Guest",x: 10,y: 10}))
+			
+			
+			$.when(ctrl.ac.Call({name:"AddGuest", args:{id: 1,name: "Test Guest",x: 10,y: 10}}))
 			 .then(
-			       function(){ 
+			       function testAddGuestUndoAfterClearAndAddGuest(){ 
 					start();
 					equals(myDylanSeating.getGuests().length,1, 'Adding guest makes it go up by one');
 					stop();
 					$.when(ctrl.ac.Undo())
 					 .then(
-						function(){ 
+						function testAddGuestUndoAfterClearAndAddGuestAndUndo(){ 
 							start();
 							equals(myDylanSeating.getGuests().length,0, 'Undoing task makes the guest count go back to 0');	
 						}
@@ -156,8 +158,6 @@ asyncTest('AddTable and undo', function() {
 		}
 	);
 });			 
-
-
 test('AddTable then move and undo', function() {
 	expect(6);
 	stop();
@@ -200,7 +200,7 @@ test('AddTable then move and undo', function() {
 			);
 		}
 	);
-});	
+});
 
 
 test('CallMultiple : [AddTable,MoveTable] and Undo', function() {
