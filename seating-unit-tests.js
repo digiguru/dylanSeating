@@ -213,11 +213,11 @@ test('CallMultiple : [AddTable,MoveTable] and Undo', function() {
 			
 			
 			var callAddTable = {
-				actionName: "AddTable",
+				name: "AddTable",
 				args: {id: 1,type:"table",x: 250, y: 100, seatCount:12}
 			},
 			   callMoveTable = {
-				actionName: "MoveTable",
+				name: "MoveTable",
 				args: {
 					table:1,
 					previous:{x:250,y:100},

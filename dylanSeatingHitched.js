@@ -173,12 +173,12 @@ var dylanSeating = function dylanSeating() {
           
       } else if (mySeat.ismarker) {
         var callCreateGuest = {
-          actionName: "AddSeatAtPosition",
+          name: "AddSeatAtPosition",
           args: {table: mySeat.table.id, seatNumber: mySeat.seatNumber}
         }
   
         var callGuestOnSeat = {
-          actionName: "PlaceGuestOnSeat",
+          name: "PlaceGuestOnSeat",
           args: { guest: model.id, seat: mySeat.id, guestOriginalSeat: model.seat ? model.seat.id : null }
         }
         return Controller.ac.CallMultiple([callCreateGuest,callGuestOnSeat]);
@@ -200,9 +200,9 @@ var dylanSeating = function dylanSeating() {
       }
     }
     var ActionController = function ActionController() {
-      var cachedActions = [],
-        UndoActions = [],
-        RedoActions = [];
+      var cachedActions = [];
+      this.UndoActions = [];
+      this.RedoActions = [];
       this.WrapMessage = function WrapMessage(data) {
         var plan = {_id: myPlanID}; // Hack: Let's only deal with one floorplan for the time being!
         return {data: data, plan:plan};
@@ -235,29 +235,42 @@ var dylanSeating = function dylanSeating() {
         }
       }
       var getAction = function getAction(action) {
-        
-        return cachedActions[action];
+        if(!action.name) {
+          return cachedActions[action];
+        }
+        return action;
       };
-      this.CallNext = function CallNext(nextAction) {
+      this.CallNext = function CallNext(arrActionList, callback) {
+        var dfd = $.Deferred();
+        var arrMomento = [];
+        var nextAction = arrActionList.pop();
+        var currentDFD = this.CallInner(nextAction,nextAction.args,nextAction.callback).promise();
         
+        $.when(currentDFD).done(function chainedAction() {
+           if(arrActionList && arrActionList.length) {
+            var innerDFD = this.CallNext(arrActionList, callback);
+            $.when(innerDFD).done(function innerChaindAction() {
+              dfd.resolveWith(this);
+            });
+           } else {
+            dfd.resolveWith(this);
+           }
+        });
+        return dfd;
       };
       this.CallMultiple = function CallMultiple(arrActionList, callback) {
         var dfd = $.Deferred();
-        var dfdPromiseList = [];
-        var arrMomento = [];
-        for(var i=0, l=arrActionList.length; i<l; i++) {
-          //var action = 
-          //UPDATE FOR MOMENTO EXPETING CUMULATION
-          //var mementoItem = {name:actionName, oppositeName:action.oppositeName,  args:args};
-          //var mementoItem = {name:actionName, args:args};
-          var mementoItem = arrActionList[i];//{name:actionName, oppositeName:action.oppositeName,  args:args};      
-          dfdPromiseList.push(
-            this.CallInner(mementoItem,null,arrActionList[i].callback).promise()
+        
+        var arrListClone = this.CloneArray(arrActionList);
+        this.UndoActions.push(arrListClone);
+        var dfdPromise = this.CallNext(arrActionList.reverse());
+        var ac = this;
+        $.when(dfdPromise)
+          .done(
+              function doneCallMultipleInner() {
+                dfd.resolveWith(ac);
+             }
           );
-          arrMomento.push(mementoItem);
-        }
-        UndoActions.push(arrMomento);
-        $.when.apply($, dfdPromiseList).done(dfd.resolve);
         return dfd.promise();
       }
       
@@ -265,6 +278,8 @@ var dylanSeating = function dylanSeating() {
         var actionName = myAction;
         if(myAction && myAction.name) {
           actionName = myAction.name;
+        }
+        if(myAction && myAction.args) {
           args = myAction.args;
         }
         var action = getAction(actionName);
@@ -277,11 +292,13 @@ var dylanSeating = function dylanSeating() {
         var actionName = myAction;
         if(myAction && myAction.name) {
           actionName = myAction.name;
+        }
+        if(myAction && myAction.args) {
           args = myAction.args;
         }
         var action = getAction(actionName);
         var dfdPromise = this.CallInnerWithoutHistory(actionName, args, callback);
-        //UndoActions.push({name:actionName, oppositeName:action.oppositeName,  args:args});
+       
         return dfdPromise;
       }
         
@@ -289,6 +306,8 @@ var dylanSeating = function dylanSeating() {
         var actionName = myAction;
         if(myAction && myAction.name) {
           actionName = myAction.name;
+        }
+        if(myAction && myAction.args) {
           args = myAction.args;
         }
         var dfdOverall = $.Deferred();
@@ -300,47 +319,132 @@ var dylanSeating = function dylanSeating() {
           if(socket) {
             socket.emit(action.name, this.WrapMessage(args), function() {
                 console.log("called" + actionName, args);
-                dfdSocket.resolve();
+                dfdSocket.resolveWith(this);
             });
           } else {
-            dfdSocket.resolve();
+            dfdSocket.resolveWith(this);
           }
-          action.doAction(args, dfdAction.resolve);
-          UndoActions.push({action:actionName, args:args});
+          var ac = this;
+          action
+            .doAction(args,
+              function resolveCallInnerWithoutHistory() {
+                dfdAction.resolveWith(ac);
+              }
+            );
+      
         } else {
           console.log("No such action:" + actionName);
           dfdSocket.resolve({success:false,message:"No such socket."});
           dfdAction.resolve({success:false,message:"No such action."});
         }
-        $.when(dfdAction,dfdSocket).then(dfdOverall.resolve);
+        var ac = this;
+        
+        $.when(dfdAction,dfdSocket)
+          .then(
+              function ResolveInnerWithoutHistory() {
+               dfdOverall.resolveWith(ac);
+             }
+          );
         return dfdOverall.promise(); 
-      }
+      };
+      this.CloneArray = function CloneArray(array) {
+        return array.slice();
+      };
+      this.SequenceDeferred = function SequenceDeferred(list, reverse, callback) {
+        var dfd = $.Deferred();
+        var dfdPromiseList = [];
+        var nextAction = list.pop();
+        var swapAction = getAction(nextAction.name);
+        
+        var currentDFDPromise = this.CallInnerWithoutHistory(reverse ? swapAction.oppositeName : nextAction.name,nextAction.args,nextAction.callback).promise();
+        var ac = this;
+        var innerDeferred;
+        if(list && list.length) {
+          //dfdPromiseList.push(this.SequenceDeferred(list, reverse, callback));
+          innerDeferred = this.SequenceDeferred(list, reverse, callback);
+        } else {
+          innerDeferred = $.Deferred();
+          innerDeferred.resolveWith(ac);
+          
+        }
+        $.when(currentDFDPromise, innerDeferred.promise()).done(function chainedAction() {
+          dfd.resolveWith(ac);
+        });
+        dfdPromiseList.push(dfd.promise());
+        
+        return dfd;
+      };
       this.Undo = function Undo(callback) {
+      
         var dfdPromiseList = [];
         var dfd = $.Deferred();
-         
-        var actionList = UndoActions.pop();
+        var arrActionList = this.UndoActions.pop();
+        var arrListClone =  this.CloneArray(arrActionList);
+        
         //If it starts with undo, let's remove it?
-        RedoActions.push(actionList);
-        for(var i=0, l=actionList.length;i<l;i++) {
+        
+        this.RedoActions.push(arrActionList);
+        var dfd = $.Deferred();
+        var ac = this;
+        
+        /*
+         $.when
+          .apply($, this.SequenceDeferred(arrListClone, reverse, callback))
+          .done(
+            function resolveUndoSequence() {
+              dfd.resolveWith(ac);
+            }
+          )
+        return dfd.promise();
+        */
+        var reverse = true;
+        return this.SequenceDeferred(arrListClone, reverse, callback);
+        
+       /* //this.UndoActions.push(arrListClone);
+        dfdPromiseList.push(this.CallInnerWithoutHistory(arrActionList.reverse()).promise());
+        var ac = this;
+        $.when.apply($, dfdPromiseList)
+          .done(
+              function doneCallMultipleInner() {
+                dfd.resolveWith(ac);
+             }
+          );
+        return dfd.promise();
+      
+       */
+       
+      
+      
+      
+         
+        /*
+       for(var i=0, l=actionList.length;i<l;i++) {
           var action = actionList[i];
           dfdPromiseList.push(this.CallInnerWithoutHistory(action.oppositeName, action.args).promise());
-          //alert("Need to use deferred promise here");
+          alert("Need to use deferred promise here");
         }
-        $.when.apply($, dfdPromiseList).done(dfd.resolve);
+        var ac = this;
+        $.when.apply($, dfdPromiseList).done(function UndoResolve() {
+              dfd.resolveWith(ac);
+        });
         return dfd;
+        */
+        
       }
       this.Redo = function Redo(callback) {
         var dfdPromiseList = [];
         var dfd = $.Deferred();
-        var actionList = RedoActions.pop();
-        UndoActions.push(actionList);
+        var actionList = this.RedoActions.pop();
+        this.UndoActions.push(actionList);
         for(var i=0, l=actionList.length;i<l;i++) {
           var action = actionList[i];
           //If it doesn't start with Undo then we should add it?
           dfdPromiseList.push(this.CallInnerWithoutHistory(action.name, action.args).promise());
         }
-        $.when.apply($, dfdPromiseList).done(dfd.resolve);
+         var ac = this;
+        $.when.apply($, dfdPromiseList).done(function RedoResolve() {
+              dfd.resolveWith(ac);
+        });
          return dfd;
       }
     }
