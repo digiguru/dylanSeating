@@ -358,18 +358,24 @@ var dylanSeating = function dylanSeating() {
         
         var currentDFDPromise = this.CallInnerWithoutHistory(reverse ? swapAction.oppositeName : nextAction.name,nextAction.args,nextAction.callback).promise();
         var ac = this;
-        var innerDeferred;
-        if(list && list.length) {
+        
+        $.when(currentDFDPromise).done(
+          function chainedAction() {
+            //, innerDeferred.promise()
+            if(list && list.length) {
           //dfdPromiseList.push(this.SequenceDeferred(list, reverse, callback));
-          innerDeferred = this.SequenceDeferred(list, reverse, callback);
-        } else {
-          innerDeferred = $.Deferred();
-          innerDeferred.resolveWith(ac);
-          
-        }
-        $.when(currentDFDPromise, innerDeferred.promise()).done(function chainedAction() {
-          dfd.resolveWith(ac);
+            var innerDeferred = this.SequenceDeferred(list, reverse, callback);
+            $.when(innerDeferred).done(function innerChaindAction() {
+              dfd.resolveWith(this);
+            });
+          } else {
+             dfd.resolveWith(ac);
+          }
+         
         });
+        
+     
+        
         dfdPromiseList.push(dfd.promise());
         
         return dfd;
