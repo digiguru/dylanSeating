@@ -259,31 +259,13 @@ var dylanSeating = function dylanSeating() {
         return dfd;
       };
       this.CallMultiple = function CallMultiple(arrActionList, callback) {
-        var dfd = $.Deferred();
-        //this.SequenceDeferred(arrListClone, reverse, callback);
-        var arrListClone = this.CloneArray(arrActionList);
+        var dfd = $.Deferred(),
+            arrListClone = this.CloneArray(arrActionList),
+            reverse = false;
+        
         this.UndoActions.push(arrListClone);
-        /*var dfdPromise = this.CallNext(arrActionList.reverse());
-        $.when(dfdPromise)
-          .done(
-              function doneCallMultipleInner() {
-                dfd.resolveWith(ac);
-             }
-          );
-        return dfd.promise();*/
-         var reverse = false;
-       
+      
         return this.SequenceDeferred(arrActionList.reverse(), reverse, callback);
-        
-        /*
-        var dfd = $.Deferred();
-        var arrActionList = this.UndoActions.pop();
-        var arrListClone =  this.CloneArray(arrActionList);
-        
-        this.RedoActions.push(arrActionList);
-        
-        var reverse = true;
-        return this.SequenceDeferred(arrListClone, reverse, callback);*/
         
       }
       
@@ -391,11 +373,10 @@ var dylanSeating = function dylanSeating() {
       };
       this.Undo = function Undo(callback) {
       
-        var dfd = $.Deferred();
-        var arrActionList = this.UndoActions.pop();
-        var arrListClone =  this.CloneArray(arrActionList);
-        var ac = this;
-        var reverse = true;
+        var dfd = $.Deferred(),
+            arrActionList = this.UndoActions.pop(),
+            arrListClone =  this.CloneArray(arrActionList),
+            reverse = true;
         
         this.RedoActions.push(arrActionList);
        
@@ -403,6 +384,16 @@ var dylanSeating = function dylanSeating() {
        
       }
       this.Redo = function Redo(callback) {
+        
+        var dfd = $.Deferred(),
+          arrActionList = this.RedoActions.pop(),
+          arrListClone =  this.CloneArray(arrActionList),
+          reverse = false;
+        
+        this.UndoActions.push(arrActionList);
+       
+        return this.SequenceDeferred(arrListClone.reverse(), reverse, callback);
+     /*   
         var dfdPromiseList = [];
         var dfd = $.Deferred();
         var actionList = this.RedoActions.pop();
@@ -417,7 +408,9 @@ var dylanSeating = function dylanSeating() {
               dfd.resolveWith(ac);
         });
          return dfd;
+           */
       }
+   
     }
     //When creating an action you should be using the raw objects.
     //Generally undo actions should be generated at the same time,

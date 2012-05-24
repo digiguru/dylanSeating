@@ -203,8 +203,8 @@ test('AddTable then move and undo', function() {
 });
 
 
-test('CallMultiple : [AddTable,MoveTable] and Undo', function() {
-	expect(5);
+test('CallMultiple : [AddTable,MoveTable], then Undo, then Redo', function() {
+	expect(8);
 	stop();
 	$.when(myDylanSeating.ClearDataExternal()).then(
 		function() {
@@ -214,7 +214,7 @@ test('CallMultiple : [AddTable,MoveTable] and Undo', function() {
 			
 			var callAddTable = {
 				name: "AddTable",
-				args: {id: 1,type:"table",x: 250, y: 100, seatCount:12}
+				args: {id: 1,type:"table",x: 250, y: 100, seatCount:3}
 			},
 			   callMoveTable = {
 				name: "MoveTable",
@@ -239,9 +239,20 @@ test('CallMultiple : [AddTable,MoveTable] and Undo', function() {
 						function(){ 
 							start();
 							equals(myDylanSeating.getTables().length,0, 'Undoing moves the table, but then gets rid of it!');
-							
+							stop();
+							$.when(ctrl.ac.Redo())
+							.then(
+								function(){ 
+									start();
+									equals(myDylanSeating.getTables().length,1, 'Adding table makes it go up by one');
+									equals(myDylanSeating.getTables()[0].GetX(),300, 'Moving table repositions x axis');
+									equals(myDylanSeating.getTables()[0].GetY(),150, 'Moving table repositions y axis');
+									
+								}
+							);
 						}
 					);
+					
 				}
 			);
 		}
