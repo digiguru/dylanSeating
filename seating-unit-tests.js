@@ -96,8 +96,8 @@ module("Controller Functions", {
 	}
 });
 
-test('AddGuest and undo', function testAddGuestUndo() {
-	expect(3);
+test('AddGuest, undo, redo', function testAddGuestUndo() {
+	expect(4);
 //	start();
 	stop();
 	$.when(myDylanSeating.ClearDataExternal()).then(
@@ -119,6 +119,14 @@ test('AddGuest and undo', function testAddGuestUndo() {
 						function testAddGuestUndoAfterClearAndAddGuestAndUndo(){ 
 							start();
 							equals(myDylanSeating.getGuests().length,0, 'Undoing task makes the guest count go back to 0');	
+							stop();
+							$.when(ctrl.ac.Redo())
+							.then(
+							        function(){ 
+									start();
+									equals(myDylanSeating.getGuests().length,1, 'guests now goes back to 1');
+							        }
+							);
 						}
 					);
 					
@@ -131,8 +139,8 @@ test('AddGuest and undo', function testAddGuestUndo() {
 	);
 	//stop();
 });
-asyncTest('AddTable and undo', function() {
-	expect(3);
+asyncTest('AddTable, undo, redo', function() {
+	expect(4);
 	$.when(myDylanSeating.ClearDataExternal()).then(
 		function() {
 			start();
@@ -150,6 +158,14 @@ asyncTest('AddTable and undo', function() {
 						function(){ 
 							start();
 							equals(myDylanSeating.getTables().length,0, 'Undoing task makes the table count go back to 0');	
+						stop();
+							$.when(ctrl.ac.Redo())
+							.then(
+							        function(){ 
+									start();
+									equals(myDylanSeating.getTables().length,1, 'table now goes back to 1');
+							        }
+							);
 						}
 					);
 				}
@@ -157,9 +173,18 @@ asyncTest('AddTable and undo', function() {
 			
 		}
 	);
-});			 
-test('AddTable then move and undo', function() {
-	expect(6);
+});
+
+//All of the following still need tests to be written for them:
+    //  "PlaceGuestOnNewSeat", {guest:guest,table:table,seatMarker:seatMarker,guestOriginalSeat:guest.seat}
+    //  "PlaceGuestOnSeat",    {guest:guest,seat:seat,guestOriginalSeat:guest.seat}
+    //  "SwapGuestWithGuest",  {guest1:guest,guest2:guest}
+    //  "AddSeatAtPosition",   {table:table, seatNumber:seatNumber}
+    //  "EditGuest", {name:name}
+});
+
+test('AddTable then move then undo, then undo, then redo, then redo', function() {
+	expect(10);
 	stop();
 	$.when(myDylanSeating.ClearDataExternal()).then(
 		function() {
@@ -191,6 +216,34 @@ test('AddTable then move and undo', function() {
 									start();
 									equals(myDylanSeating.getTables()[0].GetX(),200, 'Moving table repositions x axis');
 									equals(myDylanSeating.getTables()[0].GetY(),200, 'Moving table repositions y axis');
+							
+									stop();
+									$.when(ctrl.ac.Undo())
+									 .then(
+										function(){ 
+											start();
+											equals(myDylanSeating.getTables().length,0, 'Undo removes the table');
+											stop();
+											$.when(ctrl.ac.Redo())
+											 .then(
+												function(){ 
+													start();
+													equals(myDylanSeating.getTables().length,1, 'Redo adds the table back');
+												
+													stop();
+													$.when(ctrl.ac.Redo())
+													 .then(
+														function(){ 
+															start();
+															equals(myDylanSeating.getTables()[0].GetX(),400, 'Moving table repositions x axis');
+															equals(myDylanSeating.getTables()[0].GetY(),400, 'Moving table repositions y axis');
+														}
+													);
+												
+												}
+											);
+										}
+									);
 							
 								}
 							);
@@ -257,7 +310,5 @@ test('CallMultiple : [AddTable,MoveTable], then Undo, then Redo', function() {
 			);
 		}
 	);
-});	
-
-
 });
+
