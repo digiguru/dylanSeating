@@ -11,17 +11,6 @@ socket = {
 		}
 	}
 }
-/*
-Raphael = function() {
-	console.log("Mock Raphael");
-}
-paper = {
-	text: function() {
-		console.log("Mock Text");
-		return {};
-	}
-}
-*/
 $(function() {
 	
 var myDylanSeating;
@@ -139,6 +128,7 @@ test('AddGuest, undo, redo', function testAddGuestUndo() {
 	);
 	//stop();
 });
+
 asyncTest('AddTable, undo, redo', function() {
 	expect(4);
 	$.when(myDylanSeating.ClearDataExternal()).then(
@@ -175,13 +165,71 @@ asyncTest('AddTable, undo, redo', function() {
 	);
 });
 
+asyncTest('AddTable AddGuestAtNewSeat, undo, redo', function() {
+	expect(4);
+	$.when(myDylanSeating.ClearDataExternal()).then(
+		function() {
+			start();
+			equals(myDylanSeating.getTables().length,0, 'tables start off empty');
+			
+			var callAddTable = {
+				name: "AddTable",
+				args: {id: 1,type:"table",x: 250, y: 100, seatCount:3}
+			},
+			   callAddGuest = {
+				name: "AddGuest",
+				args: {id: 1,name: "Test Guest",x: 10,y: 10}
+			};
+			var ctrl = myDylanSeating.getController();
+			
+			stop();
+			
+			$.when(ctrl.ac.CallMultiple([callAddTable,callAddGuest]))
+			 .then(
+				function(){ 
+					start();
+					equals(myDylanSeating.getTables().length,1, 'Adding table makes it go up by one');
+					equals(myDylanSeating.getGuests().length,1, 'Adding a guest makes it go up by one');
+					equals(myDylanSeating.getTables()[0].seatCount,3, 'The seatcount starts off at 3');
+					stop();
+					//{guest:guest,table:table,seatMarker:seatMarker,guestOriginalSeat:guest.seat}
+					$.when(ctrl.ac.Call("PlaceGuestOnNewSeat", {guest: 1,table:1,seatMarker:1}))
+					.then(function() {
+						equals(myDylanSeating.getTables().length,1, 'Adding table makes it go up by one');
+								equals(myDylanSeating.getGuests().length,1, 'Adding a guest makes it go up by one');
+								equals(myDylanSeating.getTables()[0].seatCount,3, 'The seatcount starts off at 3');
+						$.when(ctrl.ac.Undo())
+						 .then(
+							function(){ 
+								start();
+								equals(myDylanSeating.getTables().length,1, 'Adding table makes it go up by one');
+								equals(myDylanSeating.getGuests().length,1, 'Adding a guest makes it go up by one');
+								equals(myDylanSeating.getTables()[0].seatCount,3, 'The seatcount starts off at 3');
+								stop();
+								$.when(ctrl.ac.Redo())
+								.then(
+									function(){ 
+										start();
+										equals(myDylanSeating.getTables().length,1, 'table now goes back to 1');
+									}
+								);
+							}
+						);
+					});
+				}
+			);
+			
+		}
+	);
+});
+
 //All of the following still need tests to be written for them:
     //  "PlaceGuestOnNewSeat", {guest:guest,table:table,seatMarker:seatMarker,guestOriginalSeat:guest.seat}
     //  "PlaceGuestOnSeat",    {guest:guest,seat:seat,guestOriginalSeat:guest.seat}
     //  "SwapGuestWithGuest",  {guest1:guest,guest2:guest}
     //  "AddSeatAtPosition",   {table:table, seatNumber:seatNumber}
     //  "EditGuest", {name:name}
-});
+//});
 
 test('AddTable then move then undo, then undo, then redo, then redo', function() {
 	expect(10);
@@ -312,3 +360,5 @@ test('CallMultiple : [AddTable,MoveTable], then Undo, then Redo', function() {
 	);
 });
 
+
+});
