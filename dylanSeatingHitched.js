@@ -459,9 +459,14 @@ var dylanSeating = function dylanSeating() {
       
       var seat = seatMarker.convertToSeat();
       console.log("Convert to new seat from place guest on new seat");
-      $.when(seat.table.dfdPromise).then(function whenPromiseDoActionPlaceGuestOnNewSeat() {
+      $.when(seat.table.dfdPromise).then(function whenPromiseDoActionPlaceGuestOnNewSeatNewSeat() {
         console.log("DONE! - Convert to new seat from place guest on new seat");
-        guest.moveToSeat(seat);
+        //guest.moveToSeat(seat);
+        console.log("Place guest on new seat");
+        $.when(guest.moveToSeat(seat)).then(function whenPromiseDoActionPlaceGuestOnNewSeatPlaceGuest() {
+          console.log("DONE! - Place guest on new seat");
+          callback();
+        });
       });
      
       
@@ -470,13 +475,24 @@ var dylanSeating = function dylanSeating() {
       var guest = GetGuest(args.guest),
           table = GetTable(args.table),
           seatFrom = GetSeat(args.guestOriginalSeat);
+      var dfdPromise;
       
       if(seatFrom) {
-        guest.moveToSeat(seatFrom);
+        console.log("undoActionPlaceGuestOnNewSeat - Move to seat");
+        dfdPromise = guest.moveToSeat(seatFrom);
       } else {
-         guest.removeFromSeat();
+        console.log("undoActionPlaceGuestOnNewSeat - Remove from seat");
+        dfdPromise = guest.removeFromSeat();
       }
-      table.removeSeat(args.seatMarker);
+      $.when(dfdPromise).then(function undoActionPlaceGuestOnNewSeatMoveGuest() {
+        console.log("undoActionPlaceGuestOnNewSeat - Remove seat");
+        table.removeSeat(args.seatMarker);
+        $.when(table.dfdPromise).then(function undoActionPlaceGuestOnNewSeatRemoveSeat() {
+          console.log("DONE! - Undo Place guest on new seat");
+          callback();
+        });
+      });
+      
     
     }
   });
@@ -1170,14 +1186,21 @@ var dylanSeating = function dylanSeating() {
           }
       };
       this.removeFromSeat = function () {
+          var dfd = $.Deferred();
           logEvent("remove from seat " + this.name);
           var seatCX = 0,
               seatCY = 0;
           this.seat = false;
-          this.animateToSpot(seatCX, seatCY, 0);
-  
+          var guestObj = this;
+          this.animateToSpot(seatCX, seatCY, 0, function() {
+            var dfdRemove = guestObj.remove();
+            console.log("Removed guest from seat");
+            $.when(dfdRemove).then(dfd.resolve);
+          });
+          
+          return dfd.promise();
       };
-      this.animateToSpot = function (x, y, rotation) {
+      this.animateToSpot = function (x, y, rotation, callback) {
           if (this.graphic) {
               this.graphic.model = this;
               /*var myX = this.GetX(),
@@ -1195,7 +1218,7 @@ var dylanSeating = function dylanSeating() {
                   this.model.moveGhostToNewLocation();
                   this.model.showHelpText(this.model.name);
                   this.model.SetRotation(rotation);
-              
+                  if(callback)callback();
               });
           }
   
@@ -1217,33 +1240,37 @@ var dylanSeating = function dylanSeating() {
           //in a curved line 
           //rather than straight.
       };
-      this.makeSureMainGraphicIsInRightPlace = function (seat) {
+      this.makeSureMainGraphicIsInRightPlace = function (seat,callback) {
           var myCX = this.GetX(),
               myCY = this.GetY(),
               seatCX = seat.GetX(),
               seatCY = seat.GetY(),
               seatRotation = seat.GetRotation();
+              
           if (myCX != seatCX || myCY != seatCY) {
               logEvent("Seat not in right place for " + this.name);
-              this.animateToSpot(seatCX, seatCY, seatRotation);
+              this.animateToSpot(seatCX, seatCY, seatRotation, callback);
+              
           } else {
               this.SetRotation(seatRotation);
               this.moveGhostToNewLocation();
+              if(callback)callback();
           }
       };
       this.moveToSeat = function (seat) {
+          var dfd = $.Deferred();
           if(this.ghost) {
             this.ghost.toFront();
           }
           this.graphic.toFront();
   
           logEvent("seat move for " + this.name);
-          this.makeSureMainGraphicIsInRightPlace(seat);
+          this.makeSureMainGraphicIsInRightPlace(seat, dfd.resolve);
           this.seat = seat;
           this.seat.isoccupied = true;
           this.seat.guest = this;
           scene.SeatConflictCheck(this.seat);
-  
+          return dfd.promise();
       };
   
       this.GetX = Generic.PathGetX;
@@ -1904,6 +1931,9 @@ var dylanSeating = function dylanSeating() {
           return mySeat;
       };
       this.removeSeat = function (index) {
+          
+          var isLastSeat = (this.seatCount === index);//,
+          //    dfd = $.Deferred();
           logEvent("remove seat" + index);
           
           this.tableSeatList[index].remove();
@@ -1915,7 +1945,7 @@ var dylanSeating = function dylanSeating() {
           }
   
           this.renderSeats();
-         
+          //return dfd.promise();
       };
       this.renderSeats = function () {
         var dfd = $.Deferred();

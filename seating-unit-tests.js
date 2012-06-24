@@ -1,4 +1,4 @@
-var testSpeed = 1000;
+var testSpeed = 4000;
 //Mocks
 socket = {
 	on: function(socketName) {
@@ -166,7 +166,7 @@ asyncTest('AddTable, undo, redo', function() {
 });
 
 asyncTest('AddTable AddGuestAtNewSeat, undo, redo', function() {
-	expect(4);
+	expect(17);
 	$.when(myDylanSeating.ClearDataExternal()).then(
 		function() {
 			start();
@@ -195,22 +195,33 @@ asyncTest('AddTable AddGuestAtNewSeat, undo, redo', function() {
 					//{guest:guest,table:table,seatMarker:seatMarker,guestOriginalSeat:guest.seat}
 					$.when(ctrl.ac.Call("PlaceGuestOnNewSeat", {guest: 1,table:1,seatMarker:1}))
 					.then(function() {
-						equals(myDylanSeating.getTables().length,1, 'Adding table makes it go up by one');
-								equals(myDylanSeating.getGuests().length,1, 'Adding a guest makes it go up by one');
-								equals(myDylanSeating.getTables()[0].seatCount,3, 'The seatcount starts off at 3');
+						start();
+						equals(myDylanSeating.getTables()[0].seatCount,4, 'The seatcount goes up to 4');
+						equals(myDylanSeating.getTables()[0].tableSeatList[0].guest,false, 'There is no guest sitting at seat 1.');
+						equals(myDylanSeating.getTables()[0].tableSeatList[1].guest,false, 'There is no guest sitting at seat 2.');
+						equals(myDylanSeating.getTables()[0].tableSeatList[2].guest.name,'Test Guest', 'The guest "Test Guest" gets seated at seat number 3');
+						equals(myDylanSeating.getTables()[0].tableSeatList[3].guest,false, 'There is no guest sitting at seat 4.');
+						stop();
 						$.when(ctrl.ac.Undo())
 						 .then(
 							function(){ 
 								start();
-								equals(myDylanSeating.getTables().length,1, 'Adding table makes it go up by one');
-								equals(myDylanSeating.getGuests().length,1, 'Adding a guest makes it go up by one');
-								equals(myDylanSeating.getTables()[0].seatCount,3, 'The seatcount starts off at 3');
+								console.log("UNDO!!!!!");
+								equals(myDylanSeating.getTables()[0].seatCount,3, 'The seatcount goes down to 3');
+								equals(myDylanSeating.getTables()[0].tableSeatList[0].guest,false, 'There is no guest sitting at seat 1.');
+								equals(myDylanSeating.getTables()[0].tableSeatList[1].guest,false, 'There is no guest sitting at seat 2.');
+								equals(myDylanSeating.getTables()[0].tableSeatList[2].guest,false, 'There is no guest sitting at seat 3.');
 								stop();
 								$.when(ctrl.ac.Redo())
 								.then(
 									function(){ 
 										start();
-										equals(myDylanSeating.getTables().length,1, 'table now goes back to 1');
+										equals(myDylanSeating.getTables()[0].seatCount,4, 'The seatcount goes up to 4');
+										equals(myDylanSeating.getTables()[0].tableSeatList[0].guest,false, 'There is no guest sitting at seat 1.');
+										equals(myDylanSeating.getTables()[0].tableSeatList[1].guest,false, 'There is no guest sitting at seat 2.');
+										equals(myDylanSeating.getTables()[0].tableSeatList[2].guest.name,'Test Guest', 'The guest "Test Guest" gets seated at seat number 3');
+										equals(myDylanSeating.getTables()[0].tableSeatList[3].guest,false, 'There is no guest sitting at seat 4.');
+											
 									}
 								);
 							}
