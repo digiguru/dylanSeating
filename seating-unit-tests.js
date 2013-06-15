@@ -556,7 +556,6 @@ $(function () {
                 
                 $.when(ctrl.ac.Call("PlaceGuestOnSeat", {
                     guest: 1,
-                    table: 1,
                     seat: 1
                 })).then(function () {
                     start();
@@ -564,8 +563,7 @@ $(function () {
                     stop();
                     $.when(ctrl.ac.Call("PlaceGuestOnSeat", {
                         guest: 2,
-                        table: 2,
-                        seat: 3
+                        seat: 6
                     })).then(function () {
                         start();
                         equals(myDylanSeating.getTables()[1].tableSeatList[2].guest.name, 'Guest 2', 'Guest 2 in the right place');
