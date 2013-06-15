@@ -1030,6 +1030,14 @@ var DylanSeating = function DylanSeating() {
 
 
         },
+        pathGenerateCircularArc = function (point1, point2, radius) {
+            point1.x = point1.x || 0;
+            point1.y = point1.y || 0;
+            point2.x = point2.x || 0;
+            point2.y = point2.y || 0;
+
+            return "M" + point1.x + " " + point1.y + " L " + point1.x + " " + point1.y + " A " + radius + " " + radius + " 0 0 1 " + point2.x + " " + point2.y;
+        },
         ToolBar = function () {
             var lnkUndo = paper.path(shapes.iconback),
                 lnkRedo = paper.path(shapes.iconforward),
@@ -1286,7 +1294,7 @@ var DylanSeating = function DylanSeating() {
                 window.alert(link);
             };
             this.applyStylingToIcon(lnkGitH, "Fork me on github", function (e) {
-                createNewPlan();
+                controller.createNewPlan();
             });
             this.applyStylingToIcon(lnkNode, "Using Node.js on the server", function (e) {
                 this.linkTo("hello");
@@ -1909,22 +1917,93 @@ var DylanSeating = function DylanSeating() {
                 controller.ClickAddSeatAtPosition(model.table, model.seatNumber + 1);
             });
         },
-        GenerateCirclePath = function (x, y, r) {
+        /*GenerateCirclePath = function (x, y, r) {
             var s = "M" + x + "," + (y - r) + "A" + r + "," + r + ",0,1,1," + (x - 0.1) + "," + (y - r) + " z";
             return s;
-        },
-        pathGenerateCircularArc = function (point1, point2, radius) {
-            point1.x = point1.x || 0;
-            point1.y = point1.y || 0;
-            point2.x = point2.x || 0;
-            point2.y = point2.y || 0;
-
-            return "M" + point1.x + " " + point1.y + " L " + point1.x + " " + point1.y + " A " + radius + " " + radius + " 0 0 1 " + point2.x + " " + point2.y;
-        },
+        },*/
+        
 
         RoundTable = function (x, y, seatCount, seatList, id) {
             var i,
-                l;
+                l,
+                start = function (event) {
+                    var model = this.attr("model"),
+                        i,
+                        l,
+                        s;
+    
+                    this.ox = model.GetX();
+                    this.oy = model.GetY();
+                    model.previousPosition = {
+                        x: model.GetX(),
+                        y: model.GetY()
+                    };
+                    for (i = 0, l = model.tableSeatList.length; i < l; i += 1) {
+                        s = model.tableSeatList[i];
+                        s.graphic.attr({
+                            fromTableX: s.GetX(),
+                            fromTableY: s.GetY()
+                        });
+                    }
+                    for (i = 0, l = model.tableSeatAdditions.length; i < l; i += 1) {
+                        s = model.tableSeatAdditions[i];
+                        s.graphic.attr({
+                            fromTableX: s.GetX(),
+                            fromTableY: s.GetY()
+                        });
+                    }
+                    model.seatSet.attr({
+                        stroke: colSeatSelectedStroke
+                    });
+                    this.attr("stroke", colTableSelectedStroke);
+                },
+                move = function (mx, my) {
+                    var model = this.attr("model"),
+                        mouseCX = this.ox + mx,
+                        mouseCY = this.oy + my,
+                        i,
+                        l,
+                        s;
+
+                    for (i = 0, l = model.tableSeatList.length; i < l; i += 1) {
+                        s = model.tableSeatList[i];
+                        s.setGraphicPosition({
+                            x: s.graphic.attr("fromTableX") + mx,
+                            y: s.graphic.attr("fromTableY") + my
+                        });
+                    }
+                    for (i = 0, l = model.tableSeatAdditions.length; i < l; i += 1) {
+                        s = model.tableSeatAdditions[i];
+                        s.setGraphicPosition({
+                            x: s.graphic.attr("fromTableX") + mx,
+                            y: s.graphic.attr("fromTableY") + my
+                        });
+                    }
+                    model.setGraphicPosition({
+                        x: mouseCX,
+                        y: mouseCY
+                    });
+
+                },
+                up = function () {
+                    var model = this.attr("model");
+                    model.seatSet.attr({
+                        stroke: colTableStroke
+                    });
+                    controller.ac.Call("MoveTable", {
+                        table: model.id,
+                        previous: model.previousPosition,
+                        current: {
+                            x: model.GetX(),
+                            y: model.GetY()
+                        }
+                    });
+                };
+            
+            
+            
+            
+            
             this.id = id || controller.NextTableID();
             logEvent("Create RoundTable");
 
@@ -2216,79 +2295,7 @@ var DylanSeating = function DylanSeating() {
 
             this.dfdPromise = this.renderSeats();
 
-            var start = function (event) {
-                var model = this.attr("model"),
-                    i,
-                    l,
-                    s;
-
-                this.ox = model.GetX();
-                this.oy = model.GetY();
-                model.previousPosition = {
-                    x: model.GetX(),
-                    y: model.GetY()
-                };
-                for (i = 0, l = model.tableSeatList.length; i < l; i += 1) {
-                    s = model.tableSeatList[i];
-                    s.graphic.attr({
-                        fromTableX: s.GetX(),
-                        fromTableY: s.GetY()
-                    });
-                }
-                for (i = 0, l = model.tableSeatAdditions.length; i < l; i += 1) {
-                    s = model.tableSeatAdditions[i];
-                    s.graphic.attr({
-                        fromTableX: s.GetX(),
-                        fromTableY: s.GetY()
-                    });
-                }
-                model.seatSet.attr({
-                    stroke: colSeatSelectedStroke
-                });
-                this.attr("stroke", colTableSelectedStroke);
-            },
-                move = function (mx, my) {
-                    var model = this.attr("model"),
-                        mouseCX = this.ox + mx,
-                        mouseCY = this.oy + my,
-                        i,
-                        l,
-                        s;
-
-                    for (i = 0, l = model.tableSeatList.length; i < l; i += 1) {
-                        s = model.tableSeatList[i];
-                        s.setGraphicPosition({
-                            x: s.graphic.attr("fromTableX") + mx,
-                            y: s.graphic.attr("fromTableY") + my
-                        });
-                    }
-                    for (i = 0, l = model.tableSeatAdditions.length; i < l; i += 1) {
-                        s = model.tableSeatAdditions[i];
-                        s.setGraphicPosition({
-                            x: s.graphic.attr("fromTableX") + mx,
-                            y: s.graphic.attr("fromTableY") + my
-                        });
-                    }
-                    model.setGraphicPosition({
-                        x: mouseCX,
-                        y: mouseCY
-                    });
-
-                },
-                up = function () {
-                    var model = this.attr("model");
-                    model.seatSet.attr({
-                        stroke: colTableStroke
-                    });
-                    controller.ac.Call("MoveTable", {
-                        table: model.id,
-                        previous: model.previousPosition,
-                        current: {
-                            x: model.GetX(),
-                            y: model.GetY()
-                        }
-                    });
-                };
+            
             this.animateTable = function (position, callback) {
                 var currentLocation = this.GetLocation();
                 if ((currentLocation.x !== position.x) || (currentLocation.y !== position.y) || (currentLocation.r !== position.r)) {
@@ -2488,6 +2495,63 @@ var DylanSeating = function DylanSeating() {
                         previous: model.previousPosition,
                         current: model.GetLocation()
                     });
+                },
+                start = function (event) {
+                    logEvent("StartDrag Desk");
+                    var model = this.attr("model"),
+                        i,
+                        l,
+                        s;
+                    model.previousPosition = model.GetLocation(); //{x:model.GetX(),y:model.GetY(),r:model.rotation}
+                    this.ox = model.GetX();
+                    this.oy = model.GetY();
+                    for (i = 0, l = model.tableSeatList.length; i < l; i += 1) {
+                        s = model.tableSeatList[i];
+                        s.graphic.attr({
+                            fromTableX: s.GetX(),
+                            fromTableY: s.GetY()
+                        });
+    
+    
+    
+                    }
+                    model.seatSet.attr({
+                        stroke: colSeatSelectedStroke
+                    });
+                    this.attr("stroke", colTableSelectedStroke);
+                },
+                move = function (mx, my) {
+                    var model = this.attr("model"),
+                        mouseCX = this.ox + mx,
+                        mouseCY = this.oy + my,
+                        i,
+                        l,
+                        s;
+
+                    for (i = 0, l = model.tableSeatList.length; i < l; i += 1) {
+                        s = model.tableSeatList[i];
+                        s.setGraphicPosition({
+                            x: s.graphic.attr("fromTableX") + mx,
+                            y: s.graphic.attr("fromTableY") + my
+                        });
+                    }
+
+                    model.setGraphicPosition({
+                        x: mouseCX,
+                        y: mouseCY
+                    });
+                },
+                up = function () {
+                    logEvent("EndDrag Desk");
+                    var model = this.attr("model");
+                    model.seatSet.attr({
+                        stroke: colTableStroke
+                    });
+                    controller.ac.Call("MoveTable", {
+                        table: model.id,
+                        previous: model.previousPosition,
+                        current: model.GetLocation() //{x:model.GetX(),y:model.GetY(),r:model.rotation}
+                    });
                 };
             this.rotationHandle.drag(rotationmove, rotationstart, rotationup);
             this.rotationHandle.mouseover(function (event) {
@@ -2530,64 +2594,6 @@ var DylanSeating = function DylanSeating() {
                 y: y
             });
 
-
-            var start = function (event) {
-                logEvent("StartDrag Desk");
-                var model = this.attr("model"),
-                    i,
-                    l,
-                    s;
-                model.previousPosition = model.GetLocation(); //{x:model.GetX(),y:model.GetY(),r:model.rotation}
-                this.ox = model.GetX();
-                this.oy = model.GetY();
-                for (i = 0, l = model.tableSeatList.length; i < l; i += 1) {
-                    s = model.tableSeatList[i];
-                    s.graphic.attr({
-                        fromTableX: s.GetX(),
-                        fromTableY: s.GetY()
-                    });
-
-
-
-                }
-                model.seatSet.attr({
-                    stroke: colSeatSelectedStroke
-                });
-                this.attr("stroke", colTableSelectedStroke);
-            },
-                move = function (mx, my) {
-                    var model = this.attr("model"),
-                        mouseCX = this.ox + mx,
-                        mouseCY = this.oy + my,
-                        i,
-                        l,
-                        s;
-
-                    for (i = 0, l = model.tableSeatList.length; i < l; i += 1) {
-                        s = model.tableSeatList[i];
-                        s.setGraphicPosition({
-                            x: s.graphic.attr("fromTableX") + mx,
-                            y: s.graphic.attr("fromTableY") + my
-                        });
-                    }
-
-                    model.setGraphicPosition({
-                        x: mouseCX,
-                        y: mouseCY
-                    });
-                },
-                up = function () {
-                    logEvent("EndDrag Desk");
-                    var model = this.attr("model");
-                    model.seatSet.attr({
-                        stroke: colTableStroke
-                    });
-                    controller.ac.Call("MoveTable", {
-                        table: model.id,
-                        previous: model.previousPosition,
-                        current: model.GetLocation() //{x:model.GetX(),y:model.GetY(),r:model.rotation}
-                    });
-                };
             this.graphic.drag(move, start, up);
             this.graphic.mouseover(function (event) {
                 Generic.Highlight(this);
@@ -2739,7 +2745,7 @@ var DylanSeating = function DylanSeating() {
     
 
 
-    var Init = (function () {
+    (function () {
         MyToolBar = new ToolBar();
         requestPlanList();
         logEvent("Finished Init");
