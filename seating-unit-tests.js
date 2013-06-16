@@ -490,11 +490,7 @@ $(function () {
         });
     });
 
-    //All of the following still need tests to be written for them:
-    //  "SwapGuestWithGuest",  {guest1:guest,guest2:guest}
-    //  "AddSeatAtPosition",   {table:table, seatNumber:seatNumber}
-    //  "EditGuest", {name:name}
-    //});
+    
 
     test('SwapGuestWithGuest, then Undo, then Redo', function () {
         expect(11);
@@ -603,6 +599,9 @@ $(function () {
             });
         });
     });
-
+//All of the following still need tests to be written for them:
+    //  "AddSeatAtPosition",   {table:table, seatNumber:seatNumber}
+    //  "EditGuest", {name:name}
+    //});
 
 });
