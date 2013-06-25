@@ -29,14 +29,19 @@ Array.prototype.insertAt = function ArrayInsertAt(o, index) {
 };
 
 
-
 var DylanSeating = function DylanSeating() {
     "use strict";
-    var seatList = [],
+    var generatePaperIfNotPresent = function () {
+            if (!$("#board").length) {
+                $("body").prepend("<div id='board'></div>");
+            }
+            return window.Raphael("board", 900, 900);
+        },
+        seatList = [],
         AllEvents = [],
         myTables = [],
         myGuests = [],
-        paper = window.Raphael("board", 900, 900),
+        paper = generatePaperIfNotPresent(),
         AllEventsAuditBox = paper.text(200, 20, "loaded"),
         logEvent = function logEvent(eventText) {
             AllEvents.push(eventText);
@@ -50,7 +55,7 @@ var DylanSeating = function DylanSeating() {
                 arrAllDataDFD = [],
                 i,
                 l = myTables.length;
-            if (myTables) {
+            if (myTables && l) {
                 for (i = 0; i < l; i += 1) {
                     arrAllDataDFD.push(myTables[i].remove());
                 }
@@ -1638,6 +1643,7 @@ var DylanSeating = function DylanSeating() {
                     y: y
                 };
             };
+            
             this.convertToSeat = function () {
                 return this.table.addSeatFromMarker(this.seatNumber + 1);
             };
@@ -1675,7 +1681,7 @@ var DylanSeating = function DylanSeating() {
                     this.setGraphicPositionCore(pointTo);
                 }
             };
-            this.remove = function () {
+            this.remove = function SeatMarkerRemove() {
                 var dfd = $.Deferred(),
                     contextModel = this;
                 console.log("delete seat marker");
@@ -1808,7 +1814,7 @@ var DylanSeating = function DylanSeating() {
                     y: this.GetY() - this.widthWithChairs
                 };
             };
-            this.remove = function () {
+            this.remove = function RoundTableRemove() {
                 var dfdRemoveTable = $.Deferred(),
                     arrRemoveDFD = [],
                     i,
@@ -2096,6 +2102,38 @@ var DylanSeating = function DylanSeating() {
             this.GetX = Generic.PathGetX;
             this.GetY = Generic.PathGetY;
 
+            this.remove = function DeskRemove() {
+                var dfdRemoveTable = $.Deferred(),
+                    arrRemoveDFD = [],
+                    i,
+                    l,
+                    seat,
+                    seatMarker,
+                    contextualModel = this;
+                for (i = 0, l = this.tableSeatList.length; i < l; i += 1) {
+                    seat = this.tableSeatList[i];
+                    arrRemoveDFD.push(seat.remove());
+                }
+                $.when.apply($, arrRemoveDFD).done(function () {
+                    console.log("removed all contents of table");
+                    if (contextualModel.graphic) {
+                        contextualModel.graphic.stop();
+                        contextualModel.graphic.animate({
+                            opacity: "0"
+                        }, animationTime, true, function () {
+                            this.remove();
+                            contextualModel.graphic = null;
+                            console.log("removed table");
+                            dfdRemoveTable.resolve();
+                        });
+                    } else {
+                        console.log("no table to remove");
+                        dfdRemoveTable.resolve();
+                    }
+                });
+                return dfdRemoveTable.promise();
+            };
+            
             this.GetLocation = function () {
                 return {
                     x: this.GetX(),

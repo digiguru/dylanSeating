@@ -1,4 +1,21 @@
-/* brackets-xunit: qunit */
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>QUnit Test Results for: seating-unit-tests.js</title>
+<link rel="stylesheet" href="http://code.jquery.com/qunit/qunit-1.11.0.css">
+<script src="/Users/digiguru/Documents/GIT/dylanSeating/jquery.js"></script>
+<script src="/Users/digiguru/Documents/GIT/dylanSeating/underscore.js"></script>
+<script src="/Users/digiguru/Documents/GIT/dylanSeating/raphael.2.0.1.js"></script>
+<script src="/Users/digiguru/Documents/GIT/dylanSeating/dylanSeatingHitched.js"></script>
+
+</head>
+<body>
+<div id="qunit"></div>
+<div id="qunit-fixture"></div>
+<script src="http://code.jquery.com/qunit/qunit-1.11.0.js"></script>
+<script>
+    /* brackets-xunit: qunit */
 /* brackets-xunit: includes=jquery.js,underscore.js,raphael.2.0.1.js,dylanSeatingHitched.js */
 /*jslint nomen: true*/
 /*global $:false, _:false, console:false, socket:false, Raphael:false, window:false, module: false, test:false, asyncTest:false, equal:false, start:false, stop:false, expect:false, DylanSeating:false */
@@ -69,9 +86,9 @@ $(function () {
         $.when(myDylanSeating.LoadDataExternal(exampleSave)).then(function () {
             start();
             equal(myDylanSeating.getTables().length, 3, 'There are 3 tables');
-            stop();
+            //stop();
             $.when(myDylanSeating.ClearDataExternal()).then(function () {
-                start();
+                //start();
                 equal(myDylanSeating.getTables().length, 0, 'The stage has been cleared');
 
             });
@@ -608,3 +625,6 @@ $(function () {
     //});
 
 });
+</script>
+</body>
+</html>
