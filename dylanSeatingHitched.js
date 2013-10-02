@@ -407,14 +407,14 @@ var DylanSeating = function DylanSeating() {
                     table: table.id,
                     seatNumber: seatNumber
                 };
-                return this.Call("AddSeatAtPosition", data);
+                return this.ac.Call("AddSeatAtPosition", data);
             };
             this.ClickSeatRemove = function ClickSeatRemove(seat) {
                 var data = {
                     table: seat.table.id,
                     seatNumber: seat.seatNumber
                 };
-                return this.Call("UndoAddSeatAtPosition", data);
+                return this.ac.Call("UndoAddSeatAtPosition", data);
             };
             this.CreateSeatAndPlaceGuest = function CreateSeatAndPlaceGuest(guest, table, seatMarker) {
                 guest = getGuest(guest);
@@ -481,7 +481,7 @@ var DylanSeating = function DylanSeating() {
                         guest1: model.id,
                         guest2: mySeat.guest.id
                     };
-                    return this.Call("SwapGuestWithGuest", data);
+                    return this.ac.Call("SwapGuestWithGuest", data);
 
                 }
                 if (mySeat.ismarker) {
@@ -500,14 +500,14 @@ var DylanSeating = function DylanSeating() {
                             guestOriginalSeat: model.seat ? model.seat.id : null
                         }
                     };
-                    return this.CallMultiple([callCreateGuest, callGuestOnSeat]);
+                    return this.ac.CallMultiple([callCreateGuest, callGuestOnSeat]);
                 }
                 data = {
                     guest: model.id,
                     seat: mySeat.id,
                     guestOriginalSeat: model.seat ? model.seat.id : null
                 };
-                return this.Call("PlaceGuestOnSeat", data);
+                return this.ac.Call("PlaceGuestOnSeat", data);
             };
             //When creating an action you should be using the raw objects.
             //Generally undo actions should be generated at the same time,

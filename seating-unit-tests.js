@@ -1,10 +1,10 @@
 /* brackets-xunit: qunit */
-/* brackets-xunit: includes=jquery.js,underscore.js,raphael.2.0.1.js,dylanSeatingHitched.js */
+/* brackets-xunit: includes=jquery.js,underscore.js,raphael.2.0.1.js,dylanSeatingHitched.js* */
 /*jslint nomen: true*/
 /*global $:false, _:false, console:false, socket:false, Raphael:false, window:false, module: false, test:false, asyncTest:false, equal:false, start:false, stop:false, expect:false, DylanSeating:false */
 
 
-var testSpeed = 1000,
+var testSpeed = 1,
     //Mocks
     socket = {
         on: function (socketName) {
@@ -63,9 +63,11 @@ $(function () {
             }]
         };
 
+        
         myDylanSeating.LoadDataExternal({});
         equal(myDylanSeating.getTables().length, 0, 'There are no tables after loading an empty object');
 
+        
         $.when(myDylanSeating.LoadDataExternal(exampleSave)).then(function () {
             start();
             equal(myDylanSeating.getTables().length, 3, 'There are 3 tables');
@@ -76,6 +78,7 @@ $(function () {
 
             });
 
+            
         });
         stop();
 
@@ -602,8 +605,130 @@ $(function () {
             });
         });
     });
+    
+    test('SwapGuestWithGuest, then Undo, then Redo', function () {
+        stop();
+        $.when(myDylanSeating.ClearDataExternal()).then(function () {
+            start();
+            equal(myDylanSeating.getTables().length, 0, 'tables start off empty');
+    
+    
+            var ctrl = myDylanSeating.getController(),
+                callAddTable1 = {
+                    name: "AddTable",
+                    args: {
+                        id: 1,
+                        type: "table",
+                        x: 100,
+                        y: 100,
+                        seatCount: 3
+                    }
+                },
+                callAddSeatAt = {
+                    name: "AddSeatAtPosition",
+                    args: {
+                        table: 1,
+                        seatNumber: 1
+                    }
+                };
+            stop();
+            $.when(ctrl.ac.CallMultiple([callAddTable1])).then(function () {
+                start();
+                equal(myDylanSeating.getTables().length, 1, 'Added 1 tables');
+                equal(myDylanSeating.getTables()[0].seatCount, 3, 'Has 3 seats');
+                stop();
+                $.when(ctrl.ac.CallMultiple([callAddSeatAt])).then(function () {
+                    start();
+                    equal(myDylanSeating.getTables().length, 1, 'Added 1 tables');
+                    equal(myDylanSeating.getTables()[0].seatCount, 4, 'Added 1 seat');
+                    stop();
+                    $.when(ctrl.ac.Undo()).then(function () {
+                        start();
+                        equal(myDylanSeating.getTables().length, 1, 'Added 1 tables');
+                        equal(myDylanSeating.getTables()[0].seatCount, 3, 'removed 1 seat');
+         
+                        
+                        
+                        stop();
+                        $.when(ctrl.ac.Redo()).then(function () {
+                            start();
+                            equal(myDylanSeating.getTables().length, 1, 'Added 1 tables');
+                            equal(myDylanSeating.getTables()[0].seatCount, 4, 'Added 1 seat');
+                            
+                            
+                         
+                        });
+                    });
+                    
+                    
+                });
+            });
+        });
+    });
+    
+    
+    
+    test('EditGuest, then Undo, then Redo', function () {
+        stop();
+        $.when(myDylanSeating.ClearDataExternal()).then(function () {
+            start();
+            equal(myDylanSeating.getTables().length, 0, 'tables start off empty');
+    
+    
+            var ctrl = myDylanSeating.getController(),
+                callAddGuest = {
+                    name: "AddGuest",
+                    args: {
+                        id: 1,
+                        name: "Primary",
+                        x: 10,
+                        y: 10
+                    }
+                },
+                callEditGuest = {
+                    name: "EditGuest",
+                    args: {
+                        id: 1,
+                        name: "Secondary"
+                    }
+                };
+            stop();
+            $.when(ctrl.ac.CallMultiple([callAddGuest])).then(function () {
+                start();
+                equal(myDylanSeating.getGuests().length, 1, 'Added 1 guest');
+                equal(myDylanSeating.getGuests()[0].name, 'Primary', 'his naem - Primary');
+                stop();
+                $.when(ctrl.ac.CallMultiple([callEditGuest])).then(function () {
+                    start();
+                    equal(myDylanSeating.getGuests().length, 1, 'Added 1 guest');
+                    equal(myDylanSeating.getGuests()[0].name, 'Secondary', 'his naem - Primary');
+                    stop();
+                    $.when(ctrl.ac.Undo()).then(function () {
+                        start();
+                        equal(myDylanSeating.getGuests().length, 1, 'Added 1 guest');
+                        equal(myDylanSeating.getGuests()[0].name, 'Primary', 'his naem - Primary');
+         
+                        
+                        
+                        stop();
+                        $.when(ctrl.ac.Redo()).then(function () {
+                            start();
+                            equal(myDylanSeating.getGuests().length, 1, 'Added 1 guest');
+                            equal(myDylanSeating.getGuests()[0].name, 'Secondary', 'his naem - Primary');
+                            
+                            
+                         
+                        });
+                    });
+                    
+                    
+                });
+            });
+        });
+    });
+    
+    
 //All of the following still need tests to be written for them:
-    //  "AddSeatAtPosition",   {table:table, seatNumber:seatNumber}
     //  "EditGuest", {name:name}
     //});
 
