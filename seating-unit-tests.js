@@ -681,15 +681,16 @@ $(function () {
                     args: {
                         id: 1,
                         name: "Primary",
-                        x: 10,
-                        y: 10
+                        x: 250,
+                        y: 250
                     }
                 },
                 callEditGuest = {
                     name: "EditGuest",
                     args: {
-                        id: 1,
-                        name: "Secondary"
+                        guest: 1,
+                        previous: { name: "Primary" },
+                        current: { name: "Secondary"}
                     }
                 };
             stop();

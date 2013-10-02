@@ -691,11 +691,13 @@ var DylanSeating = function DylanSeating() {
                     var guest = getGuest(args.guest);
                     console.log("EditGuest", args);
                     guest.SetName(args.current.name);
+                    if (callback) { callback(); }
                 },
                 undoAction: function undoEditGuest(args, callback) {
                     var guest = getGuest(args.guest);
                     console.log("UndoEditGuest", args);
                     guest.SetName(args.previous.name);
+                    if (callback) { callback(); }
                 }
             });
         },
