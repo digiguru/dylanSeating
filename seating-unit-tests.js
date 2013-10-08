@@ -41,6 +41,7 @@ $(function () {
 
         var exampleSave = {
             guestList: [{
+                id: 1,
                 name: "Fred Boodle",
                 x: 30,
                 y: 30
@@ -49,7 +50,27 @@ $(function () {
                 type: "table",
                 x: 400,
                 y: 400,
-                seatCount: 10
+                seatList: [
+                    {
+                        id: 1,
+                        guest: {
+                            id: 2,
+                            name: "Bob Cranberry",
+                            x: 30,
+                            y: 30
+                        },
+                        seatNumber: 1
+                    },
+                    {
+                        id: 2,
+                        seatNumber: 2
+                    },
+                    {
+                        id: 3,
+                        seatNumber: 3
+                    }
+                ],
+                seatCount: 3
             }, {
                 type: "desk",
                 x: 600,
@@ -71,12 +92,13 @@ $(function () {
         $.when(myDylanSeating.LoadDataExternal(exampleSave)).then(function () {
             start();
             equal(myDylanSeating.getTables().length, 3, 'There are 3 tables');
-            stop();
+            equal(myDylanSeating.getTables()[0].seatCount, 3, 'There are 3 seats on the first table');
+            /*stop();
             $.when(myDylanSeating.ClearDataExternal()).then(function () {
                 start();
                 equal(myDylanSeating.getTables().length, 0, 'The stage has been cleared');
 
-            });
+            });*/
 
             
         });

@@ -82,28 +82,27 @@ var DylanSeating = function DylanSeating() {
         loadData = function (data) {
             var dfdRemoveAllData = $.Deferred(),
                 arrAllDataDFD = [],
-                loadGuest = function (data) {
+                loadGuest = function (data, callback) {
                     return new Guest(data.name, data.x, data.y, data.id);
                 },
-                loadTable = function (data) {
-                    var table = new RoundTable(data.x, data.y, data.seatCount, data.seatList, data.id);
-                    return table;
+                loadTable = function (data, callback) {
+                    return new RoundTable(data.x, data.y, data.seatCount, data.seatList, data.id, callback);
                 },
-                loadDesk = function (data) {
+                loadDesk = function (data, callback) {
                     return new Desk(data.x, data.y, data.rotation, data.id);
                 },
                 i,
                 l,
                 myTableData,
                 myTable,
-                tableComplete = function () {
+                tableComplete = function (table) {
                     var i2,
                         l2,
                         seat,
                         guest;
-                    l2 = myTableData.seatList.length;
+                    l2 = table.seatList.length;
                     for (i2 = 0; i2 < l2; i2 += 1) {
-                        seat = myTableData.seatList[i2];
+                        seat = table.seatList[i2];
                         if (seat && seat.guest && seat.guest[0]) {
                             guest = seat.guest[0]; //Hack : needs to be property, not an array.
                             myGuests.push(loadGuest(guest));
@@ -117,7 +116,7 @@ var DylanSeating = function DylanSeating() {
                     myTableData = data.tableList[i];
                     myTable = null;
                     if (data.tableList[i].type === "desk") {
-                        myTable = loadDesk(myTableData);
+                        myTable = loadDesk(myTableData, tableComplete);
                     } else if (data.tableList[i].type === "table") {
                         myTable = loadTable(myTableData);
                     }
@@ -125,9 +124,13 @@ var DylanSeating = function DylanSeating() {
                     if (myTable.dfdPromise) {
                         arrAllDataDFD.push(myTable.dfdPromise);
                     }
-                    if (myTable.dfdPromise && myTableData.seatList) {
-                        $.when(myTable.dfdPromise).then(tableComplete);
-                    }
+                    /*if (myTable.dfdPromise && myTableData.seatList) {
+                        $.when(myTable.dfdPromise).then(
+                            function() {
+                                tableComplete(myTableData);
+                            }
+                        );
+                    }*/
 
                 }
 
@@ -1722,7 +1725,7 @@ var DylanSeating = function DylanSeating() {
             var s = "M" + x + "," + (y - r) + "A" + r + "," + r + ",0,1,1," + (x - 0.1) + "," + (y - r) + " z";
             return s;
         },*/
-        RoundTable = function (x, y, seatCount, seatList, id) {
+        RoundTable = function (x, y, seatCount, seatList, id, callback) {
             var i,
                 l,
                 start = function (event) {
@@ -2054,6 +2057,12 @@ var DylanSeating = function DylanSeating() {
                 }
             }
             this.dfdPromise = this.renderSeats();
+            var me = this;
+            $.when(this.dfdPromise).then(function() {
+                if (callback) {
+                    callback(me);
+                } 
+            });
             this.animateTable = function (position, callback) {
                 var currentLocation = this.GetLocation();
                 if ((currentLocation.x !== position.x) || (currentLocation.y !== position.y) || (currentLocation.r !== position.r)) {
