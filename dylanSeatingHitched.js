@@ -1,4 +1,4 @@
-/*jslint nomen: true*/
+/*jslint nomen: true */
 /*global $:false, _:false, console:false, socket:false, Raphael:false, window:false */
 /**
  * @license DylanSeating v1
@@ -9,8 +9,6 @@
  * Prequisites : jQuery, underscore, rapheal
  **/
 var myPlanID,
-    myTables,
-    myGuests,
     possibleSeats;
 // Array Remove - By John Resig (MIT Licensed)
 Array.prototype.remove = function ArrayRemove(from, to) {
@@ -28,25 +26,67 @@ Array.prototype.insertAt = function ArrayInsertAt(o, index) {
     return false;
 };
 
-
 var DylanSeating = function DylanSeating() {
     "use strict";
-    var generatePaperIfNotPresent = function () {
-            if (!$("#board").length) {
-                $("body").prepend("<div id='board'></div>");
-            }
-            return window.Raphael("board", 900, 900);
+
+    this.Controller = function Controller() {
+
+    };
+
+    /*this.viewModule = {
+        board: {
+            generatePaperIfNotPresent: function () {
+                if (!$("#board").length) {
+                    $("body").prepend("<div id='board'></div>");
+                }
+                return window.Raphael("board", 900, 900);
+            },
+            paper: this.generatePaperIfNotPresent()
         },
-        seatList = [],
-        AllEvents = [],
+        audit: {
+            audits: [],
+            auditBox: paper.text(200, 20, "loaded"),
+            log: function(eventText) {
+                this.audits.push(eventText);
+                this.auditBox.remove();
+                this.auditBox = paper.text(400, 200, this.audits.slice(-20).join("\n"));
+            }
+        }
+    }*/
+
+    var viewModule = (function () {
+        var auditModule = function (paper) {
+            var auditBox = paper.text(200, 20, "loaded");
+            return {
+                audits: [],
+                log: function (eventText) {
+                    this.audits.push(eventText);
+                    auditBox.remove();
+                    auditBox = paper.text(400, 200, this.audits.slice(-20).join("\n"));
+                }
+            };
+        },
+            generatePaperIfNotPresent = function () {
+                if (!$("#board").length) {
+                    $("body").prepend("<div id='board'></div>");
+                }
+                return window.Raphael("board", 900, 900);
+            },
+            paper = generatePaperIfNotPresent();
+        return {
+            paper: paper,
+            audit: auditModule(paper)
+        };
+    }());
+
+    //console.log(view, view.paper);
+
+    var seatList = [],
         myTables = [],
         myGuests = [],
-        paper = generatePaperIfNotPresent(),
-        AllEventsAuditBox = paper.text(200, 20, "loaded"),
+        paper = viewModule.paper,
         logEvent = function logEvent(eventText) {
-            AllEvents.push(eventText);
-            AllEventsAuditBox.remove();
-            AllEventsAuditBox = paper.text(400, 200, AllEvents.slice(-20).join("\n"));
+            viewModule.audit.log(eventText);
         },
         MyToolBar,
         selectedGuestEdit,
@@ -83,55 +123,54 @@ var DylanSeating = function DylanSeating() {
             var dfdRemoveAllData = $.Deferred(),
                 arrAllDataDFD = [],
                 loadGuest = function (data, callback) {
-                    return new Guest(data.name, data.x, data.y, data.id);
+                    return new Guest(data.name, data.x, data.y, data.id, callback);
                 },
                 loadTable = function (data, callback) {
                     return new RoundTable(data.x, data.y, data.seatCount, data.seatList, data.id, callback);
                 },
                 loadDesk = function (data, callback) {
-                    return new Desk(data.x, data.y, data.rotation, data.id);
+                    return new Desk(data.x, data.y, data.rotation, data.id, callback);
                 },
                 i,
                 l,
                 myTableData,
                 myTable,
-                tableComplete = function (table) {
-                    var i2,
-                        l2,
-                        seat,
-                        guest;
-                    l2 = table.seatList.length;
-                    for (i2 = 0; i2 < l2; i2 += 1) {
-                        seat = table.seatList[i2];
-                        if (seat && seat.guest && seat.guest[0]) {
-                            guest = seat.guest[0]; //Hack : needs to be property, not an array.
-                            myGuests.push(loadGuest(guest));
-                            controller.PlaceGuestOnSeat(guest.id, seat.id);
+                tableComplete = function (table, data) {
+                    if (data.seatList && data.seatList.length) {
+                        var i2,
+                            l2,
+                            seat,
+                            guest;
+                        l2 = data.seatList.length;
+                        for (i2 = 0; i2 < l2; i2 += 1) {
+                            seat = data.seatList[i2];
+                            if (seat && seat.guest && seat.guest[0]) {
+                                guest = seat.guest[0]; //Hack : needs to be property, not an array.
+                                myGuests.push(loadGuest(guest));
+                                controller.PlaceGuestOnSeat(guest.id, seat.id);
+                            }
                         }
                     }
                 };
             if (data.tableList) {
                 l = data.tableList.length;
+                var makeCompleteFunction = function (data) {
+                    return function (table) {
+                        tableComplete(table, data);
+                    };
+                };
                 for (i = 0; i < l; i += 1) {
                     myTableData = data.tableList[i];
                     myTable = null;
                     if (data.tableList[i].type === "desk") {
-                        myTable = loadDesk(myTableData, tableComplete);
+                        myTable = loadDesk(myTableData, makeCompleteFunction(myTableData));
                     } else if (data.tableList[i].type === "table") {
-                        myTable = loadTable(myTableData);
+                        myTable = loadTable(myTableData, makeCompleteFunction(myTableData));
                     }
                     myTables.push(myTable);
                     if (myTable.dfdPromise) {
                         arrAllDataDFD.push(myTable.dfdPromise);
                     }
-                    /*if (myTable.dfdPromise && myTableData.seatList) {
-                        $.when(myTable.dfdPromise).then(
-                            function() {
-                                tableComplete(myTableData);
-                            }
-                        );
-                    }*/
-
                 }
 
             }
@@ -147,6 +186,7 @@ var DylanSeating = function DylanSeating() {
             return dfdRemoveAllData;
         },
         Controller = function controller() {
+            /*These functions grab the object from the stage. You can pass in the actual object or an ID, and they will cope with both.*/
             var getTableByID = function getTableByID(id) {
                 var i, l = myTables.length;
                 for (i = 0; i < l; i += 1) {
@@ -226,6 +266,7 @@ var DylanSeating = function DylanSeating() {
                 topTableID = 0,
                 topSeatID = 0,
                 topGuestID = 0,
+                /*This clever little class stores actions and their opposite actions - allowing undoable events*/
                 ActionController = function ActionController() {
                     var cachedActions = [],
                         getAction = function getAction(action) {
@@ -308,7 +349,7 @@ var DylanSeating = function DylanSeating() {
                             name: action.name,
                             oppositeName: action.oppositeName,
                             args: args
-                        }]);
+                        }], callback);
                     };
                     /*Deferred example*/
                     this.CallInner = function CallInner(myAction, args, callback) {
@@ -404,6 +445,7 @@ var DylanSeating = function DylanSeating() {
                         return this.SequenceDeferred(arrListClone.reverse(), reverse, callback);
                     };
                 };
+            /*And now some concrete implementations. These could be assigned to the class later making the class itself reusuable.*/
             //seatMarker
             this.ClickAddSeatAtPosition = function ClickAddSeatAtPosition(table, seatNumber) {
                 var data = {
@@ -476,9 +518,7 @@ var DylanSeating = function DylanSeating() {
                 return topGuestID;
             };
             this.MoveGuestToSeatArea = function MoveGuestToSeatArea(model, mySeat) {
-                var data,
-                    callCreateGuest,
-                    callGuestOnSeat;
+                var data;
                 if (mySeat.isoccupied) {
                     data = {
                         guest1: model.id,
@@ -488,22 +528,13 @@ var DylanSeating = function DylanSeating() {
 
                 }
                 if (mySeat.ismarker) {
-                    callCreateGuest = {
-                        name: "AddSeatAtPosition",
-                        args: {
-                            table: mySeat.table.id,
-                            seatNumber: mySeat.seatNumber
-                        }
+                    data = {
+                        guest: model.id,
+                        table: mySeat.table.id,
+                        seatMarker: mySeat.seatNumber
                     };
-                    callGuestOnSeat = {
-                        name: "PlaceGuestOnSeat",
-                        args: {
-                            guest: model.id,
-                            seat: mySeat.id,
-                            guestOriginalSeat: model.seat ? model.seat.id : null
-                        }
-                    };
-                    return this.ac.CallMultiple([callCreateGuest, callGuestOnSeat]);
+                    return this.ac.Call("PlaceGuestOnNewSeat", data);
+
                 }
                 data = {
                     guest: model.id,
@@ -555,7 +586,9 @@ var DylanSeating = function DylanSeating() {
                         console.log("Place guest on new seat");
                         $.when(guest.moveToSeat(seat)).then(function whenPromiseDoActionPlaceGuestOnNewSeatPlaceGuest() {
                             console.log("DONE! - Place guest on new seat");
-                            if (callback) { callback(); }
+                            if (callback) {
+                                callback();
+                            }
                         });
                     });
                 },
@@ -575,7 +608,9 @@ var DylanSeating = function DylanSeating() {
                     $.when(dfdPromise).then(function undoActionPlaceGuestComplete() {
                         console.log("DONE! - undoActionPlaceGuestOnNewSeatComplete");
                         $.when(table.removeSeat(seatRemove.seatNumber)).then(function undoActionRemoveSeatComplete() {
-                            if (callback) { callback(); }
+                            if (callback) {
+                                callback();
+                            }
                         });
                     });
                 }
@@ -586,7 +621,9 @@ var DylanSeating = function DylanSeating() {
                     var guest = getGuest(args.guest),
                         seat = getSeat(args.seat);
                     $.when(guest.moveToSeat(seat)).done(function () {
-                        if (callback) { callback(); }
+                        if (callback) {
+                            callback();
+                        }
                     });
                 },
                 undoAction: function undoActionPlaceGuestOnSeat(args, callback) {
@@ -600,7 +637,9 @@ var DylanSeating = function DylanSeating() {
                     }
                     $.when(dfdPromise).then(function undoActionPlaceGuestOnSeatComplete() {
                         console.log("DONE! - undoActionPlaceGuestOnSeatComplete");
-                        if (callback) { callback(); }
+                        if (callback) {
+                            callback();
+                        }
                     });
                 }
             });
@@ -611,7 +650,9 @@ var DylanSeating = function DylanSeating() {
                         guest2 = getGuest(args.guest2);
                     $.when(guest1.swapWithGuestAt(guest2.seat)).then(function doActionSwapGuestWithGuestComplete() {
                         console.log("DONE! - doActionSwapGuestWithGuestComplete");
-                        if (callback) { callback(); }
+                        if (callback) {
+                            callback();
+                        }
                     });
                 },
                 undoAction: function undoActionSwapGuestWithGuest(args, callback) {
@@ -619,7 +660,9 @@ var DylanSeating = function DylanSeating() {
                         guest2 = getGuest(args.guest2);
                     $.when(guest2.swapWithGuestAt(guest1.seat)).then(function undoActionSwapGuestWithGuestComplete() {
                         console.log("DONE! - undoActionSwapGuestWithGuestComplete");
-                        if (callback) { callback(); }
+                        if (callback) {
+                            callback();
+                        }
                     });
                 }
             });
@@ -629,14 +672,18 @@ var DylanSeating = function DylanSeating() {
                     var table = getTable(args.table);
                     $.when(table.addSeatFromMarker(args.seatNumber)).then(function doActionAddSeatAtPositionComplete() {
                         console.log("DONE! - doActionAddSeatAtPositionComplete");
-                        if (callback) { callback(); }
+                        if (callback) {
+                            callback();
+                        }
                     });
                 },
                 undoAction: function undoActionAddSeatAtPosition(args, callback) {
                     var table = getTable(args.table);
                     $.when(table.removeSeat(args.seatNumber)).then(function undoActionAddSeatAtPositionComplete() {
                         console.log("DONE! - undoActionAddSeatAtPositionComplete");
-                        if (callback) { callback(); }
+                        if (callback) {
+                            callback();
+                        }
                     });
                 }
             });
@@ -654,7 +701,9 @@ var DylanSeating = function DylanSeating() {
                             myTables = _.reject(myTables, function undoActionAddTableRemoveItem(removeTable) {
                                 return removeTable.id === args.id;
                             });
-                            if (callback) { callback(); }
+                            if (callback) {
+                                callback();
+                            }
                         });
                 }
             });
@@ -671,7 +720,9 @@ var DylanSeating = function DylanSeating() {
                         myGuests = _.reject(myGuests, function (removeGuest) {
                             return removeGuest.id === args.id;
                         });
-                        if (callback) { callback(); }
+                        if (callback) {
+                            callback();
+                        }
                     });
                 }
             });
@@ -694,13 +745,17 @@ var DylanSeating = function DylanSeating() {
                     var guest = getGuest(args.guest);
                     console.log("EditGuest", args);
                     guest.SetName(args.current.name);
-                    if (callback) { callback(); }
+                    if (callback) {
+                        callback();
+                    }
                 },
                 undoAction: function undoEditGuest(args, callback) {
                     var guest = getGuest(args.guest);
                     console.log("UndoEditGuest", args);
                     guest.SetName(args.previous.name);
-                    if (callback) { callback(); }
+                    if (callback) {
+                        callback();
+                    }
                 }
             });
         },
@@ -733,11 +788,11 @@ var DylanSeating = function DylanSeating() {
             $("#editGuest").show();
             $("#txtGuestName").val(guest.name);
         },
-        showEditPlan = function (plan) {
+        /*showEditPlan = function (plan) {
             hideAllEditPanels();
             $("#editPlan").show();
             $("#txtPlanName").val(plan.name);
-        },
+        },*/
         deletePlanData = function () {
             window.console.log("Attempting to deletePlanData");
             if (window.confirm("Are you sure you want to delete all the tables in this plan?")) {
@@ -1050,8 +1105,6 @@ var DylanSeating = function DylanSeating() {
                         var model = this.attr("model"),
                             mouseCX = this.ox + mx,
                             mouseCY = this.oy + my,
-                            lockX = 0,
-                            lockY = 0,
                             myStroke = colGuestStroke;
                         model.setGraphicPosition({
                             x: mouseCX,
@@ -1165,7 +1218,7 @@ var DylanSeating = function DylanSeating() {
                 this.linkTo("hello");
             });
         },
-        Guest = function (name, x, y, id) {
+        Guest = function (name, x, y, id, callback) {
             this.id = id || controller.NextGuestID();
             logEvent("Create Guest");
             this.name = name;
@@ -1256,7 +1309,9 @@ var DylanSeating = function DylanSeating() {
                         this.model.moveGhostToNewLocation();
                         this.model.showHelpText(this.model.name);
                         this.model.SetRotation(rotation);
-                        if (callback) { callback(); }
+                        if (callback) {
+                            callback();
+                        }
                     });
                 }
 
@@ -1292,7 +1347,9 @@ var DylanSeating = function DylanSeating() {
                 } else {
                     this.SetRotation(seatRotation);
                     this.moveGhostToNewLocation();
-                    if (callback) { callback(); }
+                    if (callback) {
+                        callback();
+                    }
                 }
             };
             this.moveToSeat = function moveToSeat(seat) {
@@ -1484,6 +1541,9 @@ var DylanSeating = function DylanSeating() {
                     y: this.GetY()
                 };
             };
+            if (callback) {
+                callback();
+            }
         },
         Seat = function (x, y, rotation, table, seatNumber, id, guest) {
             logEvent("Create Seat");
@@ -1596,11 +1656,11 @@ var DylanSeating = function DylanSeating() {
                 };
             };
             var myMouseOver = function (event) {
-                Generic.Highlight(this);
-                this.animate({
-                    fill: "red"
-                }, animationTime);
-            },
+                    Generic.Highlight(this);
+                    this.animate({
+                        fill: "red"
+                    }, animationTime);
+                },
                 myMouseOut = function (event) {
                     Generic.Unhighlight(this);
                     this.animate({
@@ -1648,7 +1708,7 @@ var DylanSeating = function DylanSeating() {
                     y: y
                 };
             };
-            
+
             this.convertToSeat = function () {
                 return this.table.addSeatFromMarker(this.seatNumber + 1);
             };
@@ -1876,12 +1936,16 @@ var DylanSeating = function DylanSeating() {
                             model.placeSeat(t);
                             model.placeSeatMarker(t);
                         }
-                        if (callback) { callback(); }
+                        if (callback) {
+                            callback();
+                        }
                         dfd.resolve();
                     });
                 } else {
                     this.setGraphicPositionBase(pointTo);
-                    if (callback) { callback(); }
+                    if (callback) {
+                        callback();
+                    }
                     dfd.resolve();
                 }
                 return dfd.promise();
@@ -2058,10 +2122,10 @@ var DylanSeating = function DylanSeating() {
             }
             this.dfdPromise = this.renderSeats();
             var me = this;
-            $.when(this.dfdPromise).then(function() {
+            $.when(this.dfdPromise).then(function () {
                 if (callback) {
                     callback(me);
-                } 
+                }
             });
             this.animateTable = function (position, callback) {
                 var currentLocation = this.GetLocation();
@@ -2106,7 +2170,7 @@ var DylanSeating = function DylanSeating() {
                 return Math.round(val / rounding) * rounding;
             }
         },
-        Desk = function (x, y, rotation) {
+        Desk = function (x, y, rotation, callback) {
             this.id = controller.NextTableID();
             this.widthWithChairs = 30;
             logEvent("Create Desk");
@@ -2119,7 +2183,6 @@ var DylanSeating = function DylanSeating() {
                     i,
                     l,
                     seat,
-                    seatMarker,
                     contextualModel = this;
                 for (i = 0, l = this.tableSeatList.length; i < l; i += 1) {
                     seat = this.tableSeatList[i];
@@ -2144,7 +2207,7 @@ var DylanSeating = function DylanSeating() {
                 });
                 return dfdRemoveTable.promise();
             };
-            
+
             this.GetLocation = function () {
                 return {
                     x: this.GetX(),
@@ -2169,12 +2232,16 @@ var DylanSeating = function DylanSeating() {
                         var model = this.attr("model");
                         //model.setGraphicPositionBase(pointTo);
                         model.placeSeat(model.tableSeatList[0], true);
-                        if (callback) { callback(); }
+                        if (callback) {
+                            callback();
+                        }
                     });
                 } else {
                     this.setGraphicPositionBase(pointTo);
                     this.placeSeat(this.tableSeatList[0], false);
-                    if (callback) { callback(); }
+                    if (callback) {
+                        callback();
+                    }
                 }
                 this.placeRotationHandle(pointTo);
             };
@@ -2239,11 +2306,11 @@ var DylanSeating = function DylanSeating() {
                 model: this
             });
             var rotationstart = function (event) {
-                logEvent("StartRotation Desk");
-                var model = this.attr("model");
-                model.previousPosition = model.GetLocation(); //{x:model.GetX(),y:model.GetY(),r:model.rotation}
-                model.offsetRotation = model.rotation;
-            },
+                    logEvent("StartRotation Desk");
+                    var model = this.attr("model");
+                    model.previousPosition = model.GetLocation(); //{x:model.GetX(),y:model.GetY(),r:model.rotation}
+                    model.offsetRotation = model.rotation;
+                },
                 rotationmove = function (mx, my) {
                     var model = this.attr("model"),
                         mouseCX = this.attr("cx") + mx,
@@ -2392,6 +2459,9 @@ var DylanSeating = function DylanSeating() {
                     seatList: seatObject
                 };
             };
+            if (callback) {
+                callback();
+            }
         },
         SaveAll = function () {
             var SaveObject = {

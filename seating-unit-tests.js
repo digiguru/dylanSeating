@@ -1,10 +1,9 @@
 /* brackets-xunit: qunit */
-/* brackets-xunit: includes=jquery.js,underscore.js,raphael.2.0.1.js,dylanSeatingHitched.js* */
+/*brackets-xunit: includes=jquery.js,underscore.js,raphael.2.0.1.js,dylanSeatingHitched.js* */
 /*jslint nomen: true*/
-/*global $:false, _:false, console:false, socket:false, Raphael:false, window:false, module: false, test:false, asyncTest:false, equal:false, start:false, stop:false, expect:false, DylanSeating:false */
+/*global $, console, module, test, asyncTest, equal, start, stop, expect, DylanSeating */
 
-
-var testSpeed = 1,
+var testSpeed = 1,//,
     //Mocks
     socket = {
         on: function (socketName) {
