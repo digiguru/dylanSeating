@@ -1,4 +1,6 @@
-
+/*jslint nomen: true, plusplus: true */
+/*jshint strict:false */
+/*global require, process, console, __dirname */
 /**
  * @license DylanSeating v1
  *
@@ -10,38 +12,40 @@
 
 var express = require('express'),
     app = express.createServer(express.logger()),
-    io = require('socket.io').listen(app);
+    io = require('socket.io').listen(app),
+    _ = require("underscore"),
+    sq = require("./seatQuerying.js");
 
 
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema;
     
 var Guest = new Schema({
-  id        : { type: Number, index: true },
-  name      : String,
-  x         : Number,
-  y         : Number
+    id        : { type: Number, index: true },
+    name      : String,
+    x         : Number,
+    y         : Number
 }),
- Seat = new Schema({
-  id        : { type: Number, index: true },
-  seatNumber: Number,
-  guest     : [Guest] //HACK - not correct - needs to be single, not array. Stupid MongoDB
-//  guest     : { type: Guest} 
-}),
+    Seat = new Schema({
+        id        : { type: Number, index: true },
+        seatNumber: Number,
+        guest     : [Guest] //HACK - not correct - needs to be single, not array. Stupid MongoDB
+    //  guest     : { type: Guest} 
+    }),
     Table = new Schema({
-  id        : Number,
-  type      : String,
-  x         : Number,
-  y         : Number,
-  seatCount : Number,
-  seatList  : [Seat]
-}),
+        id        : Number,
+        type      : String,
+        x         : Number,
+        y         : Number,
+        seatCount : Number,
+        seatList  : [Seat]
+    }),
    
     Plan = new Schema({
-  name      :  { type: Number, index: true },
-  tableList : [Table],
-  guestList : [Guest]
-});
+        name      :  { type: Number, index: true },
+        tableList : [Table],
+        guestList : [Guest]
+    });
     
 //Guest.add();
 //Seat.add();
@@ -55,7 +59,9 @@ Seat.virtual('guest')
 //Table.add();
 //Plan.add();
 
-mongoose.connect(process.env.MONGOLAB_URI);//'mongodb://localhost/digiguru_seating');
+//mongoose.connect(process.env.MONGOLAB_URI);//'mongodb://localhost/digiguru_seating');
+mongoose.connect("mongodb://localhost:27017/digiguruSeating");//'mongodb://localhost/digiguru_seating');
+
 
 mongoose.model('Guest', Guest);
 mongoose.model('Seat', Seat);
@@ -65,187 +71,206 @@ mongoose.model('Plan', Plan);
 
 var port = process.env.PORT || 3000;
 
-app.listen(port, function() {
-  console.log("Listening on " + port);
+
+app.listen(port, function () {
+    console.log("Listening on " + port);
 });
 
-app.get('/', function (req, res) {
-  res.sendfile(__dirname + '/socketExampleClient.html');
+app.use(function (req, res, next) {
+    console.log('%s %s', req.method, req.url);
+    next();
 });
-app.get('/jquery.js', function (req, res) {
-  res.sendfile(__dirname + '/jquery.js');
-});
-app.get('/raphael.2.0.1.js', function (req, res) {
-  res.sendfile(__dirname + '/raphael.2.0.1.js');
-});
-app.get('/dylanSeatingHitched.js', function (req, res) {
-  res.sendfile(__dirname + '/dylanSeatingHitched.js');
-});
-var ReplaceProperties = function(original,newProps) {
-  if (original && newProps) {
-    var keys = Object.keys(newProps)
-      , len = keys.length
-      , key;
-    for (var i = 0; i < len; ++i) {
-      key = keys[i];
-      original[key] = newProps[key];
-    }
-  }
-  return original;
-};
-var GetTable = function(plan,id) {
-   console.log("GetTable" + id);
-  for(var i=0,l=plan.tableList.length; i<l; i++) {
-      if(plan.tableList[i].id == id) {
-        return plan.tableList[i];
-      }
-    }
-    return null;
-};
-var GetGuest = function(plan,id) {
-  console.log("GetGuest" + id);
-   for(var i=0,l=plan.guestList.length; i<l; i++) {
-      if(plan.guestList[i].id == id) {
-        //console.log(plan.guestList[i]);
-        return plan.guestList[i];
-      }
-    }
-    for(var i=0,l=plan.tableList.length; i<l; i++) {
-      var myTable = plan.tableList[i]
-      if(myTable.seatList) {
-        for(var i2=0,l2=myTable.seatList.length; i2<l2; i2++) {
-          if(myTable.seatList[i2].guest && myTable.seatList[i2].guest[0] && myTable.seatList[i2].guest[0].id == id) {
-            //console.log(plan.guestList[i].seatList[i2]);
-            return myTable.seatList[i2].guest[0];
-          }
+
+app.use("/static", express.static(__dirname + '/static/'));
+
+var ReplaceProperties = function (original, newProps) {
+    console.log("ReplaceProperties");
+    if (original && newProps) {
+        var keys = Object.keys(newProps),
+            len = keys.length,
+            key,
+            i;
+        for (i = 0; i < len; ++i) {
+            key = keys[i];
+            original[key] = newProps[key];
         }
-      }
     }
-    return null;
-};
-var GetSeat = function(plan,id) {
-  console.log("GetSeat" + id);
-  if(plan.tableList) {
-    for(var i=0,l=plan.tableList.length; i<l; i++) {
-      console.log("... checking table " + i);
-      if(plan.tableList[i].seatList) {
-        for(var i2=0,l2=plan.tableList[i].seatList.length; i2<l2; i2++) {
-          console.log("...    checking seat " + i2 + " with ID " + plan.tableList[i].seatList[i2].id);
+    return original;
+},
+    GetTable = function (plan, id) {
+        return sq.getTable(plan, id);
+        /*return _.find(plan.tableList, function(item) {
+            return item.id == id;
+        });*/
+        
+    },
+    GetGuest = function (plan, id) {
+        return sq.getGuest(plan, id);
+        /*console.log("GetGuest" + id);
+        var guest = _.find(plan.guestList, function(item) {
+            return item.id == id;
+        });*/
+        /*if (!guest) {
+            console.log("Not a plan guest - check tables" + id);
+            _.find(_.pluck(plan.tableList, seatList)
+            
+        }*/
+        /*var i,
+            l,
+            myTable,
+            i2,
+            l2;*/
+        /*for (i = 0, l = plan.guestList.length; i < l; i++) {
+            if (plan.guestList[i].id === id) {
+            //console.log(plan.guestList[i]);
+                return plan.guestList[i];
+            }
+        }*/
+        /*for (i = 0, l = plan.tableList.length; i < l; i++) {
+            myTable = plan.tableList[i];
+            if (myTable.seatList) {
+                for (i2 = 0, l2 = myTable.seatList.length; i2 < l2; i2++) {
+                    if (myTable.seatList[i2].guest &&
+                            myTable.seatList[i2].guest[0] &&
+                            myTable.seatList[i2].guest[0].id === id) {
+                //console.log(plan.guestList[i].seatList[i2]);
+                        return myTable.seatList[i2].guest[0];
+                    }
+                }
+            }
+        }
+        return null;*/
+    },
+    GetSeat = function (plan, id) {
+        console.log(sq);
+        return sq.getSeat(plan, id);
+        /*console.log("GetSeat" + id);
+        var i, l, i2, l2;
+        if (plan.tableList) {
+            for (i = 0, l = plan.tableList.length; i < l; i++) {
+                console.log("... checking table " + i);
+                if (plan.tableList[i].seatList) {
+                    for (i2 = 0, l2 = plan.tableList[i].seatList.length; i2 < l2; i2++) {
+                        console.log("...    checking seat " + i2 + " with ID " + plan.tableList[i].seatList[i2].id);
 
-          if(plan.tableList[i].seatList[i2].id == id) {
-            //console.log(plan.tableList[i].seatList[i2]);
-            return plan.tableList[i].seatList[i2];
-          }
-        } 
-      }
-    }
-  }
-  return null;
-};
-var GetSeatByNumber = function(plan,seatNumber) {
-  console.log("GetSeatByNumber" + seatNumber);
-  if(plan.tableList) {
-    for(var i=0,l=plan.tableList.length; i<l; i++) {
-      if(plan.tableList[i].seatList) {
-        for(var i2=0,l2=plan.tableList[i].seatList.length; i2<l2; i2++) {
-          if(plan.tableList[i].seatList[i2].seatNumber == seatNumber) {
-            //console.log(plan.tableList[i].seatList[i2]);
-            return plan.tableList[i].seatList[i2];
-          }
-        } 
-      }
-    }
-  }
-  return null;
-};
-var AddPlanList = function(newPlan, onAddedPlanList) {
-  console.log("AddPlanList");
-  console.log(newPlan);
-  //GetPlanList(function AddPlanToList() {
+                        if (plan.tableList[i].seatList[i2].id === id) {
+                        //console.log(plan.tableList[i].seatList[i2]);
+                            return plan.tableList[i].seatList[i2];
+                        }
+                    }
+                }
+            }
+        }
+        return null;*/
+    },
+    GetSeatByNumber = function (plan, seatNumber) {
+        return sq.getSeatByNumber(plan, seatNumber);
+        /*console.log("GetSeatByNumber" + seatNumber);
+        var i, l, i2, l2;
+        if (plan.tableList) {
+            for (i = 0, l = plan.tableList.length; i < l; i++) {
+                if (plan.tableList[i].seatList) {
+                    for (i2 = 0, l2 = plan.tableList[i].seatList.length; i2 < l2; i2++) {
+                        if (plan.tableList[i].seatList[i2].seatNumber === seatNumber) {
+                        //console.log(plan.tableList[i].seatList[i2]);
+                            return plan.tableList[i].seatList[i2];
+                        }
+                    }
+                }
+            }
+        }
+        return null;*/
+        
+    },
+    AddPlanList = function (newPlan, onAddedPlanList) {
+        console.log("AddPlanList");
+        console.log(newPlan);
+        //GetPlanList(function AddPlanToList() {
+
+        /*
+        var PlanSchema = mongoose.model('Plan');
+        var myPlan = new PlanSchema();
+        ReplaceProperties(myPlan,newPlan);
+        myPlan.save();
+        */
+
+        AddPlan(newPlan, function (newPlan) {
+            var savedPlanList = [newPlan];
+            console.log(savedPlanList);
+            onAddedPlanList(savedPlanList);
+        });
+
+
+        //});
+    },
+    AddPlan = function (newPlan, onAddedPlan) {
   
-  /*
-  var PlanSchema = mongoose.model('Plan');
-  var myPlan = new PlanSchema();
-  ReplaceProperties(myPlan,newPlan);
-  myPlan.save();
-  */
-  
-  AddPlan(newPlan, function(newPlan) {
-    var savedPlanList = [newPlan];
-    console.log(savedPlanList);
-    onAddedPlanList(savedPlanList);
-  });
-  
-  
-  //});
-};
-var AddPlan = function(newPlan, onAddedPlan) {
-  
-  console.log("AddPlan");
-  var PlanSchema = mongoose.model('Plan');
-  var myPlan = new PlanSchema();
-  ReplaceProperties(myPlan,newPlan);
-  myPlan.save();
-  console.log("Saved");
-  onAddedPlan(myPlan);
-  
-}
-var GetPlan = function (session,onFoundPlan) {
-  // retrieve my model
-  var MyPlan = mongoose.model('Plan');   
-  // create a blog post
-  //var plan = new MyPlan();
-  console.log("finding plan");
-  console.log(session);
-  MyPlan.find(session,function FoundPlan(err,savedPlanList) {
-    if (err) {
-      console.log(err);
-    }else if (savedPlanList.length === 0) {
-      console.log("OOps - no plan saved with these params");
-    }else if (savedPlanList.length !== 1) {
-      console.log("OOps - multiple plans - wait that can't happen!");
-    } else {
-      console.log("Found Plan");
-      var savedPlan = savedPlanList[0];
-      console.log(savedPlan);
-      onFoundPlan(savedPlan);
-    }
-  });
-};
-var GetPlanList = function(onFoundPlanList) {
-   // retrieve my model
-  var MyPlan = mongoose.model('Plan');   
-  // create a blog post
-  //var plan = new MyPlan();
-  console.log("finding all plans");
-  MyPlan.find({},function getPlanListFoundPlan(err,savedPlanList) {
-    if (err) {
-      console.log(err);
-      onFoundPlanList(null);
-    }else if (savedPlanList.length === 0) {
-      console.log("List is empty.");
-      AddPlanList({},function OnCompleteAddPlanList(newlyGeneratedList) {
-        console.log("OnCompleteAddPlanList");
-        console.log(newlyGeneratedList);
-        onFoundPlanList(newlyGeneratedList);
-      });
-      //onFoundPlanList(savedPlanList);
-    } else {
-      console.log("Found Plan");
-      console.log(savedPlanList);
-      onFoundPlanList(savedPlanList);
-    }
-  });
-};
-var MakeMissingSeats = function(myTable, seatCount) {
-  if(!myTable.seatList || !myTable.seatList.length === 0) {
-    for (var i=0,l=seatCount;i<l;i++) {
-        var SeatSchema = mongoose.model('Seat');
-        var mySeat = new SeatSchema();
-        myTable.seatList.push(ReplaceProperties(mySeat,{id:i,seatNumber:i}));
-    }
-  }
-}
+        console.log("AddPlan");
+        var PlanSchema = mongoose.model('Plan'),
+            myPlan = new PlanSchema();
+        ReplaceProperties(myPlan,newPlan);
+        myPlan.save();
+        console.log("Saved");
+        onAddedPlan(myPlan);
+
+    },
+    GetPlan = function (session,onFoundPlan) {
+        // retrieve my model
+        var MyPlan = mongoose.model('Plan');   
+        // create a blog post
+        //var plan = new MyPlan();
+        console.log("finding plan");
+        console.log(session);
+        MyPlan.find(session,function FoundPlan(err,savedPlanList) {
+            if (err) {
+                console.log(err);
+            }else if (savedPlanList.length === 0) {
+                console.log("OOps - no plan saved with these params");
+            }else if (savedPlanList.length !== 1) {
+                console.log("OOps - multiple plans - wait that can't happen!");
+            } else {
+                console.log("Found Plan");
+                var savedPlan = savedPlanList[0];
+                console.log(savedPlan);
+                onFoundPlan(savedPlan);
+            }
+        });
+    },
+    GetPlanList = function(onFoundPlanList) {
+        // retrieve my model
+        var MyPlan = mongoose.model('Plan');   
+        // create a blog post
+        //var plan = new MyPlan();
+        console.log("finding all plans");
+        MyPlan.find({},function getPlanListFoundPlan(err,savedPlanList) {
+            if (err) {
+                console.log(err);
+                onFoundPlanList(null);
+            }else if (savedPlanList.length === 0) {
+                console.log("List is empty.");
+                AddPlanList({},function OnCompleteAddPlanList(newlyGeneratedList) {
+                    console.log("OnCompleteAddPlanList");
+                    console.log(newlyGeneratedList);
+                    onFoundPlanList(newlyGeneratedList);
+                });
+            //onFoundPlanList(savedPlanList);
+            } else {
+                console.log("Found Plan");
+                console.log(savedPlanList);
+                onFoundPlanList(savedPlanList);
+            }
+        });
+    },
+    MakeMissingSeats = function(myTable, seatCount) {
+        if(!myTable.seatList || myTable.seatList.length !== 0) {
+            for (var i=0,l=seatCount;i<l;i++) {
+                var SeatSchema = mongoose.model('Seat');
+                var mySeat = new SeatSchema();
+                myTable.seatList.push(ReplaceProperties(mySeat,{id:i,seatNumber:i}));
+            }
+        }
+    };
+
 io.sockets.on('connection', function SocketConnection(socket) {
   socket.on('AddPlan', function AddPlanSocket(message) {
     AddPlan(message ? message.plan : null, function(savedPlan) {
@@ -357,7 +382,7 @@ io.sockets.on('connection', function SocketConnection(socket) {
           seat.guest.remove(guest);
         }
         if(guestOriginalSeat) {
-          guestOriginalSeat.guest = guest
+          guestOriginalSeat.guest = guest;
         }
         savedPlan.save();
     });

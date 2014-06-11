@@ -1,0 +1,50 @@
+
+
+
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>dylanSeating Demo</title>
+    <link rel="stylesheet" href="seating.css" type="text/css" media="screen">
+  <!--  <script type="text/javascript" src="raphael.js"></script> -->
+    
+    <script type="text/javascript" src="underscore.js"></script>
+    <script type="text/javascript" src="jquery.js"></script>
+    <script type="text/javascript" src="raphael.2.0.1.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+      #board { float:left; clear:none; width:900px;}
+      #sidebar { float:left; clear:none; width:100px;}
+    </style>
+<script>
+  var socket = io.connect('/');
+ 
+</script>
+  </head>
+  <body>
+   
+<div id="board"></div>
+<div id="sidebar">
+    <label>plans</label>
+    <select id="lstPlans">
+    </select>
+    <div id="editGuest">
+      <h3>Edit Guest</h3>
+      <label for="txtGuestName">Name</label>
+      <input type="text" id="txtGuestName" name="txtGuestName" />
+    </div>
+    <div id="editPlan">
+      <h3>Edit Plan</h3>
+      <label for="txtPlanName">Name</label>
+      <input type="text" id="txtPlanName" name="txtPlanName" />
+    </div>
+</div>
+    
+    
+   <script type="text/javascript" src="dylanSeatingHitched.js"></script>
+   <script>
+   var myDylanSeating = new DylanSeating();
+   </script>
+  </body>
+</html>
