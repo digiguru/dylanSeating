@@ -1,1 +1,1 @@
-web: node socketExampleExpress.js
+web: node --harmony socketExampleExpress.js
