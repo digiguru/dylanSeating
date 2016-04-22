@@ -466,8 +466,7 @@ var DylanSeating = function DylanSeating() {
                 table = getTable(table);
                 seatMarker = getSeatMarker(table, seatMarker);
                 console.log("converting marker to seat");
-                var seat = seatMarker.convertToSeat();
-                $.when(seat.table.dfdPromise).then(function () {
+                $.when(seatMarker.convertToSeat()).then(function (seat) {
                     console.log("Finished creating seat - now place guest on new seat");
                     guest.moveToSeat(seat);
                 });
@@ -577,10 +576,9 @@ var DylanSeating = function DylanSeating() {
                 doAction: function doActionPlaceGuestOnNewSeat(args, callback) {
                     var guest = getGuest(args.guest),
                         table = getTable(args.table),
-                        seatMarker = getSeatMarker(table, args.seatMarker),
-                        seat = seatMarker.convertToSeat();
+                        seatMarker = getSeatMarker(table, args.seatMarker);
                     console.log("Convert to new seat from place guest on new seat");
-                    $.when(seat.table.dfdPromise).then(function whenPromiseDoActionPlaceGuestOnNewSeatNewSeat() {
+                    $.when(seatMarker.convertToSeat()).then(function (seat) {
                         console.log("DONE! - Convert to new seat from place guest on new seat");
                         //guest.moveToSeat(seat);
                         console.log("Place guest on new seat");
@@ -670,8 +668,8 @@ var DylanSeating = function DylanSeating() {
                 name: "AddSeatAtPosition",
                 doAction: function doActionAddSeatAtPosition(args, callback) {
                     var table = getTable(args.table);
-                    $.when(table.addSeatFromMarker(args.seatNumber)).then(function doActionAddSeatAtPositionComplete() {
-                        console.log("DONE! - doActionAddSeatAtPositionComplete");
+                    $.when(table.addSeatFromMarker(args.seatNumber)).then(function (seat) {
+                        console.log("DONE! - doActionAddSeatAtPositionComplete", seat);
                         if (callback) {
                             callback();
                         }
@@ -2062,8 +2060,11 @@ var DylanSeating = function DylanSeating() {
                 }
                 this.seatSet.push(mySeat.graphic);
                 this.seatSet.push(mySeatMarker.graphic);
-                this.renderSeats();
-                return mySeat;
+                var dfd = $.Deferred();
+                this.renderSeats().then(function() {
+                    dfd.resolve(mySeat);
+                });
+                return dfd;
             };
             this.removeSeat = function RoundTable_RemoveSeat(index) {
                 var isLastSeat = (this.seatCount === index),

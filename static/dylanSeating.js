@@ -1,3 +1,5 @@
+/*jslint nomen: true */
+/*global $:false, _:false, console:false, socket:false, Raphael:false, window:false */
 
 var paper = Raphael("board", 900, 900),
     animationTime = 300,
