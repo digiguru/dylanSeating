@@ -1,5 +1,5 @@
 /* brackets-xunit: qunit */
-/*brackets-xunit: includes=jquery.js,underscore.js,raphael.2.0.1.js,dylanSeatingHitched.js* */
+/*brackets-xunit: includes=//code.jquery.com/jquery-1.11.0.min.js,underscore.js,raphael.2.0.1.js,dylanSeatingHitched.js* */
 /*jslint nomen: true*/
 /*global $, console, module, test, asyncTest, equal, start, stop, expect, DylanSeating */
 

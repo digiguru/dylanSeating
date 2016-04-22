@@ -26,6 +26,11 @@ Array.prototype.insertAt = function ArrayInsertAt(o, index) {
     return false;
 };
 
+var DylanSeatingHTMLView = function() {
+       
+}
+
+
 var DylanSeating = function DylanSeating() {
     "use strict";
 
