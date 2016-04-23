@@ -20,6 +20,7 @@ Then get some of the typescript definitions
 typings install jquery --ambient
 typings install raphael --ambient
 typings install socket.io-client --ambient
+typings install underscore --ambient
 ```
 
 You can find others using
