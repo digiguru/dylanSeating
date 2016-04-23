@@ -9,6 +9,7 @@
  * Prequisites : jQuery, underscore, rapheal
  **/
 var myPlanID, possibleSeats;
+var socket;
 // Array Remove - By John Resig (MIT Licensed)
 Array.prototype.remove = function ArrayRemove(from, to) {
     "use strict";
@@ -103,7 +104,7 @@ var DylanSeating = function DylanSeating() {
         }, loadTable = function (data, callback) {
             return new RoundTable(data.x, data.y, data.seatCount, data.seatList, data.id, callback);
         }, loadDesk = function (data, callback) {
-            return new Desk(data.x, data.y, data.rotation, data.id, callback);
+            return new Desk(data.x, data.y, data.rotation, callback);
         }, i, l, myTableData, myTable, tableComplete = function (table, data) {
             if (data.seatList && data.seatList.length) {
                 var i2, l2, seat, guest;

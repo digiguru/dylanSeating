@@ -16,7 +16,10 @@ interface Array<T> {
     remove(from: number, to: number): Array<T>;
     insertAt(o:T, index:number): boolean;
 }
-
+interface Socket {
+    emit(signal:String);
+}
+var socket: Socket;
 // Array Remove - By John Resig (MIT Licensed)
 Array.prototype.remove = function ArrayRemove(from, to) {
     "use strict";
@@ -136,7 +139,7 @@ var DylanSeating = function DylanSeating() {
                     return new RoundTable(data.x, data.y, data.seatCount, data.seatList, data.id, callback);
                 },
                 loadDesk = function (data, callback) {
-                    return new Desk(data.x, data.y, data.rotation, data.id, callback);
+                    return new Desk(data.x, data.y, data.rotation, callback);
                 },
                 i,
                 l,
