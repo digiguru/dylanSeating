@@ -63,7 +63,7 @@ var DylanSeating = function DylanSeating() {
             if (!$("#board").length) {
                 $("body").prepend("<div id='board'></div>");
             }
-            return window.Raphael("board", 900, 900);
+            return Raphael("board", 900, 900);
         }, paper = generatePaperIfNotPresent();
         return {
             paper: paper,

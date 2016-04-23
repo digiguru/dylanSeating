@@ -19,6 +19,7 @@ Then get some of the typescript definitions
 ```
 typings install jquery --ambient
 typings install raphael --ambient
+typings install socket.io-client --ambient
 ```
 
 You can find others using

@@ -12,6 +12,11 @@
 var myPlanID,
     possibleSeats;
     
+interface Array<T> {
+    remove(from: number, to: number): Array<T>;
+    insertAt(o:T, index:number): boolean;
+}
+
 // Array Remove - By John Resig (MIT Licensed)
 Array.prototype.remove = function ArrayRemove(from, to) {
     "use strict";
@@ -72,7 +77,7 @@ var DylanSeating = function DylanSeating() {
                 if (!$("#board").length) {
                     $("body").prepend("<div id='board'></div>");
                 }
-                return window.Raphael("board", 900, 900);
+                return Raphael("board", 900, 900);
             },
             paper = generatePaperIfNotPresent();
         return {
