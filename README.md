@@ -7,6 +7,26 @@ The premise is to make a really basic navigation. No right clicks, no peculiar q
 
 After being inspired by new fangled awsome sites like [Trello](http://trello.com) I thought collaberation would be a perfect match to a table planner, brides and grooms can design their seating plan for their big day with the minimum of fuss.
 
+Getting things ready in Typescript
+==================================
+
+```
+$ npm install -g typings
+```
+
+Then get some of the typescript definitions
+
+```
+typings install jquery --ambient
+typings install raphael --ambient
+```
+
+You can find others using
+
+```
+typings search jQuery
+```
+
 Example Site
 ============
 
