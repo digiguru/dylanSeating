@@ -18,6 +18,7 @@ interface Array<T> {
 }
 interface Socket {
     emit(signal:String);
+    on(signal:String);
 }
 var socket: Socket;
 // Array Remove - By John Resig (MIT Licensed)
@@ -146,6 +147,7 @@ var DylanSeating = function DylanSeating() {
                 myTableData,
                 myTable,
                 tableComplete = function (table, data) {
+                    var dfd = $.Deferred();
                     if (data.seatList && data.seatList.length) {
                         var i2,
                             l2,
@@ -156,11 +158,13 @@ var DylanSeating = function DylanSeating() {
                             seat = data.seatList[i2];
                             if (seat && seat.guest && seat.guest[0]) {
                                 guest = seat.guest[0]; //Hack : needs to be property, not an array.
-                                myGuests.push(loadGuest(guest));
+                                var a = loadGuest(guest, dfd.resolve)
+                                myGuests.push(a);
                                 controller.PlaceGuestOnSeat(guest.id, seat.id);
                             }
                         }
                     }
+                    return dfd;
                 };
             if (data.tableList) {
                 l = data.tableList.length;
@@ -187,7 +191,8 @@ var DylanSeating = function DylanSeating() {
             if (data.guestList) {
                 l = data.guestList.length;
                 for (i = 0; i < l; i += 1) {
-                    myGuests.push(loadGuest(data.guestList[i]));
+                    var a = loadGuest(data.guestList[i]);
+                    myGuests.push(a);
                 }
             }
             $.when.apply($, arrAllDataDFD).done(function () {

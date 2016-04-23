@@ -106,6 +106,7 @@ var DylanSeating = function DylanSeating() {
         }, loadDesk = function (data, callback) {
             return new Desk(data.x, data.y, data.rotation, callback);
         }, i, l, myTableData, myTable, tableComplete = function (table, data) {
+            var dfd = $.Deferred();
             if (data.seatList && data.seatList.length) {
                 var i2, l2, seat, guest;
                 l2 = data.seatList.length;
@@ -113,11 +114,13 @@ var DylanSeating = function DylanSeating() {
                     seat = data.seatList[i2];
                     if (seat && seat.guest && seat.guest[0]) {
                         guest = seat.guest[0]; //Hack : needs to be property, not an array.
-                        myGuests.push(loadGuest(guest));
+                        var a = loadGuest(guest, dfd.resolve);
+                        myGuests.push(a);
                         controller.PlaceGuestOnSeat(guest.id, seat.id);
                     }
                 }
             }
+            return dfd;
         };
         if (data.tableList) {
             l = data.tableList.length;
@@ -144,7 +147,8 @@ var DylanSeating = function DylanSeating() {
         if (data.guestList) {
             l = data.guestList.length;
             for (i = 0; i < l; i += 1) {
-                myGuests.push(loadGuest(data.guestList[i]));
+                var a = loadGuest(data.guestList[i]);
+                myGuests.push(a);
             }
         }
         $.when.apply($, arrAllDataDFD).done(function () {
