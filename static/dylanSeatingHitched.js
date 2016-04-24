@@ -9,7 +9,6 @@
  * Prequisites : jQuery, underscore, rapheal
  **/
 var myPlanID, possibleSeats;
-var socket;
 // Array Remove - By John Resig (MIT Licensed)
 Array.prototype.remove = function ArrayRemove(from, to) {
     "use strict";
@@ -148,7 +147,7 @@ var DylanSeating = function DylanSeating() {
             l = data.guestList.length;
             for (i = 0; i < l; i += 1) {
                 var a = loadGuest(data.guestList[i]);
-                myGuests.push(a);
+                myGuests.push();
             }
         }
         $.when.apply($, arrAllDataDFD).done(function () {
@@ -1237,7 +1236,7 @@ var DylanSeating = function DylanSeating() {
         };
         this.GetX = Generic.PathGetX;
         this.GetY = Generic.PathGetY;
-        this.Rotation = Generic.Rotation;
+        this.Rotation = Generic.GetRotation;
         this.setGraphicPositionBase = Generic.SetRelativeGraphicPosition;
         this.setGraphicPosition = function (position) {
             this.setGraphicPositionBase(position);
@@ -2169,7 +2168,7 @@ var DylanSeating = function DylanSeating() {
         this.seatSet.push(this.rotationHandle);
         this.tableSeatList = [];
         this.addSeat = function () {
-            var mySeat = new Seat(x, y, rotation);
+            var mySeat = new Seat(x, y, rotation, this, 0);
             mySeat.table = this;
             this.tableSeatList.push(mySeat);
             this.seatSet.push(mySeat.graphic);

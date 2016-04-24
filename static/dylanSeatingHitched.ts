@@ -17,10 +17,33 @@ interface Array<T> {
     insertAt(o:T, index:number): boolean;
 }
 interface Socket {
-    emit(signal:String);
-    on(signal:String);
+    emit(signal:String, args?:any, callback?:Function);
+    on(signal:String, action:Function);
 }
-var socket: Socket;
+interface iGuest {
+    id:string;
+    name:string;
+}
+interface iTable {
+    seatCount:number;
+    seatList:Array<iSeat>;
+    id:string;
+}
+interface iSeat {
+    id:string;
+}
+interface iPos {
+    x: number;
+    y: number;
+}
+interface iGuestPos extends iGuest, iPos { 
+}
+interface iTablePos extends iTable, iPos { 
+}
+interface iDeskPos extends iPos {
+    rotation: number;
+}
+declare var socket: Socket;
 // Array Remove - By John Resig (MIT Licensed)
 Array.prototype.remove = function ArrayRemove(from, to) {
     "use strict";
@@ -104,7 +127,7 @@ var DylanSeating = function DylanSeating() {
         clearData = function () {
             var dfdRemoveAllData = $.Deferred(),
                 arrAllDataDFD = [],
-                i,
+                i:number,
                 l = myTables.length;
             if (myTables && l) {
                 for (i = 0; i < l; i += 1) {
@@ -133,16 +156,16 @@ var DylanSeating = function DylanSeating() {
         loadData = function (data) {
             var dfdRemoveAllData = $.Deferred(),
                 arrAllDataDFD = [],
-                loadGuest = function (data, callback) {
+                loadGuest = function (data:any, callback?:Function) {
                     return new Guest(data.name, data.x, data.y, data.id, callback);
                 },
-                loadTable = function (data, callback) {
+                loadTable = function (data:iTablePos, callback?:Function) {
                     return new RoundTable(data.x, data.y, data.seatCount, data.seatList, data.id, callback);
                 },
-                loadDesk = function (data, callback) {
+                loadDesk = function (data:iDeskPos, callback?:Function) {
                     return new Desk(data.x, data.y, data.rotation, callback);
                 },
-                i,
+                i:number,
                 l,
                 myTableData,
                 myTable,
@@ -168,11 +191,12 @@ var DylanSeating = function DylanSeating() {
                 };
             if (data.tableList) {
                 l = data.tableList.length;
-                var makeCompleteFunction = function (data) {
+                var makeCompleteFunction = function (data:iTablePos) {
                     return function (table) {
                         tableComplete(table, data);
                     };
                 };
+                
                 for (i = 0; i < l; i += 1) {
                     myTableData = data.tableList[i];
                     myTable = null;
@@ -192,7 +216,7 @@ var DylanSeating = function DylanSeating() {
                 l = data.guestList.length;
                 for (i = 0; i < l; i += 1) {
                     var a = loadGuest(data.guestList[i]);
-                    myGuests.push(a);
+                    myGuests.push();
                 }
             }
             $.when.apply($, arrAllDataDFD).done(function () {
@@ -883,7 +907,7 @@ var DylanSeating = function DylanSeating() {
                     rotation = r;
                 myGraphic.transform("t" + currentX + "," + currentY + "R" + rotation);
             },
-            Disable: function (graphic, colour) {
+            Disable: function (graphic, colour?) {
                 var myGraphic = graphic || this.graphic,
                     myColour = colour || colDisabled;
                 myGraphic.PreviousColourFill = myGraphic.attr("fill");
@@ -896,7 +920,7 @@ var DylanSeating = function DylanSeating() {
                 /*graphic.mouseover(function (event) { });
                 graphic.mouseout(function (event) { });*/
             },
-            Enable: function (graphic, colour) {
+            Enable: function (graphic, colour?) {
                 var myGraphic = graphic || this.graphic,
                     myColour = colour || colTableSelectedStroke;
                 myGraphic.PreviousColourFill = myGraphic.attr("fill");
@@ -914,7 +938,7 @@ var DylanSeating = function DylanSeating() {
                     Generic.Unhighlight(this);
                 });
             },
-            Highlight: function (graphic, colour) {
+            Highlight: function (graphic, colour?) {
                 var myGraphic = graphic || this.graphic,
                     myColour = colour || colTableSelectedStroke;
                 myGraphic.PreviousColour = myGraphic.attr("stroke");
@@ -925,7 +949,7 @@ var DylanSeating = function DylanSeating() {
                     }, animationTime);
                 }
             },
-            Unhighlight: function (graphic, colour) {
+            Unhighlight: function (graphic, colour?) {
                 var myGraphic = graphic || this.graphic,
                     myColour = colour || myGraphic.PreviousColour;
                 if (myGraphic) {
@@ -1385,7 +1409,7 @@ var DylanSeating = function DylanSeating() {
 
             this.GetX = Generic.PathGetX;
             this.GetY = Generic.PathGetY;
-            this.Rotation = Generic.Rotation;
+            this.Rotation = Generic.GetRotation;
             this.setGraphicPositionBase = Generic.SetRelativeGraphicPosition;
             this.setGraphicPosition = function (position) {
                 this.setGraphicPositionBase(position);
@@ -1558,7 +1582,7 @@ var DylanSeating = function DylanSeating() {
                 callback();
             }
         },
-        Seat = function (x, y, rotation, table, seatNumber, id, guest) {
+        Seat = function (x:number, y:number, rotation:number, table:iTablePos, seatNumber:number, id?:string, guest?:iGuestPos) {
             logEvent("Create Seat");
             this.id = id || controller.NextSeatID();
             this.table = table;
@@ -2424,7 +2448,7 @@ var DylanSeating = function DylanSeating() {
             this.seatSet.push(this.rotationHandle);
             this.tableSeatList = [];
             this.addSeat = function () {
-                var mySeat = new Seat(x, y, rotation);
+                var mySeat = new Seat(x, y, rotation, this, 0);
                 mySeat.table = this;
                 this.tableSeatList.push(mySeat);
                 this.seatSet.push(mySeat.graphic);
@@ -2586,6 +2610,7 @@ var DylanSeating = function DylanSeating() {
             renderAllPlans(data);
         });
     }
+    
     (function () {
         MyToolBar = new ToolBar();
         requestPlanList();
