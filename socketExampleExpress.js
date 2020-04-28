@@ -60,8 +60,12 @@ var Guest = new Schema({
 //Table.add();
 //Plan.add();
 
-//mongoose.connect(process.env.MONGOLAB_URI);//'mongodb://localhost/digiguru_seating');
-mongoose.connect("mongodb://localhost:27017/digiguruSeating");//'mongodb://localhost/digiguru_seating');
+mongoose.connect(process.env.MONGOLAB_URI, {                
+    useNewUrlParser: true,
+    useFindAndModify: false,
+    useCreateIndex: true,
+    useUnifiedTopology: true
+});//'mongodb://localhost/digiguru_seating');
 
 
 mongoose.model('Guest', Guest);
@@ -291,9 +295,9 @@ io.on('connection', function SocketConnection(socket) {
             console.log("guest", guest);
             var guestOriginalSeat = GetSeat(savedPlan,message.data.guestOriginalSeat);
             console.log("guestOriginalSeat", guestOriginalSeat);
-            savedPlan.guestList.remove(guest);
+            savedPlan.guestList.deleteOne(guest);
             if(guestOriginalSeat) {
-              guestOriginalSeat.guest.remove(guest);
+              guestOriginalSeat.guest.deleteOne(guest);
             }
             if(seat) {
               //seat.guest = [];
@@ -314,7 +318,7 @@ io.on('connection', function SocketConnection(socket) {
             var guest = GetGuest(savedPlan,message.data.guest);
             var guestOriginalSeat = GetSeat(savedPlan,message.data.guestOriginalSeat);
             if(seat) {
-              seat.guest.remove(guest);
+              seat.guest.deleteOne(guest);
             }
             if(guestOriginalSeat) {
               guestOriginalSeat.guest = guest;
@@ -357,10 +361,10 @@ io.on('connection', function SocketConnection(socket) {
         GetPlan(message.plan, function UndoAddSeatAtPositionAction(savedPlan) {  
           //var seat = GetSeatByNumber(savedPlan,message.data.seatNumber);
           var table = GetTable(savedPlan,message.data.table);
-          //table.seatList.remove(seat);
+          //table.seatList.deleteOne(seat);
           console.log({seatNumber:message.data.seatNumber});
           console.log(table.seatList);
-          table.seatList[message.data.seatNumber].remove();
+          table.seatList[message.data.seatNumber].deleteOne();
           for(var i=0, l=table.seatList.length; i<l; i++) {
              table.seatList[i].seatNumber = i;  
           }
@@ -390,7 +394,7 @@ io.on('connection', function SocketConnection(socket) {
       socket.on('UndoAddTable', function UndoAddTableSocket(message) {
         socket.broadcast.emit('UndoAddTableResponse', message.data);
         GetPlan(message.plan,function RemoveTableAction(savedPlan) {  
-            savedPlan.tableList.remove(message.data);
+            savedPlan.tableList.deleteOne(message.data);
             savedPlan.save();
         });
         console.log(message.data);
@@ -406,7 +410,7 @@ io.on('connection', function SocketConnection(socket) {
       socket.on('UndoAddGuest', function UndoAddGuestSocket(message) {
         socket.broadcast.emit('UndoAddGuestResponse', message.data);
         GetPlan(message.plan,function RemoveTableAction(savedPlan) {  
-            savedPlan.guestList.remove(message.data);
+            savedPlan.guestList.deleteOne(message.data);
             savedPlan.save();
         });
         console.log(message.data);

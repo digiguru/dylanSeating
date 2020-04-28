@@ -14,6 +14,25 @@ I have created a free Heroku to test the product.
 
 http://digiguru.herokuapp.com/
 
+
+Development Site
+================
+
+To get running use the following.
+
+First get mongo running:
+```bash
+brew tap mongodb/brew
+brew install mongodb-community@4.2
+brew services start mongodb-community@4.2
+```
+
+And then start a dev server like:
+
+```
+MONGOLAB_URI=mongodb://localhost:27017/digiguruSeating node socketExampleExpress.js
+```
+
 Next Up Tasks
 =============
 
