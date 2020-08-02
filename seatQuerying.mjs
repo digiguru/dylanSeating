@@ -1,4 +1,6 @@
-var SeatQuerying = function() {
+import {_} from 'underscore';
+
+SeatQuerying = function() {
     'use strict';
     return {
         getTable: function (plan, id) {

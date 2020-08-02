@@ -6,10 +6,17 @@
         "mongodb": "^3.5.6",
         "mongojs": "^3.1.0",
         "mongoose": "^5.9.10",
+        "node-qunit": "^1.0.0",
         "socket.io": "^2.3.0",
         "underscore": "^1.10.2"
     },
+    "scripts": {
+        "test": "qunit -c ./seatQuerying.mjs -t ./seatQuerying-test.js --require esm"
+    },
     "engines": {
         "node": "14.0.0"
+    },
+    "devDependencies": {
+        "qunit": "^2.10.0"
     }
 }

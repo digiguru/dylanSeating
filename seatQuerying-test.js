@@ -1,7 +1,9 @@
 /* brackets-xunit: qunit */
 /* brackets-xunit: includes=underscore.js,seatQuerying.js* */
+import {SeatQuerying} from './seatQuerying';
+
 var sq;
-module("Basic Functions", {
+QUnit.module("Basic Functions", {
     setup: function () {
         sq = new SeatQuerying();
     }
