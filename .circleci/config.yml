@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/node:latest
+      - image: threetreeslight/puppeteer@0.1.2
     steps:
     - checkout
     - restore_cache: # special step to restore the dependency cache
