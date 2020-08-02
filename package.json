@@ -11,10 +11,14 @@
         "socket.io": "^2.3.0",
         "underscore": "^1.10.2"
     },
+    "jest-junit": {
+        "outputDirectory": "results"
+    },
     "type": "module",
     "scripts": {
         "test:qunit": "qunit -c ./seatQuerying.mjs -t ./seatQuerying-test.js --require esm",
-        "test": "jest"
+        "test": "jest",
+        "test:ci": "jest --ci --reporters=jest-junit"
     },
     "engines": {
         "node": "14.0.0"
@@ -24,6 +28,7 @@
         "@babel/preset-env": "^7.11.0",
         "babel-jest": "^26.2.2",
         "jest": "^26.2.2",
+        "jest-junit": "^11.1.0",
         "qunit": "^2.10.0"
     }
 }
