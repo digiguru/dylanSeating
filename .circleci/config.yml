@@ -1,28 +1,29 @@
 version: 2.1
-
+orbs:
+  browser-tools: circleci/browser-tools@1.0.1
 jobs:
   build:
     docker:
       - image: circleci/node:latest
     steps:
-    - browser-tools/install-browser-tools
-    - checkout
-    - restore_cache: # special step to restore the dependency cache
-        # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
-        key: dependency-cache-{{ checksum "package.json" }}
-    - run:
-        name: npm-install
-        command: npm ci
-    - save_cache: # special step to save the dependency cache
-        key: dependency-cache-{{ checksum "package.json" }}
-        paths:
-            - ./node_modules
-    - run: # run tests
-        name: unit-tests
-        command: npm run test:ci
-    - store_test_results:
-        path: results
-    - store_artifacts:
-        path: results
-  orbs:
-    browser-tools: circleci/browser-tools@1.0.1
+      - browser-tools/install-chromedriver
+      - checkout
+      - restore_cache: # special step to restore the dependency cache
+          # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
+          key: dependency-cache-{{ checksum "package.json" }}
+      - run:
+          name: npm-install
+          command: npm ci
+      - save_cache: # special step to save the dependency cache
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+              - ./node_modules
+      - run: # run tests
+          name: unit-tests
+          command: npm run test:ci
+      - store_test_results:
+          path: results
+      - store_artifacts:
+          path: results
+  
+  
