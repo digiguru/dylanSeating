@@ -1,6 +1,6 @@
 import {_} from 'underscore';
 
-SeatQuerying = function() {
+export function SeatQuerying () {
     'use strict';
     return {
         getTable: function (plan, id) {
@@ -64,7 +64,3 @@ SeatQuerying = function() {
         }
     };
 };
-
-//Slip sneaky module in
-module = module || {};
-module.exports = new SeatQuerying();
