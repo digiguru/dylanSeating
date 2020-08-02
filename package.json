@@ -10,13 +10,19 @@
         "socket.io": "^2.3.0",
         "underscore": "^1.10.2"
     },
+    "type": "module",
     "scripts": {
-        "test": "qunit -c ./seatQuerying.mjs -t ./seatQuerying-test.js --require esm"
+        "test:qunit": "qunit -c ./seatQuerying.mjs -t ./seatQuerying-test.js --require esm",
+        "test": "jest"
     },
     "engines": {
         "node": "14.0.0"
     },
     "devDependencies": {
+        "@babel/core": "^7.11.0",
+        "@babel/preset-env": "^7.11.0",
+        "babel-jest": "^26.2.2",
+        "jest": "^26.2.2",
         "qunit": "^2.10.0"
     }
 }
