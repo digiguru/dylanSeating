@@ -60,7 +60,7 @@ var Guest = new Schema({
 //Table.add();
 //Plan.add();
 
-mongoose.connect(process.env.MONGOLAB_URI, {                
+mongoose.connect(process.env.MONGOATLAS_CONNECTION, {                
     useNewUrlParser: true,
     useFindAndModify: false,
     useCreateIndex: true,
