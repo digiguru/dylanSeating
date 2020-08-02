@@ -30,7 +30,7 @@ brew services start mongodb-community@4.2
 And then start a dev server like:
 
 ```
-MONGOLAB_URI=mongodb://localhost:27017/digiguruSeating node socketExampleExpress.js
+MONGOATLAS_CONNECTION=mongodb://localhost:27017/digiguruSeating node socketExampleExpress.js
 ```
 
 Next Up Tasks
