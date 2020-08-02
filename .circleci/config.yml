@@ -6,7 +6,7 @@ jobs:
     docker:
       - image: circleci/node:latest
     steps:
-      - browser-tools/install-chromedriver
+      - browser-tools/install-chrome
       - checkout
       - restore_cache: # special step to restore the dependency cache
           # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
