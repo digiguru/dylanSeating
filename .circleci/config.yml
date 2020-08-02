@@ -5,8 +5,8 @@ jobs:
     docker:
       - image: circleci/node:latest
     steps:
-        - browser-tools/install-browser-tools
-        - checkout
+    - browser-tools/install-browser-tools
+    - checkout
     - restore_cache: # special step to restore the dependency cache
         # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
         key: dependency-cache-{{ checksum "package.json" }}
