@@ -7,7 +7,7 @@
         "mongojs": "^3.1.0",
         "mongoose": "^5.9.10",
         "socket.io": "^2.3.0",
-        "underscore": "^1.10.2"
+        "underscore": "^1.11.0"
     },
     "engines": {
         "node": "14.0.0"
