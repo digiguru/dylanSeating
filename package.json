@@ -6,7 +6,7 @@
         "mongodb": "^3.5.6",
         "mongojs": "^3.1.0",
         "mongoose": "^5.9.10",
-        "socket.io": "^2.3.0",
+        "socket.io": "^3.0.4",
         "underscore": "^1.10.2"
     },
     "engines": {
