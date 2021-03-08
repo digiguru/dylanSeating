@@ -7,7 +7,6 @@ jobs:
       - image: circleci/node:latest
     steps:
       - browser-tools/install-chrome
-      - browser-tools/install-firefox
       - checkout
       - restore_cache: # special step to restore the dependency cache
           # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
