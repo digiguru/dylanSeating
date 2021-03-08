@@ -1,3 +1,4 @@
+import $ from "jquery";
 /*jslint nomen: true */
 /*global $:false, _:false, console:false, socket:false, Raphael:false, window:false */
 /**
@@ -8,6 +9,7 @@
  * License: Creative Commons 3.0 (http://creativecommons.org/licenses/by-nc/3.0/)
  * Prequisites : jQuery, underscore, rapheal
  **/
+
 var myPlanID,
     possibleSeats;
 // Array Remove - By John Resig (MIT Licensed)
@@ -26,7 +28,7 @@ Array.prototype.insertAt = function ArrayInsertAt(o, index) {
     return false;
 };
 
-var DylanSeating = function DylanSeating() {
+export function DylanSeating () {
     "use strict";
 
     this.Controller = function Controller() {

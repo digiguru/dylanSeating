@@ -2,118 +2,108 @@
 /*brackets-xunit: includes=jquery.js,underscore.js,raphael.2.0.1.js,dylanSeatingHitched.js* */
 /*jslint nomen: true*/
 /*global $, console, module, test, asyncTest, equal, start, stop, expect, DylanSeating */
+import $ from "jquery";
+import {DylanSeating} from './static/dylanSeatingHitched'
 
-var testSpeed = 1,//,
-    //Mocks
-    socket = {
-        on: function (socketName) {
-            "use strict";
-            console.log("Mock socket " + socketName);
-        },
-        emit: function (socketName, object, functionObj) {
-            "use strict";
-            console.log(["Mock Emit " + socketName, object]);
-            if (functionObj) {
-                functionObj();
+describe.skip('Stuff', () => {
+
+
+    var testSpeed = 1,//,
+        //Mocks
+        socket = {
+            on: function (socketName) {
+                "use strict";
+                console.log("Mock socket " + socketName);
+            },
+            emit: function (socketName, object, functionObj) {
+                "use strict";
+                console.log(["Mock Emit " + socketName, object]);
+                if (functionObj) {
+                    functionObj();
+                }
             }
-        }
-    };
-$(function () {
-    "use strict";
-    var myDylanSeating;
-    //var myDylanSeating = new dylanSeating();
-    //var socket = false;
-    module("Basic Functions", {
-        setup: function () {
-            myDylanSeating = new DylanSeating();
-            myDylanSeating.setAnimationTime(testSpeed);
-        }
-    });
-
-    test('myTables starts off blank', function () {
-
-        equal(myDylanSeating.getTables().length, 0, 'myTables starts off blank');
-    });
-
-
-    test('Load standard data and check it', function () {
-
-        var exampleSave = {
-            guestList: [{
-                id: 1,
-                name: "Fred Boodle",
-                x: 30,
-                y: 30
-            }],
-            tableList: [{
-                type: "table",
-                x: 400,
-                y: 400,
-                seatList: [
-                    {
-                        id: 1,
-                        guest: {
-                            id: 2,
-                            name: "Bob Cranberry",
-                            x: 30,
-                            y: 30
-                        },
-                        seatNumber: 1
-                    },
-                    {
-                        id: 2,
-                        seatNumber: 2
-                    },
-                    {
-                        id: 3,
-                        seatNumber: 3
-                    }
-                ],
-                seatCount: 3
-            }, {
-                type: "desk",
-                x: 600,
-                y: 50,
-                rotation: 0
-            }, {
-                type: "table",
-                x: 200,
-                y: 200,
-                seatCount: 5
-            }]
         };
 
-        
-        myDylanSeating.LoadDataExternal({});
-        equal(myDylanSeating.getTables().length, 0, 'There are no tables after loading an empty object');
 
-        
-        $.when(myDylanSeating.LoadDataExternal(exampleSave)).then(function () {
-            start();
-            equal(myDylanSeating.getTables().length, 3, 'There are 3 tables');
-            equal(myDylanSeating.getTables()[0].seatCount, 3, 'There are 3 seats on the first table');
-            /*stop();
-            $.when(myDylanSeating.ClearDataExternal()).then(function () {
-                start();
-                equal(myDylanSeating.getTables().length, 0, 'The stage has been cleared');
 
-            });*/
+        test('myTables starts off blank', function () {
+
+            equal(myDylanSeating.getTables().length, 0, 'myTables starts off blank');
+        });
+
+
+        test('Load standard data and check it', function () {
+
+            var exampleSave = {
+                guestList: [{
+                    id: 1,
+                    name: "Fred Boodle",
+                    x: 30,
+                    y: 30
+                }],
+                tableList: [{
+                    type: "table",
+                    x: 400,
+                    y: 400,
+                    seatList: [
+                        {
+                            id: 1,
+                            guest: {
+                                id: 2,
+                                name: "Bob Cranberry",
+                                x: 30,
+                                y: 30
+                            },
+                            seatNumber: 1
+                        },
+                        {
+                            id: 2,
+                            seatNumber: 2
+                        },
+                        {
+                            id: 3,
+                            seatNumber: 3
+                        }
+                    ],
+                    seatCount: 3
+                }, {
+                    type: "desk",
+                    x: 600,
+                    y: 50,
+                    rotation: 0
+                }, {
+                    type: "table",
+                    x: 200,
+                    y: 200,
+                    seatCount: 5
+                }]
+            };
 
             
+            myDylanSeating.LoadDataExternal({});
+            equal(myDylanSeating.getTables().length, 0, 'There are no tables after loading an empty object');
+
+            
+            $.when(myDylanSeating.LoadDataExternal(exampleSave)).then(function () {
+                start();
+                equal(myDylanSeating.getTables().length, 3, 'There are 3 tables');
+                equal(myDylanSeating.getTables()[0].seatCount, 3, 'There are 3 seats on the first table');
+                /*stop();
+                $.when(myDylanSeating.ClearDataExternal()).then(function () {
+                    start();
+                    equal(myDylanSeating.getTables().length, 0, 'The stage has been cleared');
+
+                });*/
+
+                
+            });
+            stop();
+
+
         });
-        stop();
-
-
-    });
-
-
-    module("Controller Functions", {
-        setup: function () {
-            myDylanSeating = new DylanSeating();
-            myDylanSeating.setAnimationTime(testSpeed);
-        }
-    });
-
+    let myDylanSeating = new DylanSeating();
+    myDylanSeating.setAnimationTime(testSpeed);
+    
     test('AddGuest, undo, redo', function testAddGuestUndo() {
         expect(4);
         //	start();
@@ -517,7 +507,7 @@ $(function () {
         });
     });
 
-    
+
 
     test('SwapGuestWithGuest, then Undo, then Redo', function () {
         expect(11);
@@ -612,28 +602,28 @@ $(function () {
                                     equal(myDylanSeating.getTables()[1].tableSeatList[2].guest.name, 'Guest 1', 'Guest 1 is now where Guest 2 used to be');
                                     
                                     
-                                 
+                                    
                                 });
                             });
                             
                             
                         });
                         
-                       
+                        
                     });
                 });
                 
             });
         });
     });
-    
+
     test('SwapGuestWithGuest, then Undo, then Redo', function () {
         stop();
         $.when(myDylanSeating.ClearDataExternal()).then(function () {
             start();
             equal(myDylanSeating.getTables().length, 0, 'tables start off empty');
-    
-    
+
+
             var ctrl = myDylanSeating.getController(),
                 callAddTable1 = {
                     name: "AddTable",
@@ -667,7 +657,7 @@ $(function () {
                         start();
                         equal(myDylanSeating.getTables().length, 1, 'Added 1 tables');
                         equal(myDylanSeating.getTables()[0].seatCount, 3, 'removed 1 seat');
-         
+            
                         
                         
                         stop();
@@ -677,7 +667,7 @@ $(function () {
                             equal(myDylanSeating.getTables()[0].seatCount, 4, 'Added 1 seat');
                             
                             
-                         
+                            
                         });
                     });
                     
@@ -686,16 +676,16 @@ $(function () {
             });
         });
     });
-    
-    
-    
+
+
+
     test('EditGuest, then Undo, then Redo', function () {
         stop();
         $.when(myDylanSeating.ClearDataExternal()).then(function () {
             start();
             equal(myDylanSeating.getTables().length, 0, 'tables start off empty');
-    
-    
+
+
             var ctrl = myDylanSeating.getController(),
                 callAddGuest = {
                     name: "AddGuest",
@@ -729,7 +719,7 @@ $(function () {
                         start();
                         equal(myDylanSeating.getGuests().length, 1, 'Added 1 guest');
                         equal(myDylanSeating.getGuests()[0].name, 'Primary', 'his naem - Primary');
-         
+            
                         
                         
                         stop();
@@ -739,7 +729,7 @@ $(function () {
                             equal(myDylanSeating.getGuests()[0].name, 'Secondary', 'his naem - Primary');
                             
                             
-                         
+                            
                         });
                     });
                     
@@ -748,10 +738,9 @@ $(function () {
             });
         });
     });
-    
-    
-//All of the following still need tests to be written for them:
-    //  "EditGuest", {name:name}
-    //});
 
+
+//All of the following still need tests to be written for them:
+//  "EditGuest", {name:name}
+//});
 });

@@ -23,7 +23,7 @@ $(function () {
     var myDylanSeating;
     //var myDylanSeating = new dylanSeating();
     //var socket = false;
-    module("Basic Functions", {
+    QUnit.module("Basic Functions", {
         setup: function () {
             myDylanSeating = new DylanSeating();
             myDylanSeating.setAnimationTime(testSpeed);
@@ -107,7 +107,7 @@ $(function () {
     });
 
 
-    module("Controller Functions", {
+    QUnit.module("Controller Functions", {
         setup: function () {
             myDylanSeating = new DylanSeating();
             myDylanSeating.setAnimationTime(testSpeed);
