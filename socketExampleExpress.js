@@ -10,16 +10,22 @@
  **/
 
 
-const express = require('express')
+import express from 'express';
+import http from 'http';
+import { Server } from "socket.io";
+import * as sq from "./seatQuerying.js";
+import mongoose from "mongoose";
+
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
+
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
-const _ = require("underscore");
-const sq = require("./seatQuerying.js");
+const httpServer = http.createServer(app);
 
+const io = new Server(httpServer);
+const dirName = dirname(fileURLToPath(import.meta.url));
 
-var mongoose = require('mongoose'),
-    Schema = mongoose.Schema;
+var Schema = mongoose.Schema;
     
 var Guest = new Schema({
     id        : { type: Number, index: true },
@@ -59,7 +65,7 @@ var Guest = new Schema({
    //http://stackoverflow.com/questions/7744271/how-do-you-define-a-nested-object-to-an-existing-schema-in-mongoose
 //Table.add();
 //Plan.add();
-
+console.log(process.env.MONGOATLAS_CONNECTION)
 mongoose.connect(process.env.MONGOATLAS_CONNECTION, {                
     useNewUrlParser: true,
     useFindAndModify: false,
@@ -80,7 +86,7 @@ var port = process.env.PORT || 3000;
 
 
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
+    res.sendFile(dirName + '/index.html');
 });
 
 /*
@@ -89,7 +95,7 @@ app.use(function (req, res, next) {
     next();
 });
 */
-app.use("/static", express.static(__dirname + '/static/'));
+app.use("/static", express.static(dirName + '/static/'));
 
 var ReplaceProperties = function (original, newProps) {
     console.log("ReplaceProperties");
@@ -107,10 +113,6 @@ var ReplaceProperties = function (original, newProps) {
 },
     GetTable = function (plan, id) {
         return sq.getTable(plan, id);
-        // return _.find(plan.tableList, function(item) {
-        //    return item.id == id;
-        //});
-        
     },
     GetGuest = function (plan, id) {
         return sq.getGuest(plan, id);
@@ -211,43 +213,43 @@ var ReplaceProperties = function (original, newProps) {
 
 io.on('connection', function SocketConnection(socket) {
     console.log("hello")
-    socket.on('AddPlan', function AddPlanSocket(message) {
+    io.on('AddPlan', function AddPlanSocket(message) {
         AddPlan(message ? message.plan : null, function(savedPlan) {
-          socket.emit('AddPlanResponse', savedPlan);
+          io.emit('AddPlanResponse', savedPlan);
         });
         console.log(message);
       });
-      socket.on('GetPlanList', function GetPlanListSocket (message) {
+      io.on('GetPlanList', function GetPlanListSocket (message) {
         GetPlanList(function GetPlanListAction(savedPlanList) {  
             // return all the plans in the system. If it's empty then create a new plan!
-            socket.emit('GetPlanListResponse', savedPlanList);
+            io.emit('GetPlanListResponse', savedPlanList);
         });
         console.log(message);
       });
       
-      socket.on('GetPlan', function GetPlanSocket (message) {
+      io.on('GetPlan', function GetPlanSocket (message) {
         GetPlan(message.plan,function GetPlanAction(savedPlan) {  
             // return the plan as is
-            socket.emit('GetPlanResponse', savedPlan);
+            io.emit('GetPlanResponse', savedPlan);
         });
         console.log(message.data);
       });
       
-      socket.on('DeletePlanData', function DeletePlanDataSocket(message) {
+      io.on('DeletePlanData', function DeletePlanDataSocket(message) {
         console.log("DeletePlanData");
         GetPlan(message.plan,function DeletePlanDataAction(savedPlan) {  
             console.log("deltePlanData" + savedPlan);
             // push table to our plan
             savedPlan.tableList = [];
-            socket.broadcast.emit('GetPlanResponse', savedPlan);
+            io.broadcast.emit('GetPlanResponse', savedPlan);
             savedPlan.save();
         });
         console.log(message.data);
       });
       
-      socket.on('EditGuest', function EditGuestSocket(message,fn) {
+      io.on('EditGuest', function EditGuestSocket(message,fn) {
         console.log("EditGuest");
-        socket.broadcast.emit('EditGuestResponse', message.data);
+        io.broadcast.emit('EditGuestResponse', message.data);
         
         GetPlan(message.plan,function EditGuestSocketAction(savedPlan) {  
             var guest = GetGuest(savedPlan,message.data.guest);
@@ -263,9 +265,9 @@ io.on('connection', function SocketConnection(socket) {
         
         
       });
-      socket.on('UndoEditGuest', function UndoEditGuestSocket(message) {
+      io.on('UndoEditGuest', function UndoEditGuestSocket(message) {
         console.log("UndoEditGuest");
-        socket.broadcast.emit('UndoEditGuestResponse', message.data);
+        io.broadcast.emit('UndoEditGuestResponse', message.data);
         GetPlan(message.plan,function EditGuestSocketAction(savedPlan) {  
             var guest = GetGuest(savedPlan,message.data.guest);
             console.log("guest", guest);
@@ -274,19 +276,19 @@ io.on('connection', function SocketConnection(socket) {
         });
         console.log(message.data);
       });
-      socket.on('PlaceGuestOnNewSeat', function PlaceGuestOnNewSeatSocket(message) {
+      io.on('PlaceGuestOnNewSeat', function PlaceGuestOnNewSeatSocket(message) {
         console.log("PlaceGuestOnNewSeat");
-        socket.broadcast.emit('PlaceGuestOnNewSeatResponse', message.data);
+        io.broadcast.emit('PlaceGuestOnNewSeatResponse', message.data);
         console.log(message.data);
       });
-      socket.on('UndoPlaceGuestOnNewSeat', function UndoPlaceGuestOnNewSeatSocket(message) {
+      io.on('UndoPlaceGuestOnNewSeat', function UndoPlaceGuestOnNewSeatSocket(message) {
         console.log("UndoPlaceGuestOnNewSeat");
-        socket.broadcast.emit('UndoPlaceGuestOnNewSeatResponse', message.data);
+        io.broadcast.emit('UndoPlaceGuestOnNewSeatResponse', message.data);
         console.log(message.data);
       });
-      socket.on('PlaceGuestOnSeat', function PlaceGuestOnSeatSocket(message) {
+      io.on('PlaceGuestOnSeat', function PlaceGuestOnSeatSocket(message) {
         console.log("PlaceGuestOnSeat");
-        socket.broadcast.emit('PlaceGuestOnSeatResponse', message.data);
+        io.broadcast.emit('PlaceGuestOnSeatResponse', message.data);
         
         GetPlan(message.plan,function PlaceGuestOnSeatAction(savedPlan) {  
             var seat = GetSeat(savedPlan,message.data.seat);
@@ -309,9 +311,9 @@ io.on('connection', function SocketConnection(socket) {
         
         console.log(message.data);
       });
-      socket.on('UndoPlaceGuestOnSeat', function UndoPlaceGuestOnSeatSocket(message) {
+      io.on('UndoPlaceGuestOnSeat', function UndoPlaceGuestOnSeatSocket(message) {
         console.log("UndoPlaceGuestOnSeat");
-        socket.broadcast.emit('UndoPlaceGuestOnSeatResponse', message.data);
+        io.broadcast.emit('UndoPlaceGuestOnSeatResponse', message.data);
         
         GetPlan(message.plan,function UndoPlaceGuestOnSeatAction(savedPlan) {  
             var seat = GetSeat(savedPlan,message.data.seat);
@@ -328,18 +330,18 @@ io.on('connection', function SocketConnection(socket) {
       
         console.log(message.data);
       });
-      socket.on('SwapGuestWithGuest', function SwapGuestWithGuestSocket(message) {
-        socket.broadcast.emit('SwapGuestWithGuestResponse', message.data); 
+      io.on('SwapGuestWithGuest', function SwapGuestWithGuestSocket(message) {
+        io.broadcast.emit('SwapGuestWithGuestResponse', message.data); 
       
         console.log(message.data);
       });
-      socket.on('UndoSwapGuestWithGuest', function UndoSwapGuestWithGuestSocket(message) {
-        socket.broadcast.emit('UndoSwapGuestWithGuestResponse', message.data); 
+      io.on('UndoSwapGuestWithGuest', function UndoSwapGuestWithGuestSocket(message) {
+        io.broadcast.emit('UndoSwapGuestWithGuestResponse', message.data); 
       
         console.log(message.data);
       });
-      socket.on('AddSeatAtPosition', function AddSeatAtPositionSocket(message) {
-        socket.broadcast.emit('AddSeatAtPositionResponse', message.data); 
+      io.on('AddSeatAtPosition', function AddSeatAtPositionSocket(message) {
+        io.broadcast.emit('AddSeatAtPositionResponse', message.data); 
       
       
         GetPlan(message.plan,function AddSeatAtPositionAction(savedPlan) {  
@@ -356,8 +358,8 @@ io.on('connection', function SocketConnection(socket) {
         });
         console.log(message.data);
       });
-      socket.on('UndoAddSeatAtPosition', function UndoAddSeatAtPositionSocket (message) {
-        socket.broadcast.emit('UndoAddSeatAtPositionResponse', message.data);
+      io.on('UndoAddSeatAtPosition', function UndoAddSeatAtPositionSocket (message) {
+        io.broadcast.emit('UndoAddSeatAtPositionResponse', message.data);
         GetPlan(message.plan, function UndoAddSeatAtPositionAction(savedPlan) {  
           //var seat = GetSeatByNumber(savedPlan,message.data.seatNumber);
           var table = GetTable(savedPlan,message.data.table);
@@ -375,8 +377,8 @@ io.on('connection', function SocketConnection(socket) {
           console.log(message.data);
         });
       });
-      socket.on('AddTable', function AddTableSocket(message) {
-        socket.broadcast.emit('AddTableResponse', message.data); 
+      io.on('AddTable', function AddTableSocket(message) {
+        io.broadcast.emit('AddTableResponse', message.data); 
         GetPlan(message.plan,function AddTableAction(savedPlan) {  
             var TableSchema = mongoose.model('Table');   
           // create a new table
@@ -391,24 +393,24 @@ io.on('connection', function SocketConnection(socket) {
         });
         console.log(message.data);
       });
-      socket.on('UndoAddTable', function UndoAddTableSocket(message) {
-        socket.broadcast.emit('UndoAddTableResponse', message.data);
+      io.on('UndoAddTable', function UndoAddTableSocket(message) {
+        io.broadcast.emit('UndoAddTableResponse', message.data);
         GetPlan(message.plan,function RemoveTableAction(savedPlan) {  
             savedPlan.tableList.deleteOne(message.data);
             savedPlan.save();
         });
         console.log(message.data);
       });
-      socket.on('AddGuest', function AddGuestSocket(message,fn) {
-        socket.broadcast.emit('AddGuestResponse', message.data); 
+      io.on('AddGuest', function AddGuestSocket(message,fn) {
+        io.broadcast.emit('AddGuestResponse', message.data); 
         GetPlan(message.plan,function AddGuestAction(savedPlan) {  
             savedPlan.guestList.push(message.data);
             savedPlan.save();
         });
         fn();
       });
-      socket.on('UndoAddGuest', function UndoAddGuestSocket(message) {
-        socket.broadcast.emit('UndoAddGuestResponse', message.data);
+      io.on('UndoAddGuest', function UndoAddGuestSocket(message) {
+        io.broadcast.emit('UndoAddGuestResponse', message.data);
         GetPlan(message.plan,function RemoveTableAction(savedPlan) {  
             savedPlan.guestList.deleteOne(message.data);
             savedPlan.save();
@@ -416,8 +418,8 @@ io.on('connection', function SocketConnection(socket) {
         console.log(message.data);
       });
       
-      socket.on('MoveTable', function MoveTableSocket(message) {
-        socket.broadcast.emit('MoveTableResponse', message.data);
+      io.on('MoveTable', function MoveTableSocket(message) {
+        io.broadcast.emit('MoveTableResponse', message.data);
         GetPlan(message.plan,function MoveTableAction(savedPlan) {  
             var Table = GetTable(savedPlan, message.data.table);
             Table = ReplaceProperties(Table, message.data.current);
@@ -425,8 +427,8 @@ io.on('connection', function SocketConnection(socket) {
         });
         console.log(message.data);
       });
-      socket.on('UndoMoveTable', function UndoMoveTableSocket(message) {
-        socket.broadcast.emit('UndoMoveTableResponse', message.data); 
+      io.on('UndoMoveTable', function UndoMoveTableSocket(message) {
+        io.broadcast.emit('UndoMoveTableResponse', message.data); 
         GetPlan(message.plan,function UndoMoveTableAction(savedPlan) {  
             var Table = GetTable(savedPlan, message.data.table);
             Table = ReplaceProperties(Table, message.data.previous);
@@ -437,6 +439,6 @@ io.on('connection', function SocketConnection(socket) {
   
 });
 
-http.listen(port, function () {
+httpServer.listen(port, function () {
     console.log("Listening on " + port);
 });

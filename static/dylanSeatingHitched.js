@@ -1,4 +1,4 @@
-import $ from "jquery";
+//import $ from "jquery";
 /*jslint nomen: true */
 /*global $:false, _:false, console:false, socket:false, Raphael:false, window:false */
 /**
@@ -28,7 +28,8 @@ Array.prototype.insertAt = function ArrayInsertAt(o, index) {
     return false;
 };
 
-export function DylanSeating () {
+//export function DylanSeating () {
+function DylanSeating () {
     "use strict";
 
     this.Controller = function Controller() {
