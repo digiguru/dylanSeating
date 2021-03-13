@@ -12,7 +12,7 @@ Example Site
 
 I have created a free Heroku to test the product. 
 
-http://digiguru.herokuapp.com/
+https://digiguru.herokuapp.com/static/socketExampleClient.html
 
 
 Development Site
