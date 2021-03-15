@@ -9,7 +9,7 @@
         "mongoose": "^5.12.0",
         "node-qunit": "^2.0.0",
         "socket.io": "^4.0.0",
-        "underscore": "^1.12.0"
+        "underscore": "^1.12.1"
     },
     "jest-junit": {
         "outputDirectory": "results"
