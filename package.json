@@ -24,7 +24,7 @@
         "node": "14.0.0"
     },
     "devDependencies": {
-        "@babel/core": "^7.13.10",
+        "@babel/core": "^7.13.13",
         "@babel/preset-env": "^7.13.12",
         "@types/node": "^14.14.36",
         "babel-jest": "^26.6.3",
