@@ -21,7 +21,7 @@
         "test:ci": "jest --ci --reporters=jest-junit"
     },
     "engines": {
-        "node": "14.0.0"
+        "node": "16.1.0"
     },
     "devDependencies": {
         "@babel/core": "^7.14.6",
