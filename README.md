@@ -20,6 +20,13 @@ Development Site
 
 To get running use the following.
 
+```
+npm run build:babel
+npm run test:serve
+or
+npm run test
+```
+
 First get mongo running:
 ```bash
 brew tap mongodb/brew

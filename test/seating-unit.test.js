@@ -1,7 +1,7 @@
 /* brackets-xunit: qunit */
 /*brackets-xunit: includes=jquery.js,underscore.js,raphael.2.0.1.js,dylanSeatingHitched.js* */
 /*jslint nomen: true*/
-/*global $, console, module, test, asyncTest, equal, start, stop, expect, DylanSeating */
+/*global $, console, module, test, equal, start, stop, expect, DylanSeating */
 import $ from "jquery";
 import {DylanSeating} from '../src/dylanSeatingHitched'
 import 'expect-puppeteer'
@@ -155,7 +155,7 @@ describe('Stuff', () => {
             });
         });
 
-        asyncTest('AddTable, undo, redo', function () {
+        test('AddTable, undo, redo', done => {
             expect(4);
             $.when(myDylanSeating.ClearDataExternal()).then(function () {
                 start();
@@ -186,7 +186,7 @@ describe('Stuff', () => {
             });
         });
 
-        asyncTest('AddTable AddGuestAtNewSeat, undo, redo', function () {
+        test('AddTable AddGuestAtNewSeat, undo, redo', done => {
             expect(18);
             $.when(myDylanSeating.ClearDataExternal()).then(function () {
                 start();
@@ -257,7 +257,7 @@ describe('Stuff', () => {
             });
         });
 
-        asyncTest('AddTable AddGuest Place Guest On Each Seat, undo, redo', function () {
+        test('AddTable AddGuest Place Guest On Each Seat, undo, redo', done => {
             expect(44);
             $.when(myDylanSeating.ClearDataExternal()).then(function () {
                 start();
