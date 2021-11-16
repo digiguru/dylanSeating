@@ -902,7 +902,7 @@ function EditInlineFields(ID) {
                 InlineRSVP = null;
             }
         } 
-    };  
+    });  
 }
 
 /*end ones required for jqGrid*/
@@ -943,8 +943,8 @@ function UnlinkGuest(id, AccompanistGuestID) {
     q.data = "{id:" + id + "}";
     $.ajax(q).
     done(function (data) {
-        GetAccompanyingGuest(AccompanistGuestID)
-    };
+        GetAccompanyingGuest(AccompanistGuestID);
+    });
 }
 
 function SaveGuestAndAnother() {

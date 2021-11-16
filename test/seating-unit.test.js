@@ -31,7 +31,7 @@ describe('Stuff', () => {
 
         describe('Go to Site', () => {
             beforeAll(async () => {
-                await page.goto('http://127.0.0.1:3000/seatingtest.htm');
+                await page.goto('http://127.0.0.1:3000/socketExampleClient.html');
             });
             test('open site', async () => {
                 await expect(page).toMatch('My Guests');

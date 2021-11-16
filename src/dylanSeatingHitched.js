@@ -1,5 +1,3 @@
-import $ from "jquery";
-import Raphael from "raphael";
 
 /*jslint nomen: true */
 /*global $:false, _:false, console:false, socket:false, Raphael:false, window:false */
@@ -30,35 +28,17 @@ Array.prototype.insertAt = function ArrayInsertAt(o, index) {
     return false;
 };
 
-export function DylanSeating () {
+export function DylanSeating ($, Raphael) {
     "use strict";
-
+    window.Raphael = Raphael;
     this.Controller = function Controller() {
 
     };
 
-    /*this.viewModule = {
-        board: {
-            generatePaperIfNotPresent: function () {
-                if (!$("#board").length) {
-                    $("body").prepend("<div id='board'></div>");
-                }
-                return Raphael("board", 900, 900);
-            },
-            paper: this.generatePaperIfNotPresent()
-        },
-        audit: {
-            audits: [],
-            auditBox: paper.text(200, 20, "loaded"),
-            log: function(eventText) {
-                this.audits.push(eventText);
-                this.auditBox.remove();
-                this.auditBox = paper.text(400, 200, this.audits.slice(-20).join("\n"));
-            }
-        }
-    }*/
 
-    var viewModule = (function () {
+    
+
+    var viewModule = (function (Raphael) {
         var auditModule = function (paper) {
             var auditBox = paper.text(200, 20, "loaded");
             return {
@@ -74,14 +54,14 @@ export function DylanSeating () {
                 if (!$("#board").length) {
                     $("body").prepend("<div id='board'></div>");
                 }
-                return Raphael("board", 900, 900);
+                return window.Raphael("board", 900, 900);
             },
             paper = generatePaperIfNotPresent();
         return {
             paper: paper,
             audit: auditModule(paper)
         };
-    }());
+    }(Raphael));
 
     //console.log(view, view.paper);
 
@@ -2615,4 +2595,3 @@ export function DylanSeating () {
     }
 };
 
-var myDylanSeating = new DylanSeating();
