@@ -31,10 +31,11 @@ describe('Stuff', () => {
 
         describe('Go to Site', () => {
             beforeAll(async () => {
-                await page.goto('http://127.0.0.1:3000/socketExampleClient.html');
+                await page.goto('http://localhost:3000/socketExampleClient.html');
+                
             });
             test('open site', async () => {
-                await expect(page).toMatch('My Guests');
+                await expect(page).toMatch('plans');
             })
 
             test.skip('myTables starts off blank', function () {
