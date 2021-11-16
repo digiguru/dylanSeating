@@ -37,12 +37,13 @@ describe('Stuff', () => {
             test('open site', async () => {
                 await expect(page).toMatch('plans');
             })
-
-            test.skip('myTables starts off blank', function () {
-                let myDylanSeating = new DylanSeating();
-                myDylanSeating.setAnimationTime(testSpeed);
-        
-                equal(myDylanSeating.getTables().length, 0, 'myTables starts off blank');
+            var getTables = function(){
+                return window.DylanSeating.getTables();
+            }
+            test('myTables starts off blank', async () => {
+                var tables = await page.evaluate(getTables);
+                
+                equal(tables.length, 0, 'myTables starts off blank');
             });
         });
 

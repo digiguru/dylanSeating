@@ -2594,4 +2594,3 @@ export function DylanSeating ($, Raphael) {
         });
     }
 };
-
