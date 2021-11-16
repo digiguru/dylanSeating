@@ -3,7 +3,7 @@
 /*jslint nomen: true*/
 /*global $, console, module, test, asyncTest, equal, start, stop, expect, DylanSeating */
 import $ from "jquery";
-import {DylanSeating} from './static/dylanSeatingHitched'
+import {DylanSeating} from '../src/dylanSeatingHitched'
 import 'expect-puppeteer'
 import "regenerator-runtime/runtime";
 
@@ -31,7 +31,7 @@ describe('Stuff', () => {
 
         describe('Go to Site', () => {
             beforeAll(async () => {
-                await page.goto('http://127.0.0.1:4444/seatingtest.htm');
+                await page.goto('http://127.0.0.1:3000/seatingtest.htm');
             });
             test('open site', async () => {
                 await expect(page).toMatch('My Guests');

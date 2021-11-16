@@ -1,6 +1,6 @@
 /* brackets-xunit: qunit */
 /* brackets-xunit: includes=underscore.js,seatQuerying.js* */
-import {SeatQuerying} from './seatQuerying';
+import {SeatQuerying} from '../src/seatQuerying';
 
 var sq = new SeatQuerying();
 

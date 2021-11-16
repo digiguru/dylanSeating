@@ -1,4 +1,6 @@
 import $ from "jquery";
+import Raphael from "raphael";
+
 /*jslint nomen: true */
 /*global $:false, _:false, console:false, socket:false, Raphael:false, window:false */
 /**
@@ -41,7 +43,7 @@ export function DylanSeating () {
                 if (!$("#board").length) {
                     $("body").prepend("<div id='board'></div>");
                 }
-                return window.Raphael("board", 900, 900);
+                return Raphael("board", 900, 900);
             },
             paper: this.generatePaperIfNotPresent()
         },
@@ -72,7 +74,7 @@ export function DylanSeating () {
                 if (!$("#board").length) {
                     $("body").prepend("<div id='board'></div>");
                 }
-                return window.Raphael("board", 900, 900);
+                return Raphael("board", 900, 900);
             },
             paper = generatePaperIfNotPresent();
         return {
@@ -2612,3 +2614,5 @@ export function DylanSeating () {
         });
     }
 };
+
+var myDylanSeating = new DylanSeating();

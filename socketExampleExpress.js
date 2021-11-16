@@ -15,7 +15,7 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const _ = require("underscore");
-const sq = require("./seatQuerying.js");
+const sq = require("./src/seatQuerying.js");
 
 
 var mongoose = require('mongoose'),
