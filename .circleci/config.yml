@@ -4,7 +4,7 @@ orbs:
 jobs:
   build:
     docker:
-      - image: circleci/node:latest
+      - image: cimg/node:latest
     steps:
       - browser-tools/install-chrome
       - checkout
