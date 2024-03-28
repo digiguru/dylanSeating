@@ -2,7 +2,7 @@
     "name": "dylanSeating",
     "version": "0.0.1",
     "dependencies": {
-        "express": "^4.17.3",
+        "express": "^4.19.2",
         "jquery": "^3.5.1",
         "mongodb": "^3.6.4",
         "mongojs": "^3.1.0",
