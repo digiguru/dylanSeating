@@ -33,7 +33,7 @@
         "jest": "^26.2.2",
         "jest-environment-node": "^26.6.2",
         "jest-junit": "^13.0.0",
-        "jest-puppeteer": "^4.4.0",
+        "jest-puppeteer": "^10.0.1",
         "puppeteer": "^5.5.0"
     }
 }
