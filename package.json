@@ -23,7 +23,8 @@
         "test:serve": "http-server ./static -p 4444"
     },
     "engines": {
-        "node": "16.1.0"
+        "node": "v20.15.0",
+        "npm": "10.7.0"
     },
     "devDependencies": {
         "@babel/core": "^7.11.0",
@@ -34,6 +35,6 @@
         "jest-environment-node": "^26.6.2",
         "jest-junit": "^13.0.0",
         "jest-puppeteer": "^10.0.1",
-        "puppeteer": "^5.5.0"
+        "puppeteer": "^22.12.1"
     }
 }
