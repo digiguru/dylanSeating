@@ -1,4 +1,11 @@
 import $ from "jquery";
+import _ from "underscore";
+import Raphael from "raphael";
+
+window.$ = $;
+window.jQuery = $;
+window._ = _;
+window.Raphael = Raphael;
 /*jslint nomen: true */
 /*global $:false, _:false, console:false, socket:false, Raphael:false, window:false */
 /**

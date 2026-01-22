@@ -60,12 +60,10 @@ var Guest = new Schema({
 //Table.add();
 //Plan.add();
 
-mongoose.connect(process.env.MONGOATLAS_CONNECTION, {                
-    useNewUrlParser: true,
-    useFindAndModify: false,
-    useCreateIndex: true,
-    useUnifiedTopology: true
-});//'mongodb://localhost/digiguru_seating');
+mongoose.connect(process.env.MONGOATLAS_CONNECTION).catch(function (err) {
+    console.error("Mongo connection error:", err);
+});
+//'mongodb://localhost/digiguru_seating');
 
 
 mongoose.model('Guest', Guest);

@@ -7,6 +7,55 @@ import {DylanSeating} from './static/dylanSeatingHitched'
 import 'expect-puppeteer'
 import "regenerator-runtime/runtime";
 
+const jestTest = global.test;
+const createAsyncController = function (done) {
+    let pending = 0;
+    let finished = false;
+    return {
+        stop: function () {
+            pending += 1;
+        },
+        start: function () {
+            if (pending > 0) {
+                pending -= 1;
+            }
+            if (finished && pending === 0) {
+                done();
+            }
+        },
+        finish: function () {
+            finished = true;
+            if (pending === 0) {
+                done();
+            }
+        }
+    };
+};
+
+const qunitTest = function (name, fn) {
+    return jestTest(name, function (done) {
+        const controller = createAsyncController(done);
+        global.stop = controller.stop;
+        global.start = controller.start;
+        try {
+            fn();
+        } catch (err) {
+            done(err);
+            return;
+        }
+        controller.finish();
+    });
+};
+qunitTest.skip = jestTest.skip.bind(jestTest);
+qunitTest.only = jestTest.only.bind(jestTest);
+
+global.test = qunitTest;
+global.asyncTest = qunitTest;
+
+const hasPage = typeof page !== "undefined";
+const baseUrl = process.env.E2E_BASE_URL || "http://127.0.0.1:4444";
+const describeWithPage = hasPage ? describe : describe.skip;
+
 describe('Stuff', () => {
 
 
@@ -29,9 +78,9 @@ describe('Stuff', () => {
             }
         };
 
-        describe('Go to Site', () => {
+        describeWithPage('Go to Site', () => {
             beforeAll(async () => {
-                await page.goto('http://127.0.0.1:4444/seatingtest.htm');
+                await page.goto(`${baseUrl}/seatingtest.htm`);
             });
             test('open site', async () => {
                 await expect(page).toMatch('My Guests');
