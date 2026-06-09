@@ -30,10 +30,10 @@
         "@babel/preset-env": "^7.11.0",
         "babel-jest": "^26.2.2",
         "http-server": "^14.0.0",
-        "jest": "^26.2.2",
+        "jest": "^30.4.2",
         "jest-environment-node": "^26.6.2",
         "jest-junit": "^13.0.0",
         "jest-puppeteer": "^10.1.4",
-        "puppeteer": "^5.5.0"
+        "puppeteer": "^25.1.0"
     }
 }
