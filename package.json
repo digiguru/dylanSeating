@@ -28,7 +28,7 @@
     "devDependencies": {
         "@babel/core": "^7.11.0",
         "@babel/preset-env": "^7.11.0",
-        "babel-jest": "^26.2.2",
+        "babel-jest": "^30.4.1",
         "http-server": "^14.0.0",
         "jest": "^30.4.2",
         "jest-environment-node": "^26.6.2",
