@@ -26,8 +26,10 @@ jobs:
           node-version: 20.17.0
           cache: npm
 
-      - name: Upgrade all direct dependencies
-        run: npx --yes npm-check-updates@latest -u
+      - name: Upgrade all compatible direct dependencies
+        run: |
+          npx --yes npm-check-updates@latest -u --reject @babel/core,@babel/preset-env
+          npm install --save-dev @babel/core@^7 @babel/preset-env@^7
 
       - name: Regenerate lockfile
         run: npm install
