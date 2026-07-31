@@ -4,7 +4,7 @@
 /*global $, console, module, test, asyncTest, equal, start, stop, expect, DylanSeating */
 import $ from "jquery";
 import {DylanSeating} from './static/dylanSeatingHitched'
-import 'expect-puppeteer';
+import 'expect-puppeteer';;
 import "regenerator-runtime/runtime";
 
 const asyncTest = test;
