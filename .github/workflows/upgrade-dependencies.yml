@@ -47,13 +47,18 @@ jobs:
           )
           test_file.write_text(source)
 
-          app_file = Path('static/dylanSeatingHitched.js')
-          app_source = app_file.read_text().replace('import $ from "jquery";\n', '', 1)
-          app_file.write_text(app_source)
-
           html_file = Path('static/seatingtest.htm')
-          html_source = html_file.read_text().replace(
+          html_source = html_file.read_text()
+          html_source = html_source.replace(
               '<script type="text/javascript" src="seating-unit-tests.js"></script>\n',
+              '',
+          )
+          html_source = html_source.replace(
+              '<script type="text/javascript" src="dylanSeatingHitched.js"></script>\n',
+              '',
+          )
+          html_source = html_source.replace(
+              '<script>\nvar myDylanSeating = new DylanSeating();\n</script>\n',
               '',
           )
           html_file.write_text(html_source)
@@ -79,6 +84,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add seating-unit.test.js static/dylanSeatingHitched.js static/seatingtest.htm .github/workflows/ci.yml .github/workflows/upgrade-dependencies.yml
+          git add seating-unit.test.js static/seatingtest.htm .github/workflows/ci.yml .github/workflows/upgrade-dependencies.yml
           git commit -m "Fix Jest Puppeteer test compatibility"
           git push
