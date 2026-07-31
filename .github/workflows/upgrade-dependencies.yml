@@ -34,7 +34,6 @@ jobs:
           test_file = Path('seating-unit.test.js')
           source = test_file.read_text()
           source = source.replace("import 'expect-puppeteer'", "import 'expect-puppeteer';")
-          source = source.replace('import "regenerator-runtime/runtime";', 'import "regenerator-runtime/runtime";')
           if 'const asyncTest = test;' not in source:
               marker = 'import "regenerator-runtime/runtime";\n'
               source = source.replace(marker, marker + '\nconst asyncTest = test;\n')
@@ -49,13 +48,11 @@ jobs:
           test_file.write_text(source)
 
           app_file = Path('static/dylanSeatingHitched.js')
-          app_source = app_file.read_text()
-          app_source = app_source.replace('import $ from "jquery";\n', '', 1)
+          app_source = app_file.read_text().replace('import $ from "jquery";\n', '', 1)
           app_file.write_text(app_source)
 
           html_file = Path('static/seatingtest.htm')
-          html_source = html_file.read_text()
-          html_source = html_source.replace(
+          html_source = html_file.read_text().replace(
               '<script type="text/javascript" src="seating-unit-tests.js"></script>\n',
               '',
           )
@@ -73,7 +70,7 @@ jobs:
         run: sudo npx puppeteer browsers install chrome --install-deps
 
       - name: Run tests
-        run: npm run test:ci
+        run: npm test
 
       - name: Remove one-shot workflow
         run: rm .github/workflows/upgrade-dependencies.yml
