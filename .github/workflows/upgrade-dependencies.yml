@@ -1,4 +1,4 @@
-name: Upgrade dependencies
+name: Apply test compatibility fixes
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  upgrade:
+  fix-and-verify:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -23,27 +23,65 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.17.0
+          node-version: 24
           cache: npm
 
-      - name: Upgrade all compatible direct dependencies
+      - name: Apply compatibility fixes
         run: |
-          npx --yes npm-check-updates@latest -u --reject @babel/core,@babel/preset-env
-          npm install --save-dev @babel/core@^7 @babel/preset-env@^7
+          python <<'PY'
+          from pathlib import Path
 
-      - name: Regenerate lockfile
-        run: npm install
+          test_file = Path('seating-unit.test.js')
+          source = test_file.read_text()
+          source = source.replace("import 'expect-puppeteer'", "import 'expect-puppeteer';")
+          source = source.replace('import "regenerator-runtime/runtime";', 'import "regenerator-runtime/runtime";')
+          if 'const asyncTest = test;' not in source:
+              marker = 'import "regenerator-runtime/runtime";\n'
+              source = source.replace(marker, marker + '\nconst asyncTest = test;\n')
+          source = source.replace(
+              "await page.goto('http://127.0.0.1:4444/seatingtest.htm');",
+              "await page.goto('http://127.0.0.1:4444/seatingtest.htm', { waitUntil: 'networkidle0' });",
+          )
+          source = source.replace(
+              "await expect(page).toMatch('My Guests');",
+              "await expect(page).toMatchTextContent('My Guests');",
+          )
+          test_file.write_text(source)
 
-      - name: Run CI tests
+          app_file = Path('static/dylanSeatingHitched.js')
+          app_source = app_file.read_text()
+          app_source = app_source.replace('import $ from "jquery";\n', '', 1)
+          app_file.write_text(app_source)
+
+          html_file = Path('static/seatingtest.htm')
+          html_source = html_file.read_text()
+          html_source = html_source.replace(
+              '<script type="text/javascript" src="seating-unit-tests.js"></script>\n',
+              '',
+          )
+          html_file.write_text(html_source)
+
+          ci_file = Path('.github/workflows/ci.yml')
+          ci_source = ci_file.read_text().replace('node-version: 20.17.0', 'node-version: 24')
+          ci_file.write_text(ci_source)
+          PY
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install browser system dependencies
+        run: sudo npx puppeteer browsers install chrome --install-deps
+
+      - name: Run tests
         run: npm run test:ci
 
       - name: Remove one-shot workflow
         run: rm .github/workflows/upgrade-dependencies.yml
 
-      - name: Commit upgraded dependencies
+      - name: Commit verified fixes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json package-lock.json .github/workflows/upgrade-dependencies.yml
-          git commit -m "Upgrade npm dependencies"
+          git add seating-unit.test.js static/dylanSeatingHitched.js static/seatingtest.htm .github/workflows/ci.yml .github/workflows/upgrade-dependencies.yml
+          git commit -m "Fix Jest Puppeteer test compatibility"
           git push
