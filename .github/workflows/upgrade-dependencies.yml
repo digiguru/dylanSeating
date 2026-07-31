@@ -62,10 +62,6 @@ jobs:
               '',
           )
           html_file.write_text(html_source)
-
-          ci_file = Path('.github/workflows/ci.yml')
-          ci_source = ci_file.read_text().replace('node-version: 20.17.0', 'node-version: 24')
-          ci_file.write_text(ci_source)
           PY
 
       - name: Install dependencies
@@ -77,13 +73,10 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: Remove one-shot workflow
-        run: rm .github/workflows/upgrade-dependencies.yml
-
-      - name: Commit verified fixes
+      - name: Commit verified source fixes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add seating-unit.test.js static/seatingtest.htm .github/workflows/ci.yml .github/workflows/upgrade-dependencies.yml
+          git add seating-unit.test.js static/seatingtest.htm
           git commit -m "Fix Jest Puppeteer test compatibility"
           git push
