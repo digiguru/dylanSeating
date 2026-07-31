@@ -4,8 +4,10 @@
 /*global $, console, module, test, asyncTest, equal, start, stop, expect, DylanSeating */
 import $ from "jquery";
 import {DylanSeating} from './static/dylanSeatingHitched'
-import 'expect-puppeteer'
+import 'expect-puppeteer';;
 import "regenerator-runtime/runtime";
+
+const asyncTest = test;
 
 describe('Stuff', () => {
 
@@ -31,10 +33,10 @@ describe('Stuff', () => {
 
         describe('Go to Site', () => {
             beforeAll(async () => {
-                await page.goto('http://127.0.0.1:4444/seatingtest.htm');
+                await page.goto('http://127.0.0.1:4444/seatingtest.htm', { waitUntil: 'networkidle0' });
             });
             test('open site', async () => {
-                await expect(page).toMatch('My Guests');
+                await expect(page).toMatchTextContent('My Guests');
             })
 
             test.skip('myTables starts off blank', function () {
