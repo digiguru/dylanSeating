@@ -18,11 +18,18 @@ const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const { SeatQuerying } = require('./seatQuerying.js');
 
+const SOCKET_IO_PATH = '/api/socket-io/socket.io';
 const app = express();
 const server = createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+    path: SOCKET_IO_PATH,
+    transports: ['websocket'],
+    serveClient: false
+});
 const sq = SeatQuerying();
 const { Schema } = mongoose;
+let databaseConnectionPromise;
+let redisAdapterPromise;
 const rootRouteLimiter = rateLimit({
     windowMs: 60 * 1000,
     limit: 120,
@@ -203,6 +210,72 @@ var ReplaceProperties = function (original, newProps) {
         }
     };
 
+async function connectDatabase() {
+    var connectionString = process.env.MONGOATLAS_CONNECTION;
+
+    if (!connectionString) {
+        throw new Error('MONGOATLAS_CONNECTION must be set before connecting to MongoDB.');
+    }
+
+    if (mongoose.connection.readyState === 1) {
+        return mongoose.connection;
+    }
+
+    if (!databaseConnectionPromise) {
+        databaseConnectionPromise = mongoose.connect(connectionString)
+            .then(function () {
+                return mongoose.connection;
+            })
+            .catch(function (error) {
+                databaseConnectionPromise = null;
+                throw error;
+            });
+    }
+
+    return databaseConnectionPromise;
+}
+
+async function configureRedisAdapter() {
+    var redisUrl = process.env.REDIS_URL;
+
+    if (!redisUrl) {
+        return;
+    }
+
+    if (!redisAdapterPromise) {
+        redisAdapterPromise = (async function () {
+            const { createAdapter } = require('@socket.io/redis-adapter');
+            const { createClient } = require('redis');
+            const publisher = createClient({ url: redisUrl });
+            const subscriber = publisher.duplicate();
+
+            publisher.on('error', function (error) {
+                console.error('Redis publisher error', error);
+            });
+            subscriber.on('error', function (error) {
+                console.error('Redis subscriber error', error);
+            });
+
+            await Promise.all([publisher.connect(), subscriber.connect()]);
+            io.adapter(createAdapter(publisher, subscriber));
+        }()).catch(function (error) {
+            redisAdapterPromise = null;
+            throw error;
+        });
+    }
+
+    return redisAdapterPromise;
+}
+
+io.use(async function initializeRealtimeConnection(socket, next) {
+    try {
+        await Promise.all([connectDatabase(), configureRedisAdapter()]);
+        next();
+    } catch (error) {
+        console.error('Unable to initialise realtime connection', error);
+        next(new Error('Realtime service is unavailable.'));
+    }
+});
 
 io.on('connection', function SocketConnection(socket) {
     console.log("hello")
@@ -433,14 +506,9 @@ io.on('connection', function SocketConnection(socket) {
 });
 
 async function startServer() {
-    var connectionString = process.env.MONGOATLAS_CONNECTION;
     var port = process.env.PORT || 3000;
 
-    if (!connectionString) {
-        throw new Error('MONGOATLAS_CONNECTION must be set before starting the server.');
-    }
-
-    await mongoose.connect(connectionString);
+    await connectDatabase();
     await new Promise(function (resolveServer, rejectServer) {
         server.once('error', rejectServer);
         server.listen(port, function () {
@@ -460,4 +528,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { app, io, server, startServer };
+module.exports = { app, connectDatabase, io, server, SOCKET_IO_PATH, startServer };

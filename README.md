@@ -27,9 +27,9 @@ npm ci
 npm run build
 ```
 
-The build copies the supported browser distributions of jQuery, Underscore and
-Raphaël from `node_modules` into `static/vendor`; these generated files are not
-committed.
+The build copies the supported browser distributions of jQuery, Underscore,
+Raphaël and Socket.IO from `node_modules` into `static/vendor`, then creates a
+deployable `public` directory. These generated files are not committed.
 
 To run validation locally:
 
@@ -51,6 +51,30 @@ MONGOATLAS_CONNECTION=mongodb://localhost:27017/digiguruSeating npm start
 
 The server now reports a clear startup error when this variable is missing,
 rather than attempting a connection during module import.
+
+Vercel deployment
+=================
+
+Vercel runs `npm run build`, which creates a deployable `public` directory.
+The static client is served from that directory and the Socket.IO server is
+exposed as the Node.js function at `/api/socket-io`.
+
+Set these environment variables in Vercel for both Preview and Production:
+
+```bash
+MONGOATLAS_CONNECTION=<your MongoDB Atlas connection string>
+```
+
+For reliable live updates when Vercel runs more than one function instance,
+also configure a Redis-compatible service and set:
+
+```bash
+REDIS_URL=<your Redis connection string>
+```
+
+The browser connects directly by WebSocket to
+`/api/socket-io/socket.io`; Socket.IO long-polling is intentionally disabled
+because Vercel Functions require the WebSocket transport.
 
 Next Up Tasks
 =============

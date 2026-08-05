@@ -8,8 +8,8 @@ import puppeteer from 'puppeteer';
 const require = createRequire(import.meta.url);
 const httpServer = require('http-server');
 const projectDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const staticDirectory = join(projectDirectory, 'static');
-const staticServer = httpServer.createServer({ root: staticDirectory });
+const publicDirectory = join(projectDirectory, 'public');
+const staticServer = httpServer.createServer({ root: publicDirectory });
 const server = staticServer.server;
 
 let browser;
@@ -27,11 +27,17 @@ try {
     const { port } = server.address();
     const serverUrl = `http://127.0.0.1:${port}`;
 
-    for (const asset of ['vendor/jquery.min.js', 'vendor/underscore-min.js', 'vendor/raphael.min.js']) {
+    for (const asset of ['vendor/jquery.min.js', 'vendor/underscore-min.js', 'vendor/raphael.min.js', 'vendor/socket.io.min.js']) {
         const response = await fetch(`${serverUrl}/${asset}`);
         if (!response.ok) {
             throw new Error(`Expected ${asset} to be available, received ${response.status}.`);
         }
+    }
+
+    const homeResponse = await fetch(serverUrl);
+    const homePage = await homeResponse.text();
+    if (!homeResponse.ok || !homePage.includes('/api/socket-io/socket.io')) {
+        throw new Error('Expected the Vercel-ready client page to be available at the site root.');
     }
 
     browserHome = await mkdtemp(join(tmpdir(), 'dylan-seating-browser-'));
