@@ -18,20 +18,39 @@ http://digiguru.herokuapp.com/
 Development Site
 ================
 
-To get running use the following.
+The project now targets Node 24 and uses current Express, Mongoose, Socket.IO,
+Jest and Puppeteer releases. Install dependencies and build the browser assets
+before starting it:
 
-First get mongo running:
 ```bash
-brew tap mongodb/brew
-brew install mongodb-community@4.2
-brew services start mongodb-community@4.2
+npm ci
+npm run build
 ```
 
-And then start a dev server like:
+The build copies the supported browser distributions of jQuery, Underscore and
+Raphaël from `node_modules` into `static/vendor`; these generated files are not
+committed.
+
+To run validation locally:
+
+```bash
+npm run check
+npm run test:unit
+npx puppeteer browsers install chrome
+npm run test:browser
+```
+
+The browser test uses the Chrome version required by the installed Puppeteer
+release. The CI workflow installs it, along with its Linux libraries, for you.
+
+To run the application, set a MongoDB connection string and start the server:
 
 ```
-MONGOATLAS_CONNECTION=mongodb://localhost:27017/digiguruSeating node socketExampleExpress.js
+MONGOATLAS_CONNECTION=mongodb://localhost:27017/digiguruSeating npm start
 ```
+
+The server now reports a clear startup error when this variable is missing,
+rather than attempting a connection during module import.
 
 Next Up Tasks
 =============
@@ -120,4 +139,3 @@ I always am happy to discuss coding practice, but I would love anyone to contrib
  * Accessibility advice. Are you blind? Tell me how would you plan an event!
 
 If you have any feedback then let me know.
-

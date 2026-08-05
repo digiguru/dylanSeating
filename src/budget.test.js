@@ -3,7 +3,7 @@
 /*global $:false, test:false, ok:false, equal:false, convertStringToBudget */
 /* brackets-xunit: qunit */
 /* brackets-xunit: includes=budget.js* */
-import {convertStringToBudget} from './budget';
+const { convertStringToBudget } = require('./budget');
 
 test("Simple numbers", function () {
     expect(convertStringToBudget("1")).toBe(1);//, "1 is 1 works for simple numbers");

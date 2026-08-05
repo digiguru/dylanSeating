@@ -2,39 +2,37 @@
     "name": "dylanSeating",
     "version": "0.0.1",
     "dependencies": {
-        "express": "^4.22.2",
-        "jquery": "^3.5.1",
-        "mongodb": "^3.6.4",
-        "mongojs": "^3.1.0",
-        "mongoose": "^8.24.1",
-        "socket.io": "^4.8.1",
-        "underscore": "^1.12.0"
+        "express": "^5.2.1",
+        "express-rate-limit": "^8.6.2",
+        "jquery": "^4.0.0",
+        "mongoose": "^9.9.1",
+        "raphael": "^2.3.0",
+        "socket.io": "^4.8.3",
+        "underscore": "^1.13.8"
     },
     "jest-junit": {
         "outputDirectory": "results"
     },
     "jest": {
-        "preset": "jest-puppeteer"
+        "testEnvironment": "node"
     },
     "scripts": {
-        "test:qunit": "qunit -c ./seatQuerying.mjs -t ./seatQuerying-test.js --require esm",
-        "test": "jest",
-        "test:ci": "jest --ci --reporters=jest-junit",
-        "test:serve": "http-server ./static -p 4444"
+        "build": "node scripts/copy-browser-assets.cjs",
+        "check": "node --check socketExampleExpress.js && node --check seatQuerying.js && node --check src/budget.js && node --check static/dylanSeatingHitched.js",
+        "start": "npm run build && node socketExampleExpress.js",
+        "test": "npm run test:unit && npm run test:browser",
+        "test:browser": "node scripts/browser-smoke-test.mjs",
+        "test:ci": "jest --ci --runInBand --reporters=default --reporters=jest-junit && npm run test:browser",
+        "test:unit": "jest --runInBand",
+        "test:serve": "npm run build && http-server ./static -p 4444"
     },
     "engines": {
         "node": "24.x"
     },
     "devDependencies": {
-        "@babel/core": "^7.11.0",
-        "@babel/preset-env": "^7.11.0",
-        "babel-jest": "^29.7.0",
-        "http-server": "^14.0.0",
-        "jest": "^29.7.0",
-        "jest-environment-node": "^29.7.0",
+        "http-server": "^14.1.1",
+        "jest": "^30.4.2",
         "jest-junit": "^17.0.0",
-        "jest-puppeteer": "^11.0.0",
-        "puppeteer": "^25.4.0",
-        "regenerator-runtime": "^0.14.1"
+        "puppeteer": "^25.5.0"
     }
 }

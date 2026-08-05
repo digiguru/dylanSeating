@@ -9,8 +9,11 @@ updates:
       timezone: Europe/London
     open-pull-requests-limit: 5
     groups:
-      npm-dependencies:
+      npm-minor-and-patch:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
     commit-message:
       prefix: chore(deps)
