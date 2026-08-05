@@ -2,7 +2,7 @@
 /*jslint nomen: true*/
 /*global $:false, test:false, ok:false, equal:false */
 
-export function convertStringToBudget(input) {
+function convertStringToBudget(input) {
     "use strict";
     var pointReg = /\./g,
         commaReg = /\,/g,
@@ -58,3 +58,4 @@ export function convertStringToBudget(input) {
     return returnValue;
 }
 
+module.exports = { convertStringToBudget };

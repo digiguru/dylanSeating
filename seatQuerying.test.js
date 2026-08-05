@@ -1,6 +1,6 @@
 /* brackets-xunit: qunit */
 /* brackets-xunit: includes=underscore.js,seatQuerying.js* */
-import {SeatQuerying} from './seatQuerying';
+const { SeatQuerying } = require('./seatQuerying');
 
 var sq = new SeatQuerying();
 
@@ -55,7 +55,6 @@ test('Seat by Number', function () {
     var seat = sq.getSeatByNumber({tableList:[{seatList:[{id: 1, name:"Seat1"}]}]}, 0);
     expect(seat).toEqual({id: 1, name:"Seat1"});//, 'A seat can be found');
 });
-
 
 
 

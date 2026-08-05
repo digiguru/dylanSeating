@@ -1,4 +1,3 @@
-import $ from "jquery";
 /*jslint nomen: true */
 /*global $:false, _:false, console:false, socket:false, Raphael:false, window:false */
 /**
@@ -28,7 +27,7 @@ Array.prototype.insertAt = function ArrayInsertAt(o, index) {
     return false;
 };
 
-export function DylanSeating () {
+function DylanSeating () {
     "use strict";
 
     this.Controller = function Controller() {
@@ -2611,4 +2610,6 @@ export function DylanSeating () {
             //socket.emit('my other event', { my: 'data' });
         });
     }
-};
+}
+
+window.DylanSeating = DylanSeating;

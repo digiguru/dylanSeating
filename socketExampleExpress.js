@@ -10,16 +10,18 @@
  **/
 
 
-const express = require('express')
+const path = require('node:path');
+const { createServer } = require('node:http');
+const express = require('express');
+const { Server } = require('socket.io');
+const mongoose = require('mongoose');
+const { SeatQuerying } = require('./seatQuerying.js');
+
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
-const _ = require("underscore");
-const sq = require("./seatQuerying.js");
-
-
-var mongoose = require('mongoose'),
-    Schema = mongoose.Schema;
+const server = createServer(app);
+const io = new Server(server);
+const sq = SeatQuerying();
+const { Schema } = mongoose;
     
 var Guest = new Schema({
     id        : { type: Number, index: true },
@@ -60,27 +62,13 @@ var Guest = new Schema({
 //Table.add();
 //Plan.add();
 
-mongoose.connect(process.env.MONGOATLAS_CONNECTION, {                
-    useNewUrlParser: true,
-    useFindAndModify: false,
-    useCreateIndex: true,
-    useUnifiedTopology: true
-});//'mongodb://localhost/digiguru_seating');
-
-
 mongoose.model('Guest', Guest);
 mongoose.model('Seat', Seat);
 mongoose.model('Table', Table);
 mongoose.model('Plan', Plan);
 
-
-var port = process.env.PORT || 3000;
-
-
-
-
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
+    res.sendFile(path.join(__dirname, 'static', 'socketExampleClient.html'));
 });
 
 /*
@@ -89,7 +77,7 @@ app.use(function (req, res, next) {
     next();
 });
 */
-app.use("/static", express.static(__dirname + '/static/'));
+app.use(express.static(path.join(__dirname, 'static')));
 
 var ReplaceProperties = function (original, newProps) {
     console.log("ReplaceProperties");
@@ -128,83 +116,83 @@ var ReplaceProperties = function (original, newProps) {
     AddPlanList = function (newPlan, onAddedPlanList) {
         console.log("AddPlanList");
         console.log(newPlan);
-        //GetPlanList(function AddPlanToList() {
-
-
-        AddPlan(newPlan, function (newPlan) {
-            var savedPlanList = [newPlan];
+        return AddPlan(newPlan, function (savedPlan) {
+            var savedPlanList = [savedPlan];
             console.log(savedPlanList);
             onAddedPlanList(savedPlanList);
         });
-
-
-        //});
     },
     AddPlan = function (newPlan, onAddedPlan) {
   
         console.log("AddPlan");
         var PlanSchema = mongoose.model('Plan'),
             myPlan = new PlanSchema();
-        ReplaceProperties(myPlan,newPlan);
-        myPlan.save();
-        console.log("Saved");
-        onAddedPlan(myPlan);
-
+        ReplaceProperties(myPlan, newPlan || {});
+        return myPlan.save()
+            .then(function (savedPlan) {
+                console.log("Saved");
+                onAddedPlan(savedPlan);
+                return savedPlan;
+            })
+            .catch(function (error) {
+                console.error("Could not save plan", error);
+                return null;
+            });
     },
-    GetPlan = function (session,onFoundPlan) {
-        // retrieve my model
+    GetPlan = function (session, onFoundPlan) {
         var MyPlan = mongoose.model('Plan');   
-        // create a blog post
-        //var plan = new MyPlan();
         console.log("finding plan");
         console.log(session);
-        MyPlan.find(session,function FoundPlan(err,savedPlanList) {
-            if (err) {
-                console.log(err);
-            }else if (savedPlanList.length === 0) {
-                console.log("OOps - no plan saved with these params");
-            }else if (savedPlanList.length !== 1) {
-                console.log("OOps - multiple plans - wait that can't happen!");
-            } else {
+        return MyPlan.find(session).exec()
+            .then(function (savedPlanList) {
+                if (savedPlanList.length === 0) {
+                    console.log("OOps - no plan saved with these params");
+                    return null;
+                }
+                if (savedPlanList.length !== 1) {
+                    console.log("OOps - multiple plans - wait that can't happen!");
+                    return null;
+                }
                 console.log("Found Plan");
                 var savedPlan = savedPlanList[0];
                 console.log(savedPlan);
                 onFoundPlan(savedPlan);
-            }
-        });
+                return savedPlan;
+            })
+            .catch(function (error) {
+                console.error("Could not find plan", error);
+                return null;
+            });
     },
-    GetPlanList = function(onFoundPlanList) {
-        // retrieve my model
+    GetPlanList = function (onFoundPlanList) {
         var MyPlan = mongoose.model('Plan');   
-        // create a blog post
-        //var plan = new MyPlan();
         console.log("finding all plans");
-        MyPlan.find({},function getPlanListFoundPlan(err,savedPlanList) {
-            if (err) {
-                console.log(err);
-                onFoundPlanList(null);
-            }else if (savedPlanList.length === 0) {
-                console.log("List is empty.");
-                AddPlanList({},function OnCompleteAddPlanList(newlyGeneratedList) {
-                    console.log("OnCompleteAddPlanList");
-                    console.log(newlyGeneratedList);
-                    onFoundPlanList(newlyGeneratedList);
-                });
-            //onFoundPlanList(savedPlanList);
-            } else {
+        return MyPlan.find({}).exec()
+            .then(function (savedPlanList) {
+                if (savedPlanList.length === 0) {
+                    console.log("List is empty.");
+                    return AddPlanList({}, onFoundPlanList);
+                }
                 console.log("Found Plan");
                 console.log(savedPlanList);
                 onFoundPlanList(savedPlanList);
-            }
-        });
+                return savedPlanList;
+            })
+            .catch(function (error) {
+                console.error("Could not find plans", error);
+                onFoundPlanList(null);
+                return null;
+            });
     },
     MakeMissingSeats = function(myTable, seatCount) {
-        if(!myTable.seatList || myTable.seatList.length !== 0) {
-            for (var i=0,l=seatCount;i<l;i++) {
-                var SeatSchema = mongoose.model('Seat');
-                var mySeat = new SeatSchema();
-                myTable.seatList.push(ReplaceProperties(mySeat,{id:i,seatNumber:i}));
-            }
+        if (!myTable.seatList) {
+            myTable.seatList = [];
+        }
+        var firstMissingSeat = myTable.seatList ? myTable.seatList.length : 0;
+        for (var i = firstMissingSeat; i < seatCount; i++) {
+            var SeatSchema = mongoose.model('Seat');
+            var mySeat = new SeatSchema();
+            myTable.seatList.push(ReplaceProperties(mySeat, { id: i, seatNumber: i }));
         }
     };
 
@@ -437,6 +425,32 @@ io.on('connection', function SocketConnection(socket) {
   
 });
 
-http.listen(port, function () {
-    console.log("Listening on " + port);
-});
+async function startServer() {
+    var connectionString = process.env.MONGOATLAS_CONNECTION;
+    var port = process.env.PORT || 3000;
+
+    if (!connectionString) {
+        throw new Error('MONGOATLAS_CONNECTION must be set before starting the server.');
+    }
+
+    await mongoose.connect(connectionString);
+    await new Promise(function (resolveServer, rejectServer) {
+        server.once('error', rejectServer);
+        server.listen(port, function () {
+            server.off('error', rejectServer);
+            console.log("Listening on " + port);
+            resolveServer();
+        });
+    });
+
+    return server;
+}
+
+if (require.main === module) {
+    startServer().catch(function (error) {
+        console.error('Unable to start DylanSeating', error);
+        process.exitCode = 1;
+    });
+}
+
+module.exports = { app, io, server, startServer };

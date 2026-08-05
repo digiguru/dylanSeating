@@ -1,6 +1,6 @@
-import {_} from 'underscore';
+const _ = require('underscore');
 
-export function SeatQuerying () {
+function SeatQuerying() {
     'use strict';
     return {
         getTable: function (plan, id) {
@@ -63,4 +63,6 @@ export function SeatQuerying () {
 
         }
     };
-};
+}
+
+module.exports = { SeatQuerying };
