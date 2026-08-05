@@ -3,6 +3,7 @@
     "version": "0.0.1",
     "dependencies": {
         "express": "^5.2.1",
+        "express-rate-limit": "^8.6.2",
         "jquery": "^4.0.0",
         "mongoose": "^9.9.1",
         "raphael": "^2.3.0",

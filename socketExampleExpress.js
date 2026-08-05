@@ -13,6 +13,7 @@
 const path = require('node:path');
 const { createServer } = require('node:http');
 const express = require('express');
+const { rateLimit } = require('express-rate-limit');
 const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const { SeatQuerying } = require('./seatQuerying.js');
@@ -22,6 +23,12 @@ const server = createServer(app);
 const io = new Server(server);
 const sq = SeatQuerying();
 const { Schema } = mongoose;
+const rootRouteLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    limit: 120,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false
+});
     
 var Guest = new Schema({
     id        : { type: Number, index: true },
@@ -67,7 +74,7 @@ mongoose.model('Seat', Seat);
 mongoose.model('Table', Table);
 mongoose.model('Plan', Plan);
 
-app.get('/', (req, res) => {
+app.get('/', rootRouteLimiter, (req, res) => {
     res.sendFile(path.join(__dirname, 'static', 'socketExampleClient.html'));
 });
 

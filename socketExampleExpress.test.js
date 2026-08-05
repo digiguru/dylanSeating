@@ -26,5 +26,6 @@ describe('application server', () => {
 
         expect(response.ok).toBe(true);
         expect(body).toContain('dylanSeating Demo');
+        expect(response.headers.get('ratelimit')).toBeTruthy();
     });
 });
