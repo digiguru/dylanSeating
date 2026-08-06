@@ -10,13 +10,22 @@
     <script type="text/javascript" src="vendor/underscore-min.js"></script>
     <script type="text/javascript" src="vendor/jquery.min.js"></script>
     <script type="text/javascript" src="vendor/raphael.min.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="vendor/socket.io.min.js"></script>
     <style>
       #board { float:left; clear:none; width:900px;}
       #sidebar { float:left; clear:none; width:100px;}
     </style>
 <script>
-  var socket = io.connect('/');
+  var socket = io(window.location.origin, {
+    path: '/api/socket-io/socket.io',
+    transports: ['websocket'],
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 30000
+  });
+
+  socket.on('connect_error', function (error) {
+    console.error('Realtime connection failed:', error.message);
+  });
  
 </script>
   </head>

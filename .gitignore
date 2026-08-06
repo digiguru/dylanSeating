@@ -9,7 +9,11 @@
 
 # production
 /build
+/public
 /static/vendor
+
+# Vercel
+.vercel
 
 # misc
 .DS_Store
