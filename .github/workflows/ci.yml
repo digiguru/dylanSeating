@@ -34,7 +34,7 @@ jobs:
         run: npm audit --omit=dev --audit-level=high
 
       - name: Install browser system dependencies
-        run: sudo env PUPPETEER_CACHE_DIR="$PUPPETEER_CACHE_DIR" npx puppeteer browsers install chrome --install-deps
+        run: sudo env PATH="$PWD/node_modules/.bin:$PATH" PUPPETEER_CACHE_DIR="$PUPPETEER_CACHE_DIR" npx --no-install puppeteer browsers install chrome --install-deps
 
       - name: Build browser assets
         run: npm run build
