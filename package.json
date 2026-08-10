@@ -15,7 +15,7 @@
     },
     "allowScripts": {
         "unrs-resolver@1.12.2": true,
-        "puppeteer@25.5.0": false
+        "puppeteer@25.5.0": true
     },
     "jest-junit": {
         "outputDirectory": "results"
