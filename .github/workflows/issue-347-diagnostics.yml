@@ -1,0 +1,32 @@
+name: Issue 347 diagnostics
+
+on:
+  push:
+    branches:
+      - chore/issue-347-security-maintenance
+
+permissions:
+  contents: read
+
+env:
+  PUPPETEER_SKIP_DOWNLOAD: "true"
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Audit and dependency ancestry
+        run: |
+          npm audit --json || true
+          echo '--- production audit ---'
+          npm audit --omit=dev --audit-level=high || true
+          echo '--- deprecated ancestry ---'
+          npm ls glob inflight puppeteer || true
+          npm explain glob || true
+          npm explain inflight || true
