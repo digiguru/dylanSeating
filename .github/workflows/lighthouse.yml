@@ -1,0 +1,57 @@
+name: Lighthouse production audit
+on:
+  pull_request:
+    branches: [main]
+    paths: [.github/workflows/lighthouse.yml]
+  deployment_status:
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+jobs:
+  audit:
+    name: Audit production release
+    if: >-
+      github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success' &&
+       (github.event.deployment.environment == 'Production' || github.event.deployment.environment == 'production' ||
+        github.event.deployment.ref == 'main' || github.ref == 'refs/heads/main'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: Wait for successful CI on deployed commit
+        if: github.event_name == 'deployment_status'
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const sha=context.payload.deployment.sha,gateName='CI';
+            for(let attempt=1;attempt<=60;attempt++){
+              const {data}=await github.rest.actions.listWorkflowRunsForRepo({owner:context.repo.owner,repo:context.repo.repo,head_sha:sha,event:'push',per_page:100});
+              const gate=data.workflow_runs.find(run=>run.name===gateName);
+              if(gate?.status==='completed'){
+                if(gate.conclusion==='success'){core.info(`${gateName} passed for ${sha}: ${gate.html_url}`);return;}
+                core.setFailed(`${gateName} completed with ${gate.conclusion} for ${sha}: ${gate.html_url}`);return;
+              }
+              core.info(`Waiting for ${gateName} on ${sha} (${attempt}/60)`);await new Promise(r=>setTimeout(r,10000));
+            }
+            core.setFailed(`Timed out waiting for ${gateName} to complete successfully for ${sha}`);
+      - name: Audit production with Lighthouse
+        id: lighthouse
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: https://dylan-seating.vercel.app/
+          uploadArtifacts: true
+          temporaryPublicStorage: false
+      - name: Publish Lighthouse job summary
+        env:
+          LIGHTHOUSE_RESULTS_PATH: ${{ steps.lighthouse.outputs.resultsPath }}
+          AUDIT_URL: https://dylan-seating.vercel.app/
+        run: |
+          node <<'NODE'
+          const fs=require('fs'),path=require('path'),p=process.env.LIGHTHOUSE_RESULTS_PATH;if(!p)throw new Error('Lighthouse action did not expose resultsPath');
+          const f=fs.readdirSync(p).filter(x=>/^lhr-.*\.json$/.test(x));if(!f.length)throw new Error(`No Lighthouse JSON reports found in ${p}`);
+          const r=f.map(x=>JSON.parse(fs.readFileSync(path.join(p,x),'utf8'))).sort((a,b)=>new Date(a.fetchTime||0)-new Date(b.fetchTime||0)).at(-1),s=n=>Math.round((r.categories?.[n]?.score??0)*100),m=n=>r.audits?.[n]?.displayValue??'n/a',t=r.fetchTime?new Date(r.fetchTime).toISOString().replace('T',' ').replace('.000Z',' UTC'):'unknown';
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,['## 🔦 Production Lighthouse','',`**URL:** [${process.env.AUDIT_URL}](${process.env.AUDIT_URL})  `,`**Audited:** ${t}`,'','| Category | Score |','|---|---:|',`| Performance | **${s('performance')}** |`,`| Accessibility | **${s('accessibility')}** |`,`| Best Practices | **${s('best-practices')}** |`,`| SEO | **${s('seo')}** |`,'','| Metric | Result |','|---|---:|',`| First Contentful Paint | ${m('first-contentful-paint')} |`,`| Largest Contentful Paint | ${m('largest-contentful-paint')} |`,`| Total Blocking Time | ${m('total-blocking-time')} |`,`| Cumulative Layout Shift | ${m('cumulative-layout-shift')} |`,`| Speed Index | ${m('speed-index')} |`,'','> Full HTML and JSON reports are attached to this workflow run as the `lighthouse-results` artifact.',''].join('\n'));
+          NODE
