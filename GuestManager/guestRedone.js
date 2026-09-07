@@ -1,41 +1,47 @@
 /*jslint nomen: true, plusplus: true */
-/*global $, document, window, alert */
-$(document).ready(function () {
+/*global document, console */
+document.addEventListener('DOMContentLoaded', function () {
     "use strict";
-    var $list = $("#guestList"),
-        $btnAdd = $("#btnAdd"),
-        $txtInputName = $("#txtInputName"),
-        tmpGuest = Handlebars.compile($("#tmpGuest").html()),
+    var list = document.getElementById("guestList"),
+        btnAdd = document.getElementById("btnAdd"),
+        txtInputName = document.getElementById("txtInputName"),
         guestList = [],
-        createGuest = function(name) {
-            var names = name.split(" "),
-                surname = _.last(names),
-                firstname = _.initial(names).join(" ");
+        createGuest = function (name) {
+            var names = name.trim().split(/\s+/),
+                surname = names.pop() || "",
+                firstname = names.join(" ");
             return {
                 firstname: firstname,
                 surname: surname
             };
         },
-        updateGuestListUI = function(newRow) {
-            
-            $list.html(tmpGuest(_.sortBy(guestList, "surname")));
+        updateGuestListUI = function () {
+            var sortedGuests = guestList.slice().sort(function (left, right) {
+                    return left.surname.localeCompare(right.surname) ||
+                        left.firstname.localeCompare(right.firstname);
+                });
+
+            list.replaceChildren();
+            sortedGuests.forEach(function (guest) {
+                var item = document.createElement("li");
+                item.textContent = guest.surname + ", " + guest.firstname;
+                list.appendChild(item);
+            });
+        },
+        addGuest = function () {
+            var name = txtInputName.value.trim();
+            if (name) {
+                guestList.push(createGuest(name));
+                updateGuestListUI();
+            }
+            txtInputName.value = "";
+            console.log(guestList);
         };
-    
-    $btnAdd.click(function (e) {
-        var name = $txtInputName.val();
-        if(name) {
-            var newLine = createGuest(name);
-            guestList.push(newLine);
-            updateGuestListUI(newLine);
-        }
-        $txtInputName.val("");
-        console.log(guestList);
-        
-    });
-    $txtInputName.keypress(function (e) {
-        var code = e.keyCode || e.which;
-        if (code == 13) {
-           $btnAdd.trigger("click");
+
+    btnAdd.addEventListener("click", addGuest);
+    txtInputName.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            addGuest();
         }
     });
 });
