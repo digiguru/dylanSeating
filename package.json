@@ -14,8 +14,8 @@
         "underscore": "^1.13.8"
     },
     "allowScripts": {
-        "unrs-resolver@1.12.2": true,
-        "puppeteer@25.5.0": true
+        "unrs-resolver": true,
+        "puppeteer": true
     },
     "jest-junit": {
         "outputDirectory": "results"
