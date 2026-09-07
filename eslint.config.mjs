@@ -1,3 +1,10 @@
+const correctnessRules = {
+  'no-dupe-args': 'error',
+  'no-dupe-keys': 'error',
+  'no-unreachable': 'error',
+  'valid-typeof': 'error',
+};
+
 export default [
   {
     ignores: [
@@ -9,16 +16,19 @@ export default [
     ],
   },
   {
-    files: ['**/*.{js,cjs,mjs}'],
+    files: ['**/*.js', '**/*.cjs'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'commonjs',
     },
-    rules: {
-      'no-dupe-args': 'error',
-      'no-dupe-keys': 'error',
-      'no-unreachable': 'error',
-      'valid-typeof': 'error',
+    rules: correctnessRules,
+  },
+  {
+    files: ['**/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
     },
+    rules: correctnessRules,
   },
 ];
