@@ -30,6 +30,9 @@ jobs:
       - name: Install dependencies without Puppeteer browser download
         run: PUPPETEER_SKIP_DOWNLOAD=true npm ci
 
+      - name: Lint JavaScript
+        run: npm run lint
+
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 
