@@ -4,7 +4,7 @@
     "dependencies": {
         "@socket.io/redis-adapter": "^8.3.0",
         "express": "^5.2.1",
-        "express-rate-limit": "^8.6.2",
+        "express-rate-limit": "^8.7.0",
         "jquery": "^4.0.0",
         "mongoose": "^9.9.4",
         "raphael": "^2.3.0",
@@ -38,8 +38,8 @@
     },
     "devDependencies": {
         "http-server": "^14.1.1",
-        "jest": "^30.4.2",
+        "jest": "^30.5.1",
         "jest-junit": "^17.0.0",
-        "puppeteer": "^25.9.0"
+        "puppeteer": "^25.10.0"
     }
 }
