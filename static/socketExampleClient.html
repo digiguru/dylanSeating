@@ -48,7 +48,7 @@
       <section class="workspace" aria-label="Interactive seating planner">
         <div class="board-frame">
           <div class="board-label-row">
-            <span class="board-label">Seating canvas</span>
+            <span class="board-label">Seating Canvas</span>
             <span class="board-hint">Drag to rearrange</span>
           </div>
           <div class="board-scroll">
@@ -82,9 +82,13 @@
       </section>
     </main>
 
+    <script type="text/javascript" src="canvas-layout.js"></script>
     <script type="text/javascript" src="dylanSeatingHitched.js"></script>
     <script>
       var myDylanSeating = new DylanSeating();
+      if (window.DylanSeatingCanvasLayout) {
+        window.DylanSeatingCanvasLayout.finishInitialisation();
+      }
 
       (function moveLegacyAuditMessagesOutOfCanvas() {
         var board = document.getElementById('board');
