@@ -96,6 +96,37 @@ try {
         throw new Error(`Expected three centred toolbox objects, found ${canvasLayout.alignedObjectCount}.`);
     }
 
+    const deskCreation = await page.evaluate(async () => {
+        const before = myDylanSeating.getTables().length;
+        const controller = myDylanSeating.getController();
+
+        controller.ac.Call('AddTable', {
+            id: 'browser-desk-regression',
+            type: 'desk',
+            x: 320,
+            y: 320,
+            rotation: 90
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        const tables = myDylanSeating.getTables();
+        const newestTable = tables[tables.length - 1];
+        return {
+            before,
+            after: tables.length,
+            id: newestTable?.id,
+            type: newestTable?.ToJson?.().type
+        };
+    });
+
+    if (deskCreation.after !== deskCreation.before + 1) {
+        throw new Error(`Expected desk creation to add one table; before=${deskCreation.before}, after=${deskCreation.after}.`);
+    }
+    if (deskCreation.id !== 'browser-desk-regression' || deskCreation.type !== 'desk') {
+        throw new Error(`Expected created desk to preserve its id/type; received ${deskCreation.id}/${deskCreation.type}.`);
+    }
+
     console.log('Browser smoke test passed.');
 } finally {
     await browser?.close();
