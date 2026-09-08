@@ -2,6 +2,12 @@
     "use strict";
 
     var Raphael = window.Raphael,
+        objectStyling = window.DylanSeatingObjectStyling,
+        defaultColours = objectStyling && objectStyling.defaultColours ? objectStyling.defaultColours : {
+            guest: "#f7e7a9",
+            "round-table": "#d9cbee",
+            desk: "#cbdaf0"
+        },
         TOOLBOX_LEFT = 20,
         TOOLBOX_TOP = 72,
         TOOLBOX_WIDTH = 200,
@@ -11,6 +17,7 @@
         ITEM_SPACING = 70,
         LEGACY_ITEM_X = 650,
         LEGACY_TOOLBOX_LEFT = 600,
+        TOOLBOX_FILL = "135-#f8fbff-#edf8f2-#f5effb",
         initialising = true;
 
     if (!Raphael || !Raphael.fn || !Raphael.el) {
@@ -37,6 +44,23 @@
 
     function toolboxItemY(legacyY) {
         return ITEM_FIRST_Y + ((legacyY / 50) * ITEM_SPACING);
+    }
+
+    function toolboxFillFor(type) {
+        if (type === "guest") {
+            return defaultColours.guest;
+        }
+        if (type === "table") {
+            return objectStyling && objectStyling.fillFor ?
+                objectStyling.fillFor("round-table", defaultColours["round-table"]) :
+                defaultColours["round-table"];
+        }
+        if (type === "desk") {
+            return objectStyling && objectStyling.fillFor ?
+                objectStyling.fillFor("desk", defaultColours.desk) :
+                defaultColours.desk;
+        }
+        return null;
     }
 
     function wrapToolboxCreateObject(model) {
@@ -70,8 +94,11 @@
         originalAttr = Raphael.el.attr;
 
     Raphael.fn.rect = function alignedRect(x, y, width, height, radius) {
+        var rect;
         if (initialising && x === LEGACY_TOOLBOX_LEFT && y === 20 && width === 200 && height === 600) {
-            return originalRect.call(this, TOOLBOX_LEFT, TOOLBOX_TOP, width, height, radius);
+            rect = originalRect.call(this, TOOLBOX_LEFT, TOOLBOX_TOP, width, height, radius);
+            rect.__dylanToolboxBackground = true;
+            return rect;
         }
         return originalRect.apply(this, arguments);
     };
@@ -88,7 +115,8 @@
 
     Raphael.el.attr = function alignedAttr(name, value) {
         var attrs,
-            translation;
+            translation,
+            itemFill;
 
         if (!initialising || !name || typeof name !== "object" || Array.isArray(name)) {
             return originalAttr.apply(this, arguments);
@@ -96,6 +124,18 @@
 
         attrs = Object.assign({}, name);
         wrapToolboxCreateObject(attrs.model);
+
+        if (this.__dylanToolboxBackground) {
+            attrs.fill = TOOLBOX_FILL;
+            attrs.stroke = "#9fb3c8";
+            attrs["stroke-width"] = 1.25;
+        }
+
+        itemFill = attrs.model && toolboxFillFor(attrs.model.type);
+        if (itemFill) {
+            attrs.fill = itemFill;
+            attrs.stroke = "#52637d";
+        }
 
         if (attrs.ox === LEGACY_ITEM_X && attrs.oy >= 0 && attrs.oy <= 100) {
             attrs.ox = ITEM_CENTER_X;
@@ -113,6 +153,12 @@
     window.DylanSeatingCanvasLayout = {
         finishInitialisation: function finishInitialisation() {
             initialising = false;
+        },
+        visualTokens: {
+            toolboxFill: TOOLBOX_FILL,
+            guest: defaultColours.guest,
+            table: defaultColours["round-table"],
+            desk: defaultColours.desk
         }
     };
 }(window));
