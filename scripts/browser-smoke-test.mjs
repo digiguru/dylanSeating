@@ -32,7 +32,8 @@ try {
         'vendor/underscore-min.js',
         'vendor/raphael.min.js',
         'vendor/socket.io.min.js',
-        'canvas-layout.js'
+        'canvas-layout.js',
+        'object-styling.js'
     ]) {
         const response = await fetch(`${serverUrl}/${asset}`);
         if (!response.ok) {
@@ -42,8 +43,8 @@ try {
 
     const homeResponse = await fetch(serverUrl);
     const homePage = await homeResponse.text();
-    if (!homeResponse.ok || !homePage.includes('/api/socket-io/socket.io') || !homePage.includes('canvas-layout.js')) {
-        throw new Error('Expected the Vercel-ready client page and canvas layout helper to be available at the site root.');
+    if (!homeResponse.ok || !homePage.includes('/api/socket-io/socket.io') || !homePage.includes('canvas-layout.js') || !homePage.includes('object-styling.js')) {
+        throw new Error('Expected the Vercel-ready client page and modern browser helpers to be available at the site root.');
     }
 
     browserHome = await mkdtemp(join(tmpdir(), 'dylan-seating-browser-'));
@@ -187,6 +188,90 @@ try {
     if (looseGuestAfter.x < looseGuestBefore.x + 80 || looseGuestAfter.y < looseGuestBefore.y + 50) {
         throw new Error(`Expected loose guest to stay at its dragged position; moved from ${looseGuestBefore.x},${looseGuestBefore.y} to ${looseGuestAfter.x},${looseGuestAfter.y}.`);
     }
+
+    const stylingResult = await page.evaluate(async () => {
+        const controller = myDylanSeating.getController();
+        const styling = window.DylanSeatingObjectStyling;
+        const nameInput = document.getElementById('txtObjectName');
+        const swatches = Array.from(document.querySelectorAll('.colour-swatch'));
+
+        controller.ac.Call('AddTable', {
+            id: 'browser-style-table',
+            type: 'table',
+            x: 650,
+            y: 420,
+            seatCount: 2
+        });
+        await new Promise((resolve) => setTimeout(resolve, 120));
+
+        const table = myDylanSeating.getTables().find((candidate) => candidate.id === 'browser-style-table');
+        const chair = table.tableSeatList[0];
+        const guest = myDylanSeating.getGuests().find((candidate) => candidate.id === 'browser-loose-guest-regression');
+
+        styling.select(table, 'round-table');
+        nameInput.value = 'Top Table';
+        nameInput.dispatchEvent(new Event('change', { bubbles: true }));
+        swatches[5].click();
+
+        styling.select(chair, 'chair');
+        nameInput.value = 'Chair A';
+        nameInput.dispatchEvent(new Event('change', { bubbles: true }));
+        swatches[3].click();
+
+        styling.select(guest, 'guest');
+        nameInput.value = 'Alex';
+        nameInput.dispatchEvent(new Event('change', { bubbles: true }));
+        swatches[0].click();
+
+        styling.syncLabels();
+
+        return {
+            swatchCount: swatches.length,
+            table: {
+                name: table.name,
+                colour: table.colour,
+                fill: table.graphic.attr('fill'),
+                json: table.ToJson(),
+                label: table.styleLabel?.attr('text')
+            },
+            chair: {
+                name: chair.name,
+                colour: chair.colour,
+                fill: chair.graphic.attr('fill'),
+                json: chair.ToJson(),
+                label: chair.styleLabel?.attr('text')
+            },
+            guest: {
+                name: guest.name,
+                colour: guest.colour,
+                fill: guest.graphic.attr('fill'),
+                json: guest.ToJson()
+            }
+        };
+    });
+
+    if (stylingResult.swatchCount !== 8) {
+        throw new Error(`Expected eight pastel colour swatches, found ${stylingResult.swatchCount}.`);
+    }
+    if (stylingResult.table.name !== 'Top Table' || stylingResult.table.colour !== '#cbdaf0' || stylingResult.table.fill !== '#cbdaf0') {
+        throw new Error(`Round table styling did not apply correctly: ${JSON.stringify(stylingResult.table)}.`);
+    }
+    if (stylingResult.table.json.name !== 'Top Table' || stylingResult.table.json.colour !== '#cbdaf0' || stylingResult.table.label !== 'Top Table') {
+        throw new Error(`Round table styling did not serialize/render correctly: ${JSON.stringify(stylingResult.table)}.`);
+    }
+    if (stylingResult.chair.name !== 'Chair A' || stylingResult.chair.colour !== '#cce8cf' || stylingResult.chair.fill !== '#cce8cf') {
+        throw new Error(`Chair styling did not apply correctly: ${JSON.stringify(stylingResult.chair)}.`);
+    }
+    if (stylingResult.chair.json.name !== 'Chair A' || stylingResult.chair.json.colour !== '#cce8cf' || stylingResult.chair.label !== 'Chair A') {
+        throw new Error(`Chair styling did not serialize/render correctly: ${JSON.stringify(stylingResult.chair)}.`);
+    }
+    if (stylingResult.guest.name !== 'Alex' || stylingResult.guest.colour !== '#f5c6c8' || stylingResult.guest.fill !== '#f5c6c8') {
+        throw new Error(`Guest styling did not apply correctly: ${JSON.stringify(stylingResult.guest)}.`);
+    }
+    if (stylingResult.guest.json.name !== 'Alex' || stylingResult.guest.json.colour !== '#f5c6c8') {
+        throw new Error(`Guest styling did not serialize correctly: ${JSON.stringify(stylingResult.guest)}.`);
+    }
+
     if (pageErrors.length > 0) {
         throw new Error(`Unexpected browser error while exercising seating interactions: ${pageErrors.join(' | ')}`);
     }
