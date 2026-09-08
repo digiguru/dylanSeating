@@ -68,6 +68,11 @@
             <input type="text" id="txtGuestName" name="txtGuestName" />
           </div>
 
+          <div class="control-section debug-section" aria-live="polite">
+            <h2>Activity</h2>
+            <pre id="debugOutput" class="debug-output">loaded</pre>
+          </div>
+
           <div id="editPlan" class="control-section editor-card">
             <h2>Edit plan</h2>
             <label for="txtPlanName">Name</label>
@@ -80,6 +85,40 @@
     <script type="text/javascript" src="dylanSeatingHitched.js"></script>
     <script>
       var myDylanSeating = new DylanSeating();
+
+      (function moveLegacyAuditMessagesOutOfCanvas() {
+        var board = document.getElementById('board');
+        var debugOutput = document.getElementById('debugOutput');
+
+        function relocateAuditMessages() {
+          var auditMessages = board.querySelectorAll('svg text');
+          var latestMessage = null;
+
+          auditMessages.forEach(function (message) {
+            var x = Number(message.getAttribute('x'));
+            var y = Number(message.getAttribute('y'));
+            var isAuditMessage = (x === 200 && y === 20) || (x === 400 && y === 200);
+
+            if (isAuditMessage) {
+              latestMessage = message.textContent;
+              message.style.display = 'none';
+            }
+          });
+
+          if (latestMessage) {
+            debugOutput.textContent = latestMessage;
+          }
+        }
+
+        var auditObserver = new MutationObserver(relocateAuditMessages);
+        auditObserver.observe(board, {
+          childList: true,
+          subtree: true,
+          characterData: true,
+          attributes: true
+        });
+        relocateAuditMessages();
+      }());
     </script>
   </body>
 </html>
