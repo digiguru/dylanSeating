@@ -14,8 +14,10 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(122, 162, 247, 0.16), transparent 34rem),
-    linear-gradient(180deg, #f7f9fc 0%, #eef3f8 100%);
+    radial-gradient(circle at 8% 0%, rgba(247, 210, 178, 0.34), transparent 30rem),
+    radial-gradient(circle at 92% 8%, rgba(217, 203, 238, 0.34), transparent 30rem),
+    radial-gradient(circle at 52% 100%, rgba(204, 232, 207, 0.28), transparent 36rem),
+    linear-gradient(160deg, #fbfcff 0%, #f3f8f5 48%, #f6f1fa 100%);
 }
 
 button,
@@ -131,7 +133,9 @@ h1 {
   min-height: 50px;
   padding: 0 18px;
   border-bottom: 1px solid rgba(69, 91, 126, 0.14);
-  background: rgba(248, 250, 253, 0.96);
+  background:
+    linear-gradient(90deg, rgba(203, 218, 240, 0.30), rgba(204, 232, 207, 0.22), rgba(217, 203, 238, 0.28)),
+    rgba(248, 250, 253, 0.96);
 }
 
 .board-label {
@@ -149,11 +153,13 @@ h1 {
 .board-scroll {
   overflow: auto;
   background:
-    linear-gradient(rgba(75, 104, 154, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(75, 104, 154, 0.055) 1px, transparent 1px),
-    radial-gradient(circle at 22% 18%, rgba(123, 171, 255, 0.16), transparent 28rem),
-    linear-gradient(135deg, #f8fbff 0%, #edf4fb 100%);
-  background-size: 24px 24px, 24px 24px, auto, auto;
+    linear-gradient(rgba(89, 104, 126, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(89, 104, 126, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 16% 14%, rgba(203, 218, 240, 0.46), transparent 30rem),
+    radial-gradient(circle at 78% 22%, rgba(217, 203, 238, 0.38), transparent 32rem),
+    radial-gradient(circle at 54% 86%, rgba(204, 232, 207, 0.38), transparent 34rem),
+    linear-gradient(145deg, #fbfdff 0%, #f3f8f5 52%, #f7f2fa 100%);
+  background-size: 24px 24px, 24px 24px, auto, auto, auto, auto;
 }
 
 #board {
@@ -162,6 +168,20 @@ h1 {
   height: 900px;
   min-width: 900px;
   min-height: 900px;
+}
+
+#board svg .seat-marker {
+  fill: #d7dce2 !important;
+  stroke: #bcc4cd !important;
+  stroke-width: 1 !important;
+  opacity: 0.48 !important;
+  transition: opacity 120ms ease, fill 120ms ease, stroke 120ms ease;
+}
+
+#board svg .seat-marker:hover {
+  fill: #c9d0d8 !important;
+  stroke: #aeb8c3 !important;
+  opacity: 0.76 !important;
 }
 
 .control-panel {
@@ -280,7 +300,9 @@ h1 {
   padding: 0;
   border: 2px solid rgba(63, 80, 108, 0.14);
   border-radius: 11px;
-  background: var(--swatch-colour);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.42), transparent 48%),
+    var(--swatch-colour);
   cursor: pointer;
   transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
 }
