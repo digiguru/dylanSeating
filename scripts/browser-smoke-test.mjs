@@ -27,7 +27,13 @@ try {
     const { port } = server.address();
     const serverUrl = `http://127.0.0.1:${port}`;
 
-    for (const asset of ['vendor/jquery.min.js', 'vendor/underscore-min.js', 'vendor/raphael.min.js', 'vendor/socket.io.min.js']) {
+    for (const asset of [
+        'vendor/jquery.min.js',
+        'vendor/underscore-min.js',
+        'vendor/raphael.min.js',
+        'vendor/socket.io.min.js',
+        'canvas-layout.js'
+    ]) {
         const response = await fetch(`${serverUrl}/${asset}`);
         if (!response.ok) {
             throw new Error(`Expected ${asset} to be available, received ${response.status}.`);
@@ -36,8 +42,8 @@ try {
 
     const homeResponse = await fetch(serverUrl);
     const homePage = await homeResponse.text();
-    if (!homeResponse.ok || !homePage.includes('/api/socket-io/socket.io')) {
-        throw new Error('Expected the Vercel-ready client page to be available at the site root.');
+    if (!homeResponse.ok || !homePage.includes('/api/socket-io/socket.io') || !homePage.includes('canvas-layout.js')) {
+        throw new Error('Expected the Vercel-ready client page and canvas layout helper to be available at the site root.');
     }
 
     browserHome = await mkdtemp(join(tmpdir(), 'dylan-seating-browser-'));
@@ -53,6 +59,41 @@ try {
 
     if (!heading?.includes('My Guests')) {
         throw new Error('The seating page did not render its expected heading.');
+    }
+
+    await page.goto(serverUrl, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('#board svg');
+
+    const canvasLayout = await page.evaluate(() => {
+        const svg = document.querySelector('#board svg');
+        const background = Array.from(svg.querySelectorAll('rect')).find((element) =>
+            element.getAttribute('width') === '200' && element.getAttribute('height') === '600'
+        );
+        const expectedPositions = new Set(['120,120', '120,190', '120,260']);
+        const alignedObjects = Array.from(svg.querySelectorAll('path, circle')).filter((element) => {
+            const matrix = element.getCTM();
+            if (!matrix) {
+                return false;
+            }
+            return expectedPositions.has(`${Math.round(matrix.e)},${Math.round(matrix.f)}`);
+        });
+
+        return {
+            heading: document.querySelector('.board-label')?.textContent,
+            toolboxX: Number(background?.getAttribute('x')),
+            toolboxY: Number(background?.getAttribute('y')),
+            alignedObjectCount: alignedObjects.length
+        };
+    });
+
+    if (canvasLayout.heading !== 'Seating Canvas') {
+        throw new Error(`Expected Seating Canvas heading, received ${canvasLayout.heading}.`);
+    }
+    if (canvasLayout.toolboxX !== 20 || canvasLayout.toolboxY !== 72) {
+        throw new Error(`Expected toolbox at 20,72; received ${canvasLayout.toolboxX},${canvasLayout.toolboxY}.`);
+    }
+    if (canvasLayout.alignedObjectCount !== 3) {
+        throw new Error(`Expected three centred toolbox objects, found ${canvasLayout.alignedObjectCount}.`);
     }
 
     console.log('Browser smoke test passed.');
