@@ -108,7 +108,7 @@ h1 {
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-columns: minmax(0, 1fr) 300px;
   gap: 18px;
   align-items: start;
 }
@@ -193,7 +193,8 @@ h1 {
   letter-spacing: -0.01em;
 }
 
-.control-panel label {
+.control-panel label,
+.colour-fieldset legend {
   color: #52637d;
   font-size: 0.78rem;
   font-weight: 750;
@@ -219,6 +220,86 @@ h1 {
   box-shadow: 0 0 0 4px rgba(84, 121, 194, 0.14);
 }
 
+.legacy-editor {
+  display: none !important;
+}
+
+.object-editor-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.selected-object-type {
+  display: block;
+  margin-bottom: 3px;
+  color: #6a7a93;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.editor-hint {
+  margin: 0;
+  color: #718097;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.object-editor-fields {
+  display: grid;
+  gap: 8px;
+}
+
+.object-editor-fields[hidden] {
+  display: none;
+}
+
+.colour-fieldset {
+  margin: 4px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.colour-fieldset legend {
+  margin-bottom: 8px;
+  padding: 0;
+}
+
+.pastel-palette {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.colour-swatch {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 2px solid rgba(63, 80, 108, 0.14);
+  border-radius: 11px;
+  background: var(--swatch-colour);
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.colour-swatch:hover {
+  transform: translateY(-1px) scale(1.04);
+  border-color: rgba(63, 80, 108, 0.35);
+}
+
+.colour-swatch:focus-visible {
+  outline: 3px solid rgba(84, 121, 194, 0.28);
+  outline-offset: 2px;
+}
+
+.colour-swatch.is-selected {
+  border-color: #304d7d;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #304d7d;
+}
+
 .debug-output {
   margin: 0;
   max-height: 180px;
@@ -240,7 +321,7 @@ h1 {
 
   .control-panel {
     position: static;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .control-section + .control-section {
