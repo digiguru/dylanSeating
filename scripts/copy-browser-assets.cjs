@@ -43,6 +43,29 @@ function patchLegacyDeskConstructor() {
     writeFileSync(target, source.replace(legacyConstructor, fixedConstructor));
 }
 
+function patchLooseGuestDrag() {
+    const target = join(publicDirectory, 'dylanSeatingHitched.js');
+    const legacyDrop = `                    } else {
+                        model.ghost.hide();
+                        model.removeFromSeat();
+                    }`;
+    const fixedDrop = `                    } else {
+                        model.ghost.hide();
+                        if (model.seat) {
+                            model.removeFromSeat();
+                        } else {
+                            model.showHelpText(model.name);
+                        }
+                    }`;
+    const source = readFileSync(target, 'utf8');
+
+    if (!source.includes(legacyDrop)) {
+        throw new Error('Could not find the legacy loose-guest drop path to patch.');
+    }
+
+    writeFileSync(target, source.replace(legacyDrop, fixedDrop));
+}
+
 mkdirSync(vendorDirectory, { recursive: true });
 
 copyAsset('jquery', ['jquery.min.js'], 'jquery.min.js');
@@ -53,4 +76,5 @@ copySocketIoClient('socket.io.min.js');
 rmSync(publicDirectory, { recursive: true, force: true });
 cpSync(staticDirectory, publicDirectory, { recursive: true });
 patchLegacyDeskConstructor();
+patchLooseGuestDrag();
 copyFileSync(join(staticDirectory, 'socketExampleClient.html'), join(publicDirectory, 'index.html'));
