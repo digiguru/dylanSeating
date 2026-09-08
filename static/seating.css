@@ -219,6 +219,20 @@ h1 {
   box-shadow: 0 0 0 4px rgba(84, 121, 194, 0.14);
 }
 
+.debug-output {
+  margin: 0;
+  max-height: 180px;
+  overflow: auto;
+  padding: 10px 12px;
+  border: 1px solid rgba(69, 91, 126, 0.14);
+  border-radius: 10px;
+  background: #f6f8fb;
+  color: #66758d;
+  font: 0.72rem/1.45 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 @media (max-width: 1000px) {
   .workspace {
     grid-template-columns: 1fr;
@@ -226,7 +240,7 @@ h1 {
 
   .control-panel {
     position: static;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .control-section + .control-section {
