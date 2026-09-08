@@ -1,3 +1,3 @@
-const { server } = require('../socketExampleExpress.js');
+const { server } = require('../styledServer.js');
 
 module.exports = server;

@@ -23,12 +23,14 @@ describe('application server', () => {
         });
     });
 
-    test('serves the seating client without connecting to MongoDB on import', async () => {
+    test('serves the modern seating client without connecting to MongoDB on import', async () => {
         const response = await fetch(origin);
         const body = await response.text();
 
         expect(response.ok).toBe(true);
-        expect(body).toContain('dylanSeating Demo');
+        expect(body).toContain('<title>Dylan Seating</title>');
+        expect(body).toContain('class="board-frame"');
+        expect(body).toContain('id="debugOutput"');
         expect(response.headers.get('ratelimit')).toBeTruthy();
     });
 

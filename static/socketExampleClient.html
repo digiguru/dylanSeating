@@ -1,57 +1,150 @@
-
-
-
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>dylanSeating Demo</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dylan Seating</title>
     <link rel="stylesheet" href="seating.css" type="text/css" media="screen">
     <script type="text/javascript" src="vendor/underscore-min.js"></script>
     <script type="text/javascript" src="vendor/jquery.min.js"></script>
     <script type="text/javascript" src="vendor/raphael.min.js"></script>
     <script src="vendor/socket.io.min.js"></script>
-    <style>
-      #board { float:left; clear:none; width:900px;}
-      #sidebar { float:left; clear:none; width:100px;}
-    </style>
-<script>
-  var socket = io(window.location.origin, {
-    path: '/api/socket-io/socket.io',
-    transports: ['websocket'],
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 30000
-  });
+    <script>
+      var socket = io(window.location.origin, {
+        path: '/api/socket-io/socket.io',
+        transports: ['websocket'],
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 30000
+      });
 
-  socket.on('connect_error', function (error) {
-    console.error('Realtime connection failed:', error.message);
-  });
- 
-</script>
+      socket.on('connect_error', function (error) {
+        console.error('Realtime connection failed:', error.message);
+      });
+    </script>
   </head>
   <body>
-   
-<div id="board"></div>
-<div id="sidebar">
-    <label>plans</label>
-    <select id="lstPlans">
-    </select>
-    <div id="editGuest">
-      <h3>Edit Guest</h3>
-      <label for="txtGuestName">Name</label>
-      <input type="text" id="txtGuestName" name="txtGuestName" />
-    </div>
-    <div id="editPlan">
-      <h3>Edit Plan</h3>
-      <label for="txtPlanName">Name</label>
-      <input type="text" id="txtPlanName" name="txtPlanName" />
-    </div>
-</div>
-    
-    
-   <script type="text/javascript" src="dylanSeatingHitched.js"></script>
-   <script>
-   var myDylanSeating = new DylanSeating();
-   </script>
+    <main class="app-shell">
+      <header class="app-header">
+        <div class="eyebrow">Seating planner</div>
+        <h1>Dylan Seating</h1>
+        <p class="intro">Arrange guests visually, try different layouts, and keep the plan easy to understand at a glance.</p>
+      </header>
+
+      <section class="guidance" aria-label="How to use the seating planner">
+        <div class="guidance-item">
+          <span class="guidance-step">1</span>
+          <div><strong>Choose a plan</strong><span>Pick the seating plan you want to work on.</span></div>
+        </div>
+        <div class="guidance-item">
+          <span class="guidance-step">2</span>
+          <div><strong>Arrange the room</strong><span>Drag guests, tables and chairs around the canvas.</span></div>
+        </div>
+        <div class="guidance-item">
+          <span class="guidance-step">3</span>
+          <div><strong>Style details</strong><span>Hover an object to name it and choose a pastel colour.</span></div>
+        </div>
+      </section>
+
+      <section class="workspace" aria-label="Interactive seating planner">
+        <div class="board-frame">
+          <div class="board-label-row">
+            <span class="board-label">Seating Canvas</span>
+            <span class="board-hint">Drag to rearrange · hover to edit</span>
+          </div>
+          <div class="board-scroll">
+            <div id="board"></div>
+          </div>
+        </div>
+
+        <aside id="sidebar" class="control-panel">
+          <div class="control-section">
+            <label for="lstPlans">Plan</label>
+            <select id="lstPlans" aria-label="Seating plan"></select>
+          </div>
+
+          <div id="objectEditor" class="control-section editor-card object-editor" aria-live="polite">
+            <div class="object-editor-heading">
+              <div>
+                <span id="selectedObjectType" class="selected-object-type">Nothing selected</span>
+                <h2>Object details</h2>
+              </div>
+            </div>
+            <p id="objectEditorHint" class="editor-hint">Hover a guest, table, desk or chair on the canvas to edit it.</p>
+            <div id="objectEditorFields" class="object-editor-fields" hidden>
+              <label for="txtObjectName">Name</label>
+              <input type="text" id="txtObjectName" name="txtObjectName" autocomplete="off" />
+              <fieldset class="colour-fieldset">
+                <legend>Colour</legend>
+                <div id="pastelPalette" class="pastel-palette" aria-label="Pastel colour palette"></div>
+              </fieldset>
+            </div>
+          </div>
+
+          <div id="editGuest" class="control-section editor-card legacy-editor" aria-hidden="true">
+            <h2>Edit guest</h2>
+            <label for="txtGuestName">Name</label>
+            <input type="text" id="txtGuestName" name="txtGuestName" />
+          </div>
+
+          <div class="control-section debug-section" aria-live="polite">
+            <h2>Activity</h2>
+            <pre id="debugOutput" class="debug-output">loaded</pre>
+          </div>
+
+          <div id="editPlan" class="control-section editor-card">
+            <h2>Edit plan</h2>
+            <label for="txtPlanName">Name</label>
+            <input type="text" id="txtPlanName" name="txtPlanName" />
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script type="text/javascript" src="object-styling.js"></script>
+    <script type="text/javascript" src="canvas-layout.js"></script>
+    <script type="text/javascript" src="dylanSeatingHitched.js"></script>
+    <script>
+      var myDylanSeating = new DylanSeating();
+      if (window.DylanSeatingCanvasLayout) {
+        window.DylanSeatingCanvasLayout.finishInitialisation();
+      }
+      if (window.DylanSeatingObjectStyling) {
+        window.DylanSeatingObjectStyling.finishInitialisation();
+      }
+
+      (function moveLegacyAuditMessagesOutOfCanvas() {
+        var board = document.getElementById('board');
+        var debugOutput = document.getElementById('debugOutput');
+
+        function relocateAuditMessages() {
+          var auditMessages = board.querySelectorAll('svg text');
+          var latestMessage = null;
+
+          auditMessages.forEach(function (message) {
+            var x = Number(message.getAttribute('x'));
+            var y = Number(message.getAttribute('y'));
+            var isAuditMessage = (x === 200 && y === 20) || (x === 400 && y === 200);
+
+            if (isAuditMessage) {
+              latestMessage = message.textContent;
+              message.style.display = 'none';
+            }
+          });
+
+          if (latestMessage) {
+            debugOutput.textContent = latestMessage;
+          }
+        }
+
+        var auditObserver = new MutationObserver(relocateAuditMessages);
+        auditObserver.observe(board, {
+          childList: true,
+          subtree: true,
+          characterData: true,
+          attributes: true
+        });
+        relocateAuditMessages();
+      }());
+    </script>
   </body>
 </html>
