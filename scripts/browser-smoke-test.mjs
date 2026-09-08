@@ -54,6 +54,9 @@ try {
     });
 
     const page = await browser.newPage();
+    const pageErrors = [];
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+    await page.setViewport({ width: 1600, height: 1400 });
     await page.goto(`${serverUrl}/seatingtest.htm`, { waitUntil: 'networkidle0' });
     const heading = await page.$eval('h1', (element) => element.textContent);
 
@@ -125,6 +128,67 @@ try {
     }
     if (deskCreation.id !== 'browser-desk-regression' || deskCreation.type !== 'desk') {
         throw new Error(`Expected created desk to preserve its id/type; received ${deskCreation.id}/${deskCreation.type}.`);
+    }
+
+    const looseGuestBefore = await page.evaluate(async () => {
+        const controller = myDylanSeating.getController();
+        controller.ac.Call('AddGuest', {
+            id: 'browser-loose-guest-regression',
+            name: 'Loose Guest',
+            x: 500,
+            y: 500
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        const guest = myDylanSeating.getGuests().find((candidate) => candidate.id === 'browser-loose-guest-regression');
+        guest.graphic.node.setAttribute('id', 'browser-loose-guest');
+        return {
+            x: guest.GetX(),
+            y: guest.GetY(),
+            hasSeat: Boolean(guest.seat)
+        };
+    });
+
+    if (looseGuestBefore.hasSeat) {
+        throw new Error('Expected newly added regression guest to start loose on the canvas.');
+    }
+
+    const looseGuestElement = await page.$('#browser-loose-guest');
+    if (!looseGuestElement) {
+        throw new Error('Could not find the newly created loose guest graphic.');
+    }
+    await looseGuestElement.evaluate((element) => element.scrollIntoView({ block: 'center', inline: 'center' }));
+    const looseGuestBox = await looseGuestElement.boundingBox();
+    if (!looseGuestBox) {
+        throw new Error('Could not measure the newly created loose guest graphic.');
+    }
+
+    const dragStartX = looseGuestBox.x + looseGuestBox.width / 2;
+    const dragStartY = looseGuestBox.y + looseGuestBox.height / 2;
+    await page.mouse.move(dragStartX, dragStartY);
+    await page.mouse.down();
+    await page.mouse.move(dragStartX + 120, dragStartY + 80, { steps: 8 });
+    await page.mouse.up();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const looseGuestAfter = await page.evaluate(() => {
+        const guest = myDylanSeating.getGuests().find((candidate) => candidate.id === 'browser-loose-guest-regression');
+        return {
+            x: guest.GetX(),
+            y: guest.GetY(),
+            hasSeat: Boolean(guest.seat)
+        };
+    });
+
+    if (looseGuestAfter.hasSeat) {
+        throw new Error('Expected loose guest to remain unseated after an empty-canvas drag.');
+    }
+    if (looseGuestAfter.x < looseGuestBefore.x + 80 || looseGuestAfter.y < looseGuestBefore.y + 50) {
+        throw new Error(`Expected loose guest to stay at its dragged position; moved from ${looseGuestBefore.x},${looseGuestBefore.y} to ${looseGuestAfter.x},${looseGuestAfter.y}.`);
+    }
+    if (pageErrors.length > 0) {
+        throw new Error(`Unexpected browser error while exercising seating interactions: ${pageErrors.join(' | ')}`);
     }
 
     console.log('Browser smoke test passed.');
