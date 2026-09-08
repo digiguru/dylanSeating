@@ -1,4 +1,4 @@
-const { copyFileSync, cpSync, existsSync, mkdirSync, rmSync } = require('node:fs');
+const { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } = require('node:fs');
 const { dirname, join, resolve } = require('node:path');
 
 const projectDirectory = resolve(__dirname, '..');
@@ -30,6 +30,19 @@ function copySocketIoClient(destination) {
     copyFileSync(source, join(vendorDirectory, destination));
 }
 
+function patchLegacyDeskConstructor() {
+    const target = join(publicDirectory, 'dylanSeatingHitched.js');
+    const legacyConstructor = 'Desk = function (x, y, rotation, callback) {\n            this.id = controller.NextTableID();';
+    const fixedConstructor = 'Desk = function (x, y, rotation, id, callback) {\n            this.id = id || controller.NextTableID();';
+    const source = readFileSync(target, 'utf8');
+
+    if (!source.includes(legacyConstructor)) {
+        throw new Error('Could not find the legacy Desk constructor to patch.');
+    }
+
+    writeFileSync(target, source.replace(legacyConstructor, fixedConstructor));
+}
+
 mkdirSync(vendorDirectory, { recursive: true });
 
 copyAsset('jquery', ['jquery.min.js'], 'jquery.min.js');
@@ -39,4 +52,5 @@ copySocketIoClient('socket.io.min.js');
 
 rmSync(publicDirectory, { recursive: true, force: true });
 cpSync(staticDirectory, publicDirectory, { recursive: true });
+patchLegacyDeskConstructor();
 copyFileSync(join(staticDirectory, 'socketExampleClient.html'), join(publicDirectory, 'index.html'));
