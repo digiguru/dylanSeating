@@ -63,6 +63,12 @@
         return null;
     }
 
+    function markSeatMarker(element, attrs) {
+        if (attrs && attrs.model && attrs.model.ismarker && element.node) {
+            element.node.classList.add("seat-marker");
+        }
+    }
+
     function wrapToolboxCreateObject(model) {
         var createObject;
 
@@ -116,13 +122,22 @@
     Raphael.el.attr = function alignedAttr(name, value) {
         var attrs,
             translation,
-            itemFill;
+            itemFill,
+            result;
 
-        if (!initialising || !name || typeof name !== "object" || Array.isArray(name)) {
+        if (!name || typeof name !== "object" || Array.isArray(name)) {
             return originalAttr.apply(this, arguments);
         }
 
         attrs = Object.assign({}, name);
+        markSeatMarker(this, attrs);
+
+        if (!initialising) {
+            result = originalAttr.call(this, attrs);
+            markSeatMarker(this, attrs);
+            return result;
+        }
+
         wrapToolboxCreateObject(attrs.model);
 
         if (this.__dylanToolboxBackground) {
@@ -147,7 +162,9 @@
             attrs.transform = "t" + (translation.x - 580) + "," + translation.y;
         }
 
-        return originalAttr.call(this, attrs);
+        result = originalAttr.call(this, attrs);
+        markSeatMarker(this, attrs);
+        return result;
     };
 
     window.DylanSeatingCanvasLayout = {
