@@ -81,12 +81,17 @@ try {
             }
             return expectedPositions.has(`${Math.round(matrix.e)},${Math.round(matrix.f)}`);
         });
+        const fills = alignedObjects.map((element) => element.getAttribute('fill'));
 
         return {
             heading: document.querySelector('.board-label')?.textContent,
             toolboxX: Number(background?.getAttribute('x')),
             toolboxY: Number(background?.getAttribute('y')),
-            alignedObjectCount: alignedObjects.length
+            toolboxFill: background?.getAttribute('fill'),
+            alignedObjectCount: alignedObjects.length,
+            alignedObjectFills: fills,
+            gradientCount: svg.querySelectorAll('linearGradient').length,
+            visualTokens: window.DylanSeatingCanvasLayout?.visualTokens
         };
     });
 
@@ -98,6 +103,15 @@ try {
     }
     if (canvasLayout.alignedObjectCount !== 3) {
         throw new Error(`Expected three centred toolbox objects, found ${canvasLayout.alignedObjectCount}.`);
+    }
+    if (!canvasLayout.alignedObjectFills.includes('#f7e7a9')) {
+        throw new Error(`Expected toolbox guest to use the shared Butter pastel; fills=${JSON.stringify(canvasLayout.alignedObjectFills)}.`);
+    }
+    if (canvasLayout.gradientCount < 3 || !String(canvasLayout.toolboxFill).startsWith('url(')) {
+        throw new Error(`Expected toolbox/table gradients; gradientCount=${canvasLayout.gradientCount}, toolboxFill=${canvasLayout.toolboxFill}.`);
+    }
+    if (canvasLayout.visualTokens?.guest !== '#f7e7a9' || canvasLayout.visualTokens?.table !== '#d9cbee' || canvasLayout.visualTokens?.desk !== '#cbdaf0') {
+        throw new Error(`Toolbox palette does not match object styling defaults: ${JSON.stringify(canvasLayout.visualTokens)}.`);
     }
 
     const deskCreation = await page.evaluate(async () => {
@@ -225,12 +239,18 @@ try {
 
         styling.syncLabels();
 
+        const markers = Array.from(document.querySelectorAll('#board svg .seat-marker'));
+        const markerStyle = markers[0] ? getComputedStyle(markers[0]) : null;
+
         return {
             swatchCount: swatches.length,
+            markerCount: markers.length,
+            markerFill: markerStyle?.fill,
+            markerOpacity: markerStyle?.opacity,
             table: {
                 name: table.name,
                 colour: table.colour,
-                fill: table.graphic.attr('fill'),
+                fill: table.graphic.node.getAttribute('fill'),
                 json: table.ToJson(),
                 label: table.styleLabel?.attr('text')
             },
@@ -253,8 +273,11 @@ try {
     if (stylingResult.swatchCount !== 8) {
         throw new Error(`Expected eight pastel colour swatches, found ${stylingResult.swatchCount}.`);
     }
-    if (stylingResult.table.name !== 'Top Table' || stylingResult.table.colour !== '#cbdaf0' || stylingResult.table.fill !== '#cbdaf0') {
-        throw new Error(`Round table styling did not apply correctly: ${JSON.stringify(stylingResult.table)}.`);
+    if (stylingResult.markerCount < 1 || stylingResult.markerOpacity !== '0.48') {
+        throw new Error(`Expected subdued grey seat markers; count=${stylingResult.markerCount}, fill=${stylingResult.markerFill}, opacity=${stylingResult.markerOpacity}.`);
+    }
+    if (stylingResult.table.name !== 'Top Table' || stylingResult.table.colour !== '#cbdaf0' || !String(stylingResult.table.fill).startsWith('url(')) {
+        throw new Error(`Round table gradient styling did not apply correctly: ${JSON.stringify(stylingResult.table)}.`);
     }
     if (stylingResult.table.json.name !== 'Top Table' || stylingResult.table.json.colour !== '#cbdaf0' || stylingResult.table.label !== 'Top Table') {
         throw new Error(`Round table styling did not serialize/render correctly: ${JSON.stringify(stylingResult.table)}.`);
