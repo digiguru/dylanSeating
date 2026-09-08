@@ -45,6 +45,42 @@
         return allowed ? colour : defaults[type];
     }
 
+    function clamp(value) {
+        return Math.max(0, Math.min(255, Math.round(value)));
+    }
+
+    function channelToHex(value) {
+        return clamp(value).toString(16).padStart(2, "0");
+    }
+
+    function mixColour(colour, target, amount) {
+        var sourceRed = parseInt(colour.slice(1, 3), 16),
+            sourceGreen = parseInt(colour.slice(3, 5), 16),
+            sourceBlue = parseInt(colour.slice(5, 7), 16),
+            targetRed = parseInt(target.slice(1, 3), 16),
+            targetGreen = parseInt(target.slice(3, 5), 16),
+            targetBlue = parseInt(target.slice(5, 7), 16);
+
+        return "#" +
+            channelToHex(sourceRed + ((targetRed - sourceRed) * amount)) +
+            channelToHex(sourceGreen + ((targetGreen - sourceGreen) * amount)) +
+            channelToHex(sourceBlue + ((targetBlue - sourceBlue) * amount));
+    }
+
+    function fillFor(type, colour) {
+        var fixedColour = normaliseColour(colour, type),
+            highlight,
+            shade;
+
+        if (type !== "round-table" && type !== "desk") {
+            return fixedColour;
+        }
+
+        highlight = mixColour(fixedColour, "#ffffff", 0.48);
+        shade = mixColour(fixedColour, "#66758d", 0.14);
+        return "135-" + highlight + "-" + fixedColour + "-" + shade;
+    }
+
     function modelPosition(model) {
         if (!model || typeof model.GetX !== "function" || typeof model.GetY !== "function") {
             return null;
@@ -135,7 +171,7 @@
             return;
         }
         model.colour = fixedColour;
-        model.graphic.attr({ fill: fixedColour });
+        model.graphic.attr({ fill: fillFor(type, fixedColour) });
     }
 
     function persistenceType(type) {
@@ -331,6 +367,8 @@
 
     window.DylanSeatingObjectStyling = {
         palette: palette.slice(),
+        defaultColours: Object.assign({}, defaults),
+        fillFor: fillFor,
         register: register,
         select: select,
         finishInitialisation: finishInitialisation,
