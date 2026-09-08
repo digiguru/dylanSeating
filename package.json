@@ -25,9 +25,9 @@
     },
     "scripts": {
         "build": "node scripts/copy-browser-assets.cjs",
-        "check": "node --check socketExampleExpress.js && node --check api/socket-io.js && node --check seatQuerying.js && node --check src/budget.js && node --check scripts/copy-browser-assets.cjs && node --check static/canvas-layout.js && node --check static/dylanSeatingHitched.js",
+        "check": "node --check socketExampleExpress.js && node --check styledServer.js && node --check objectStylingServer.js && node --check api/socket-io.js && node --check seatQuerying.js && node --check src/budget.js && node --check scripts/copy-browser-assets.cjs && node --check static/canvas-layout.js && node --check static/object-styling.js && node --check static/dylanSeatingHitched.js",
         "lint": "npx --yes eslint@10.9.1 .",
-        "start": "npm run build && node socketExampleExpress.js",
+        "start": "npm run build && node styledServer.js",
         "test": "npm run test:unit && npm run test:browser",
         "test:browser": "node scripts/browser-smoke-test.mjs",
         "test:ci": "jest --ci --runInBand --reporters=default --reporters=jest-junit && npm run test:browser",
