@@ -15,7 +15,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci --ignore-scripts
-      - run: npm audit fix --ignore-scripts
+      - run: npm audit fix --omit=dev --ignore-scripts || true
       - run: npm audit --omit=dev --audit-level=high
       - name: Save fixed lockfile
         run: |
